@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - backend_media:/app/media
+    environment:
+      - DEBUG=1
+      - DATABASE_URL=sqlite:///db.sqlite3
+    depends_on:
+      - db
+    command: python manage.py runserver 0.0.0.0:8000
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+    command: npm start
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ie221_db
+      POSTGRES_USER: ie221_user
+      POSTGRES_PASSWORD: ie221_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
+  backend_media:
