@@ -42,12 +42,8 @@ const ForgetPassword: React.FC = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // Giả lập hành động gửi email reset password
       setSuccessMessage('Reset password link has been sent to your email!');
       setServerError('');
-      // Sau một thời gian ngắn, có thể chuyển hướng đến trang verify
-      // navigate('/verify-email', { state: { email: formState.email } });
-      // Hoặc chỉ alert tạm thời
       alert('Reset password link sent successfully!');
     }    
   };

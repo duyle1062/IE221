@@ -47,7 +47,6 @@ const VerifyEmail: React.FC = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // Giả lập hành động submit thành công
       alert('OTP verified successfully!');
       navigate('/login');
     }
