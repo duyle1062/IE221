@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import OtpInput from 'react-otp-input';
-import './VerifyEmail.css';
+import styles from './VerifyEmail.module.css';
 
 interface OtpState {
   otp: string;
@@ -54,16 +54,16 @@ const VerifyEmail: React.FC = () => {
   };
 
   return (
-    <div className="container">
-      <div className="wrapper-otp">
-        <h1 className="header">Confirm OTP</h1>
-        <p className="otp-text">
-          Please enter the OTP code sent to your email <span className="font-semibold">{email}</span>
+    <div className={styles.container}>        
+      <h1 className={styles.header}>Confirm OTP</h1>
+      <div className={styles.wrapperOtp}>
+        <p className={styles.otpText}>
+          Please enter the OTP code sent to your email <span className={styles.fontSemibold}>{email}</span>
         </p>
-        {errors.otp && <span className="error text-center">{errors.otp}</span>}
-        <form action="" className="otp-form" onSubmit={handleSubmit} noValidate>
-          <div className="form-otp-text">
-            <div className="input-wrapper-OTP">
+        {errors.otp && <span className={styles.error}>{errors.otp}</span>}
+        <form action="" className={styles.otpForm} onSubmit={handleSubmit} noValidate>
+          <div className={styles.formOtpText}>
+            <div className={styles.inputWrapperOtp}>
               <OtpInput
                 value={otpState.otp}
                 onChange={handleChange}
@@ -77,30 +77,30 @@ const VerifyEmail: React.FC = () => {
                     type="text"
                   />
                 )}
-                containerStyle="otp-input-container"
-                inputStyle="otp-input"
+                containerStyle={styles.otpInputContainer}
+                inputStyle={styles.otpInput}
               />
             </div>
           </div>
-          <div className="btn-row">
+          <div className={styles.btnRow}>
             <button
               type="button"
-              className="clear-btn"
+              className={styles.clearBtn}
               onClick={handleClear}
             >
               Clear
             </button>
             <button
               type="submit"
-              className={`form-button ${isFormValid() ? 'active' : ''}`}
+              className={`${styles.formButton} ${isFormValid() ? styles.active : ''}`}
             >
               Submit
             </button>
           </div>
-          <div className="form-navigate-login">
-            <label className="form-navigate-text">
+          <div className={styles.formNavigateLogin}>
+            <label className={styles.formNavigateText}>
               Didn't receive an OTP?{' '}
-              <Link to="/signup" className="form-navigate-link">
+              <Link to="/signup" className={styles.formNavigateLink}>
                 Resend OTP
               </Link>
             </label>
