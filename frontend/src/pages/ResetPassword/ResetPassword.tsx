@@ -22,7 +22,7 @@ const ResetPassword: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string>('');
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || ''; // Lấy email từ state nếu có (từ trang verify trước)
+  const email = location.state?.email || '';
 
   const isFormValid = (): boolean => {
     return (
@@ -57,22 +57,19 @@ const ResetPassword: React.FC = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      // Giả lập hành động reset password
       setSuccessMessage('Password reset successfully!');
       setServerError('');
-      // Sau một thời gian ngắn, chuyển hướng đến login
       setTimeout(() => {
         navigate('/login');
       }, 2000);
-      // Hoặc chỉ alert tạm thời
       alert('Password reset successfully!');
     }
   };
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.header}>Reset Password</h1>
       <div className={styles.wrapper}>
+      <h1 className={styles.header}>Reset Password</h1>
         <p className={styles.resetText}>
           Enter your new password for <span className={styles.fontSemibold}>{email}</span> ...
         </p>

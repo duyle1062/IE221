@@ -54,8 +54,8 @@ const VerifyEmail: React.FC = () => {
 
   return (
     <div className={styles.container}>        
-      <h1 className={styles.header}>Confirm OTP</h1>
       <div className={styles.wrapperOtp}>
+        <h1 className={styles.header}>Confirm OTP</h1>
         <p className={styles.otpText}>
           Please enter the OTP code sent to your email <span className={styles.fontSemibold}>{email}</span>
         </p>

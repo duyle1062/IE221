@@ -15,7 +15,7 @@ const ForgetPassword: React.FC = () => {
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   const isFormValid = (): boolean => {
     return formState.email.trim() !== '';
@@ -50,8 +50,8 @@ const ForgetPassword: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.header}>Forgot Password</h1>
       <div className={styles.wrapper}>
+      <h1 className={styles.header}>Forgot Password</h1>
         <p className={styles.forgetText}>
           Enter your email address and we'll send you a link to reset your password.
         </p>
