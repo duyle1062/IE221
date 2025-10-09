@@ -7,18 +7,30 @@ import Footer from "./components/Footer/Footer";
 import LoginForm from "./pages/LoginForm/Login";
 import HomePage from "./pages/HomePage/HomePage";
 
+import PizzaPage from "./pages/Category/PizzaPage";
+import ChickenPage from "./pages/Category/ChickenPage";
+import SaladPage from "./pages/Category/SaladPage";
+import DrinkPage from "./pages/Category/DrinkPage";
+import VegetarianPage from "./pages/Category/VegetarianPage";
+import ComboPage from "./pages/Category/ComboPage";
+
 export default function App() {
   return (
     <Router>
       <Routes>
         <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forget-password" element={<ForgetPassword />} />  
+        <Route path="/forget-password" element={<ForgetPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/homepage" element={<HomePage />}></Route>
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/login" element={<LoginForm />} />
+        <Route path="/homepage" element={<HomePage />} />
+        <Route path="/category/pizza" element={<PizzaPage />} />
+        <Route path="/category/chicken" element={<ChickenPage />} />
+        <Route path="/category/salad" element={<SaladPage />} />
+        <Route path="/category/drink" element={<DrinkPage />} />
+        <Route path="/category/vegetarian" element={<VegetarianPage />} />
+        <Route path="/category/combo" element={<ComboPage />} />
       </Routes>
-      <Footer/>
     </Router>
   );
 }

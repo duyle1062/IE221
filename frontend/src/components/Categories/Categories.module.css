@@ -1,0 +1,70 @@
+.container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin: auto;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  max-width: 1000px;
+}
+
+.category {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  font-size: 14px;
+}
+
+.icon {
+  font-size: 26px;
+  margin-bottom: 6px;
+  transition: transform 0.3s ease;
+}
+
+.category:hover .icon {
+  transform: scale(1.1);
+  color: var(--primary-color);
+}
+
+.category:hover .label {
+  color: var(--primary-color);
+}
+
+.label {
+  font-weight: 500;
+  text-transform: capitalize;
+  position: relative;
+}
+
+.label::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 0%;
+  height: 2px;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.category:hover .label::after {
+  width: 100%;
+}
+
+.active {
+  color: var(--primary-color);
+}
+
+.active .icon {
+  color: var(--primary-color);
+}
+
+.active .label::after {
+  width: 100%;
+  background-color: var(--primary-color);
+}
