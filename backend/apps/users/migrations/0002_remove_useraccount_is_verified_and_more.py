@@ -27,10 +27,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='useraccount',
-            constraint=models.CheckConstraint(condition=models.Q(('gender__in', ['MALE', 'FEMALE', 'OTHER'])), name='users_UserAccount_gender_Gender'),
+            constraint=models.CheckConstraint(check=models.Q(('gender__in', ['MALE', 'FEMALE', 'OTHER'])), name='users_UserAccount_gender_Gender'),
         ),
         migrations.AddConstraint(
             model_name='useraccount',
-            constraint=models.CheckConstraint(condition=models.Q(('role__in', ['ADMIN', 'USER'])), name='users_UserAccount_role_Role'),
+            constraint=models.CheckConstraint(check=models.Q(('role__in', ['ADMIN', 'USER'])), name='users_UserAccount_role_Role'),
         ),
     ]
