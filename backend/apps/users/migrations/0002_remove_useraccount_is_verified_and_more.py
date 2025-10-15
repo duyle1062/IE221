@@ -27,18 +27,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='useraccount',
-<<<<<<< HEAD
-            constraint=models.CheckConstraint(check=models.Q(('gender__in', ['MALE', 'FEMALE', 'OTHER'])), name='users_UserAccount_gender_Gender'),
-        ),
-        migrations.AddConstraint(
-            model_name='useraccount',
-            constraint=models.CheckConstraint(check=models.Q(('role__in', ['ADMIN', 'USER'])), name='users_UserAccount_role_Role'),
-=======
             constraint=models.CheckConstraint(check=models.Q(gender__in=['MALE', 'FEMALE', 'OTHER']), name='users_UserAccount_gender_Gender'),
         ),
         migrations.AddConstraint(
             model_name='useraccount',
             constraint=models.CheckConstraint(check=models.Q(role__in=['ADMIN', 'USER']), name='users_UserAccount_role_Role'),
->>>>>>> 8a39f94 (feature: API Get current user's personal information)
         ),
     ]
