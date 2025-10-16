@@ -19,3 +19,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]
+
+class UserUpdateProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAccount
+        fields = [
+            'firstname',
+            'lastname',
+            'gender',
+            'phone'
+        ]
