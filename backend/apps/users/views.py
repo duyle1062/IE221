@@ -4,12 +4,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import UserAccount
-from .serializers import UserProfileSerializer
+from .serializers import UserProfileSerializer, UserUpdateProfileSerializer
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
-def get_current_user_info(request):
+def user_profile_view(request):
     try:
         # request.user đã được authenticate qua JWT token
         user = request.user
@@ -38,14 +38,43 @@ def get_current_user_info(request):
                 'error_code': 'USER_DELETED'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Serialize user data
-        serializer = UserProfileSerializer(user)
+        # GET: lấy thông tin của user hiện tại
+        if request.method == 'GET':
+            # Serialize user data
+            serializer = UserProfileSerializer(user)
+            
+            return Response({
+                'success': True,
+                'data': serializer.data,
+                'message': 'User information retrieved successfully'
+            }, status=status.HTTP_200_OK)
         
-        return Response({
-            'success': True,
-            'data': serializer.data,
-            'message': 'User information retrieved successfully'
-        }, status=status.HTTP_200_OK)
+        # PATCH: cập nhật thông tin của user hiện tại
+
+        if request.method == 'PATCH':
+            serializer = UserUpdateProfileSerializer(
+                user,
+                data = request.data,
+                partial = True 
+            )
+
+            # Kiểm tra dữ liệu có hợp lệ không
+            if serializer.is_valid():
+                serializer.save()
+                respone_serializer = UserProfileSerializer(user)
+                return Response({
+                    'success': True,
+                    'data': respone_serializer.data,
+                    'message': 'User profile updated successfully'
+                }, status = status.HTTP_200_OK)
+            
+            # Nếu không hợp lệ, trả về lỗi
+            return Response({
+                'success': False,
+                'message': 'Invalid data provided',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         
     except Exception as e:
         return Response({
@@ -53,15 +82,3 @@ def get_current_user_info(request):
             'message': 'An error occurred while retrieving user information',
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_user_profile(request):
-    """
-    API GET: Lấy thông tin profile của user hiện tại (alias cho get_current_user_info)
-    
-    Headers cần thiết:
-    - Authorization: Bearer <JWT_TOKEN>
-    """
-    return get_current_user_info(request)
