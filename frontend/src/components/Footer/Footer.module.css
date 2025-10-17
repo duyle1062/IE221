@@ -12,7 +12,8 @@
   color: #fff;
   padding: 20px 0;
   display: flex;
-  position: fixed;
+  position: sticky;
+  margin-top: auto;
   bottom: 0;
 }
 
