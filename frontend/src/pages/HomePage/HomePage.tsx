@@ -2,6 +2,7 @@ import React from "react";
 import Header from "../../components/Header/Header";
 import Banner from "../../components/Banner/Banner";
 import Categories from "../../components/Categories/Categories";
+import Card from "../../components/Card/Card";
 import Footer from "../../components/Footer/Footer";
 
 export default function HomePage() {
@@ -10,6 +11,7 @@ export default function HomePage() {
       <Header />
       <Banner />
       <Categories />
+      <Card />
       <Footer />
     </>
   );
