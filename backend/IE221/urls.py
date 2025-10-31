@@ -11,6 +11,9 @@ urlpatterns = [
     
     # JWT token management endpoints: https://djoser.readthedocs.io/en/latest/jwt_endpoints.html
     path("auth/login/", include("djoser.urls.jwt")),
+
+    # category list
+    path("api/", include("apps.product.urls")),
     
     # API endpoints
     path("api/users/", include("apps.users.urls")),

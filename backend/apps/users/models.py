@@ -34,8 +34,8 @@ class UserAccount(AbstractBaseUser):
         USER = 'USER', 'User'
         
     # Add any additional fields you want to include in your user model
-    firstname = models.CharField(max_length=256)
-    lastname = models.CharField(max_length=256)
+    firstname = models.TextField()
+    lastname = models.TextField()
     gender = EnumField(enum=Gender, max_length=10)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=256, db_column='password_hash')
