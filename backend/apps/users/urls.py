@@ -1,6 +1,9 @@
 from django.urls import path
-from .views import hello
+from .views import user_profile_view
+
+app_name = 'users'
 
 urlpatterns = [
-    path("hello/", hello),
+    # User profile endpoints
+    path("profile", user_profile_view, name='user_profile'),
 ]

@@ -217,3 +217,5 @@ backend/static_root/
 *.temp
 .tmp/
 .temp/
+
+/node_modules

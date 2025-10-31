@@ -1,0 +1,25 @@
+:root {
+  --primary-color: #c8102e;
+  --btn-color: #637381;
+  --btn-background-color: #dfe4ea;
+  --blue-color: #2d68f8;
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+@font-face {
+  font-family: OpenSans;
+  src: url(../assets/fonts/OpenSans-VariableFont_wdthwght.ttf);
+}
+
+html,
+body {
+  height: 100%;
+  font-family: OpenSans;
+}

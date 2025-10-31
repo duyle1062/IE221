@@ -15,7 +15,8 @@ urlpatterns = [
     # category list
     path("api/", include("apps.product.urls")),
     
-    # path("api/users/", include("apps.users.urls")),
+    # API endpoints
+    path("api/users/", include("apps.users.urls")),
     # path("api/auth/", include("apps.authentication.urls")),
 ]
 
