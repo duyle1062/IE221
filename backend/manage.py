@@ -18,5 +18,8 @@ def main():
     execute_from_command_line(sys.argv)
 
 
+print("Database Name:", os.getenv('DB_NAME'))
+print("Secret Key:", os.getenv('SECRET_KEY'))
+
 if __name__ == '__main__':
     main()
