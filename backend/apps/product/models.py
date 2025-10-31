@@ -22,7 +22,6 @@ class Product(models.Model):
         return f"{self.category} - {self.name}"
 
     def get_average_rating(self):
-        """Calculate average rating - used as fallback when not annotated"""
         # Check if average_rating was already annotated in the queryset
         if hasattr(self, 'average_rating'):
             return self.average_rating
