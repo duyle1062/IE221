@@ -3,7 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from .models import Cart, CartItem, Product
+from .models import Cart, CartItem
+from apps.product.models import Product
 from .serializers import (
     CartSerializer, 
     AddCartItemSerializer, 
@@ -58,10 +59,10 @@ class CartItemDetailView(APIView):
 
     def get_object(self, pk, user):
         try:
-            item = CartItem.objects.get(pk=pk)
-            # Check User này có sở hữu item này không
-            if item.cart.user != user:
-                return None
+            item = CartItem.objects.select_related('cart', 'cart__user').get(
+                pk=pk,
+                cart__user=user
+            )
             return item
         except CartItem.DoesNotExist:
             return None

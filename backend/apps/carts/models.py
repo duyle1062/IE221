@@ -1,11 +1,14 @@
 from django.db import models
 from django.conf import settings
-from apps.products.models import Product
+from apps.product.models import Product
 
 class Cart(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cart')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'carts'
 
     def __str__(self):
         return f"Cart fpr {self.user.email}"
@@ -17,6 +20,7 @@ class CartItem(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'cart_items'
         # Ràng buộc này đảm bảo mỗi sản phẩm chỉ xuất hiện 1 lần trong 1 giỏ
         unique_together = ('cart', 'product')
 
