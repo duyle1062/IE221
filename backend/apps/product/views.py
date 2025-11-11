@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.exceptions import NotFound, APIException
+from rest_framework.exceptions import APIException
 from .models import Category, Product
 from .serializers import ProductSerializer, CategorySerializer
 from django_filters.rest_framework import DjangoFilterBackend
@@ -41,7 +41,6 @@ class ProductListView(ListCreateAPIView):
     filterset_fields = ['is_active']
     
     def get_queryset(self) -> QuerySet[Product]:
-      # Only apply category filtering for GET requests (listing products)
         category_name = self.kwargs.get('slug_name', None)
         if category_name is None:
             raise ValidationError("Category name is required")
@@ -113,7 +112,6 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
         if instance.deleted_at is not None:
             return Response({"detail": "Product already deleted."}, status=status.HTTP_410_GONE)
 
-        # Set deleted_at timestamp instead of actually deleting
         instance.deleted_at = timezone.now()
         instance.save()
 

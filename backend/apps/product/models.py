@@ -34,6 +34,7 @@ class Product(models.Model):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
 
+# Add new model representing product_images table
 class ProductImages(models.Model):
     id = models.BigAutoField(primary_key=True)
     image_data = models.BinaryField()
