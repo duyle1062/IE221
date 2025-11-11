@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "djoser",
     "apps.users",
     "apps.authentication",
+    "apps.carts",
     "apps.product",
 ]
 
