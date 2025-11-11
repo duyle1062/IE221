@@ -18,6 +18,8 @@ urlpatterns = [
     # API endpoints
     path("api/users/", include("apps.users.urls")),
     # path("api/auth/", include("apps.authentication.urls")),
+    path("api/cart/", include("apps.carts.urls")),
 ]
 
-urlpatterns += [re_path(r"^.*", TemplateView.as_view(template_name="index.html"))]
+# Catch-all for frontend - comment out if only using API
+# urlpatterns += [re_path(r"^.*", TemplateView.as_view(template_name="index.html"))]
