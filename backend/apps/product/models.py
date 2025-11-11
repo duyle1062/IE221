@@ -5,13 +5,12 @@ from apps.users.models import UserAccount as User
 
 class Product(models.Model):
     # restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, db_column='restaurant_id')
-    restaurant = models.IntegerField(db_column='restaurant_id')  # This field type is a guess.
+    restaurant = models.IntegerField(db_column='restaurant_id') 
     category = models.ForeignKey('Category', on_delete=models.DO_NOTHING, db_column='category_id', blank=True, null=True)
     name = models.TextField()
     slug = models.TextField()
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image_urls = models.URLField(blank=True, null=True)  # This field type is a guess.
     is_active = models.BooleanField(default=True)
     available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,6 +34,20 @@ class Product(models.Model):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
 
+class ProductImages(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    image_data = models.BinaryField()
+    image_content_type = models.CharField(max_length=50)
+    is_primary = models.BooleanField()
+    sort_order = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    product = models.ForeignKey('Product', models.DO_NOTHING)
+
+    class Meta:
+        db_table = 'product_images'
+        verbose_name = 'Product Image'
+        verbose_name_plural = 'Product Images'
 
 class Category(models.Model):
     name = models.TextField()
@@ -70,3 +83,4 @@ class Ratings(models.Model):
         verbose_name = 'Rating'
         verbose_name_plural = 'Ratings'
         unique_together = ('product', 'user')
+        

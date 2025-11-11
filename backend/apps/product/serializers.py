@@ -14,11 +14,12 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ["id", "category_id", "name", "slug", "description", "price", "average_rating", "image_urls", "category", "restaurant", "is_active", "available"]
+        fields = ["id", "category_id", "name", "slug", "description", "price", "average_rating", "category", "restaurant", "is_active", "available", "deleted_at"]
+        read_only_fields = ["deleted_at"]
 
     def get_average_rating(self, obj):
         """Get average rating - uses annotation if available, otherwise calculates"""
-        # If annotated in queryset 
+        # If annotated in queryset
         if hasattr(obj, 'average_rating'):
             return round(obj.average_rating, 2) if obj.average_rating else None
         # Otherwise call the model method (fallback)

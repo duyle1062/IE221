@@ -1,10 +1,21 @@
 from django.db.models import QuerySet, Avg
 from django.forms import ValidationError
+from django.utils import timezone
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.exceptions import NotFound, APIException
 from .models import Category, Product
 from .serializers import ProductSerializer, CategorySerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.exceptions import ObjectDoesNotExist
+
+
+# Custom exception for HTTP 410 Gone
+class Gone(APIException):
+    status_code = status.HTTP_410_GONE
+    default_detail = "This resource has been deleted."
+    default_code = "gone"
 
 # List all categories / create a new category
 class CategoryListView(ListCreateAPIView):   
@@ -42,7 +53,11 @@ class ProductListView(ListCreateAPIView):
                 raise ObjectDoesNotExist("Category does not exist")
 
             # Annotate with average rating for performance
-            queryset = Product.objects.filter(category=category).annotate(
+            # Exclude deleted products (deleted_at IS NULL)
+            queryset = Product.objects.filter(
+                category=category,
+                deleted_at__isnull=True
+            ).annotate(
                 average_rating=Avg('ratings__rating')
             )
             return queryset
@@ -70,12 +85,38 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
 
             try:
                 # Annotate with average rating for performance
-                queryset = Product.objects.annotate(
+                product = Product.objects.annotate(
                     average_rating=Avg('ratings__rating')
                 ).get(pk=product_id, category=category)
+
+                # Check if product is soft deleted - raise 410 Gone
+                if product.deleted_at is not None:
+                    raise Gone("This product has been deleted.")
+
+                return product
+
             except ObjectDoesNotExist:
                 raise ObjectDoesNotExist("Product does not exist in this category")
 
-            return queryset
         else:
-            return Product.objects.get(pk=product_id, category__slug_name=category_name)
+            product = Product.objects.get(pk=product_id, category__slug_name=category_name)
+
+            # Check if product is soft deleted for UPDATE/DELETE operations - raise 410 Gone
+            if product.deleted_at is not None:
+                raise Gone("This product has been deleted.")
+
+            return product
+
+    def destroy(self, request, *args, **kwargs):      
+        instance = self.get_object()
+        
+        if instance.deleted_at is not None:
+            return Response({"detail": "Product already deleted."}, status=status.HTTP_410_GONE)
+
+        # Set deleted_at timestamp instead of actually deleting
+        instance.deleted_at = timezone.now()
+        instance.save()
+
+        # Return 200 with the deleted product data
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
