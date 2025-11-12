@@ -11,7 +11,6 @@ class Product(models.Model):
     slug = models.TextField()
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image_urls = models.URLField(blank=True, null=True)  # This field type is a guess.
     is_active = models.BooleanField(default=True)
     available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,6 +33,26 @@ class Product(models.Model):
         db_table = 'products'
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
+
+
+class ProductImage(models.Model):
+    """Store multiple images for each product as bytea in PostgreSQL"""
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', db_column='product_id')
+    image_data = models.BinaryField(editable=True)  # Store image as bytea (PNG, JPG, WEBP)
+    image_content_type = models.CharField(max_length=50)  # e.g., 'image/png', 'image/jpeg', 'image/webp'
+    is_primary = models.BooleanField(default=False)  # Mark primary/thumbnail image
+    sort_order = models.IntegerField(default=0)  # For ordering images in gallery
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Image for {self.product.name} ({self.image_content_type})"
+    
+    class Meta:
+        db_table = 'product_images'
+        verbose_name = 'Product Image'
+        verbose_name_plural = 'Product Images'
+        ordering = ['sort_order', 'id']  # Order by sort_order, then by id
 
 
 class Category(models.Model):
