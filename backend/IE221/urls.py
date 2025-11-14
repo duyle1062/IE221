@@ -2,6 +2,19 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.views.generic import TemplateView
 
+# Import Router của DRF
+from rest_framework.routers import DefaultRouter
+
+# Import ViewSet Admin 
+from apps.users.views import UserAdminViewSet
+
+admin_router = DefaultRouter()
+
+# Đăng ký các ViewSet của Admin vào router này
+#    - 'users' chính là tiền tố URL -> sẽ tạo ra /api/admin/users/
+#    - basename='admin-user' là bắt buộc khi dùng get_queryset
+admin_router.register(r'users', UserAdminViewSet, basename='admin-user')
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     
@@ -19,6 +32,8 @@ urlpatterns = [
     path("api/users/", include("apps.users.urls")),
     # path("api/auth/", include("apps.authentication.urls")),
     path("api/cart/", include("apps.carts.urls")),
+
+    path("api/admin/", include(admin_router.urls)),
 ]
 
 # Catch-all for frontend - comment out if only using API
