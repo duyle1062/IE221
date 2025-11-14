@@ -1,11 +1,13 @@
-from rest_framework import status
+from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
 from .models import UserAccount
 from .serializers import UserProfileSerializer, UserUpdateProfileSerializer
-
+from django.utils import timezone
+from .permissions import IsAdminUser
 
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -82,3 +84,36 @@ def user_profile_view(request):
             'message': 'An error occurred while retrieving user information',
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserAdminViewSet(mixins.ListModelMixin,   
+                       mixins.RetrieveModelMixin,   
+                       mixins.DestroyModelMixin,     
+                       viewsets.GenericViewSet):
+    
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    serializer_class = UserProfileSerializer
+    
+    def get_queryset(self):
+        queryset = UserAccount.objects.filter(deleted_at__isnull=True)
+        role = self.request.query_params.get('role', None)
+        
+        if role == UserAccount.Role.ADMIN:
+            queryset = queryset.filter(role=UserAccount.Role.ADMIN)
+        elif role == UserAccount.Role.USER:
+            queryset = queryset.filter(role=UserAccount.Role.USER)
+        # Nếu role=None hoặc role='ALL', trả về tất cả
+        
+        return queryset.order_by('-created_at')
+
+    def destroy(self, request, *args, **kwargs):
+        # "instance" là đối tượng User sắp bị xóa (lấy từ {id} trên URL)
+        instance = self.get_object()
+        admin_user = self.request.user
+        if instance == admin_user:
+            raise ValidationError("You cannot delete your own account")
+
+        instance.deleted_at = timezone.now()
+        instance.is_active = False
+        instance.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
