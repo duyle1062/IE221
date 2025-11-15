@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Avg
 from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.users.models import UserAccount as User
+from django.utils import timezone
 
 class Product(models.Model):
     # restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, db_column='restaurant_id')
@@ -77,12 +78,12 @@ class Ratings(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='product_id')
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
-    review = models.TextField(blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Rating {self.rating} for {self.product} by User {self.user}"
+        return f"{self.user} rated {self.product.name}: {self.rating} stars"
     
     class Meta:
         db_table = 'ratings'

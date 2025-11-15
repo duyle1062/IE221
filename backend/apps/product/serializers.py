@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductImage
+from .models import Product, Category, ProductImage, Ratings
 import base64
-
+from apps.users.models import UserAccount as User
 
 class ProductImageSerializer(serializers.ModelSerializer):
     """Serializer for ProductImage model - File upload only"""
@@ -70,3 +70,21 @@ class ProductSerializer(serializers.ModelSerializer):
         if hasattr(obj, 'average_rating'):
             return round(obj.average_rating, 2) if obj.average_rating else None
         return obj.get_average_rating() 
+    
+class RatingUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email'] 
+
+class RatingSerializer(serializers.ModelSerializer):
+    user = RatingUserSerializer(read_only=True) 
+
+    class Meta:
+        model = Ratings
+        fields = ['id', 'user', 'rating', 'comment', 'created_at']
+        read_only_fields = ['user', 'created_at']
+    
+    def validate_rating(self, value):
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("Rating must be from 1 to 5 stars")
+        return value
