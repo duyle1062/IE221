@@ -1,0 +1,242 @@
+.profileContainer {
+  max-width: 800px;
+  margin: 2rem auto;
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-light);
+  overflow: hidden;
+}
+
+.nav {
+  display: flex;
+  background-color: var(--background-light);
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.navButton {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-color-medium);
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.navButton:hover {
+  background-color: var(--background-hover-light);
+  color: var(--text-color-black);
+}
+
+.navButton.active {
+  color: var(--blue-color);
+  border-bottom-color: var(--blue-color);
+}
+
+.content {
+  padding: 1.5rem 2rem;
+}
+
+.content h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--text-color-dark);
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-color-dark-secondary);
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color-medium);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--blue-color);
+  color: var(--text-color-white);
+  transition: background-color 0.2s;
+}
+
+.button:hover {
+  filter: brightness(90%);
+}
+
+.buttonSecondary {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--btn-background-color);
+  color: var(--btn-color);
+  transition: background-color 0.2s;
+}
+
+.buttonSecondary:hover {
+  background-color: var(--btn-color);
+  color: var(--text-color-white);
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.profileView p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--text-color-dark);
+}
+.profileView p strong {
+  margin-right: 0.5rem;
+  color: var(--text-color-black);
+}
+.profileView button {
+  margin-top: 1rem;
+}
+
+.addressList {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.addressItem {
+  border: 1px solid var(--border-color-light);
+  padding: 1rem;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.addressDetails p {
+  margin: 0.25rem 0;
+}
+
+.defaultBadge {
+  background-color: var(--success-color);
+  color: var(--text-color-white);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+}
+
+.addressActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-shrink: 0;
+}
+
+.buttonLink {
+  background: none;
+  border: none;
+  color: var(--blue-color);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9rem;
+}
+.buttonLink:hover {
+  text-decoration: underline;
+}
+
+.buttonLinkDanger {
+  color: var(--primary-color);
+}
+
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--backdrop-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: var(--text-color-white);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px var(--shadow-medium);
+  width: 90%;
+  max-width: 500px;
+  z-index: 1001;
+}
+
+.modalContent h2 {
+  margin-top: 0;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.message {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+  background-color: var(--success-background-light);
+  color: var(--success-text-dark);
+  border: 1px solid var(--success-border-color);
+}
+
+.passwordInputWrapper {
+  position: relative;
+}
+
+.passwordInputWrapper input {
+  padding-right: 2.5rem;
+}
+
+.passwordToggleIcon {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: var(--text-color-medium);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.passwordToggleIcon:hover {
+  color: var(--text-color-black);
+}
