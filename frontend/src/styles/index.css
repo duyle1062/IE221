@@ -25,6 +25,14 @@
 
   --shadow-light: rgba(0, 0, 0, 0.05);
   --shadow-medium: rgba(0, 0, 0, 0.3);
+
+  --primary-color-light: #fcebeb;
+  --border-color-light-pink: #fdf2f2;
+  --button-disabled-bg: #dde2e7;
+  --text-color-light: #8a92a6;
+
+  --pink-button-bg: #f7a7a7;
+  --pink-light-bg: #fef0f0;
 }
 
 *,
