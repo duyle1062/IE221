@@ -3,7 +3,6 @@ import RegisterForm from "./pages/RegisterForm/Register";
 import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
 import ForgetPassword from "./pages/ForgetPassword/ForgetPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
-import Footer from "./components/Footer/Footer";
 import LoginForm from "./pages/LoginForm/Login";
 import HomePage from "./pages/HomePage/HomePage";
 
@@ -13,6 +12,7 @@ import SaladPage from "./pages/Category/SaladPage";
 import DrinkPage from "./pages/Category/DrinkPage";
 import VegetarianPage from "./pages/Category/VegetarianPage";
 import ComboPage from "./pages/Category/ComboPage";
+import ProductPage from "./pages/ProductDetailPage/ProductDetailPage";
 
 export default function App() {
   return (
@@ -24,6 +24,8 @@ export default function App() {
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/homepage" element={<HomePage />} />
+        <Route path="/product/:id" element={<ProductPage />} />
+
         <Route path="/category/pizza" element={<PizzaPage />} />
         <Route path="/category/chicken" element={<ChickenPage />} />
         <Route path="/category/salad" element={<SaladPage />} />
