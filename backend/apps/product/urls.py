@@ -5,6 +5,9 @@ from .views import (
 )
 
 urlpatterns = [
+    # Admin endpoints
+    path("admin/products/", views.AdminProductListCreateView.as_view(), name="admin_product_list"),
+    
     # Product Search endpoint (must be before category-specific routes)
     path("products/search/", views.ProductSearchView.as_view(), name="product_search"),
     # Category endpoints

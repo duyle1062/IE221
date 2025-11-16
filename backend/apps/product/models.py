@@ -6,7 +6,7 @@ from django.utils import timezone
 
 class Product(models.Model):
     # restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, db_column='restaurant_id')
-    restaurant = models.IntegerField(db_column='restaurant_id')  # This field type is a guess.
+    restaurant = models.IntegerField(db_column='restaurant_id') 
     category = models.ForeignKey('Category', on_delete=models.DO_NOTHING, db_column='category_id', blank=True, null=True)
     name = models.TextField()
     slug = models.TextField()
@@ -34,7 +34,6 @@ class Product(models.Model):
         db_table = 'products'
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
-
 
 class ProductImage(models.Model):
     """Store multiple images for each product as bytea in PostgreSQL"""
@@ -90,3 +89,4 @@ class Ratings(models.Model):
         verbose_name = 'Rating'
         verbose_name_plural = 'Ratings'
         unique_together = ('product', 'user')
+        

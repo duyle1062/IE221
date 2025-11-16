@@ -1,4 +1,4 @@
-from django.db.models import QuerySet, Avg, Q
+from django.db.models import QuerySet, Avg, Q, Count
 from django.forms import ValidationError
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.views import APIView
@@ -6,13 +6,24 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from apps.users.permissions import IsAdminUser
+from rest_framework.exceptions import APIException
 from .models import Category, Product, ProductImage, Ratings
-from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer, RatingSerializer
+from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer, RatingSerializer, AdminProductListSerializer
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
 from django.core.exceptions import ObjectDoesNotExist
 from .pagination import StandardResultsSetPagination
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
+
+
+# Custom exception for HTTP 410 Gone
+class Gone(APIException):
+    status_code = status.HTTP_410_GONE
+    default_detail = "This resource has been deleted."
+    default_code = "gone"
 
 # List all categories / create a new category
 class CategoryListView(ListCreateAPIView):
@@ -54,8 +65,12 @@ class ProductListView(ListCreateAPIView):
                 raise ObjectDoesNotExist("Category does not exist")
 
             # Annotate with average rating for performance
-            queryset = Product.objects.filter(category=category).annotate(
-                average_rating=Avg("ratings__rating")
+            # Exclude deleted products (deleted_at IS NULL)
+            queryset = Product.objects.filter(
+                category=category,
+                deleted_at__isnull=True
+            ).annotate(
+                average_rating=Avg('ratings__rating')
             )
             return queryset
         else:
@@ -83,19 +98,42 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
 
             try:
                 # Annotate with average rating for performance
-                queryset = Product.objects.annotate(
-                    average_rating=Avg("ratings__rating")
+                product = Product.objects.annotate(
+                    average_rating=Avg('ratings__rating')
                 ).get(pk=product_id, category=category)
+
+                # Check if product is soft deleted - raise 410 Gone
+                if product.deleted_at is not None:
+                    raise Gone("This product has been deleted.")
+
+                return product
+
             except ObjectDoesNotExist:
                 raise ObjectDoesNotExist("Product does not exist in this category")
 
-            return queryset
         else:
-            return Product.objects.get(pk=product_id, category__slug_name=category_name)
+            product = Product.objects.get(pk=product_id, category__slug_name=category_name)
 
+            # Check if product is soft deleted for UPDATE/DELETE operations - raise 410 Gone
+            if product.deleted_at is not None:
+                raise Gone("This product has been deleted.")
+
+            return product
+
+    def destroy(self, request, *args, **kwargs):      
+        instance = self.get_object()
+        
+        if instance.deleted_at is not None:
+            return Response({"detail": "Product already deleted."}, status=status.HTTP_410_GONE)
+
+        instance.deleted_at = timezone.now()
+        instance.save()
+
+        # Return 200 with the deleted product data
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 # ============== Product Image Management ==============
-
 
 class ProductImageListView(ListCreateAPIView):
     """List all images of a product or upload new image"""
@@ -268,9 +306,9 @@ class ProductRatingListView(ListCreateAPIView):
             product = Product.objects.get(pk=product_id)
         except Product.DoesNotExist:
             raise serializers.ValidationError("Product does not exist")
-        
+
         has_rated = Ratings.objects.filter(
-            user=self.request.user, 
+            user=self.request.user,
             product=product
         ).exists()
 
@@ -278,5 +316,44 @@ class ProductRatingListView(ListCreateAPIView):
             raise serializers.ValidationError(
                 "You have already rated this product"
             )
-            
+
         serializer.save(user=self.request.user, product=product)
+
+# ============== Admin Views ==============
+
+class AdminProductListCreateView(ListCreateAPIView):
+    serializer_class = AdminProductListSerializer
+    permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['is_active', 'available', 'category']
+    ordering_fields = ['id', 'name', 'price', 'created_at', 'updated_at']
+    ordering = ['id']  # Default ordering
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        """
+        Get all products including soft-deleted ones.
+        Annotate with average rating and total ratings for performance.
+        """
+        queryset = Product.objects.select_related('category').annotate(
+            average_rating=Avg('ratings__rating'),
+            total_ratings=Count('ratings')
+        ).order_by('-created_at')
+
+        # Optional filter to show only non-deleted products
+        include_deleted = self.request.query_params.get('include_deleted', 'true')
+        if include_deleted.lower() == 'false':
+            queryset = queryset.filter(deleted_at__isnull=True)
+
+        # Optional search by product name
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) | Q(description__icontains=search)
+            )
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """Handle product creation via admin endpoint"""
+        serializer.save()
