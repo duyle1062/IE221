@@ -14,6 +14,7 @@ import DrinkPage from "./pages/Category/DrinkPage";
 import VegetarianPage from "./pages/Category/VegetarianPage";
 import ComboPage from "./pages/Category/ComboPage";
 import UserProfile from "./pages/UserProfile/UserProfile";
+import Cart from "./pages/Cart/Cart";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/category/vegetarian" element={<VegetarianPage />} />
         <Route path="/category/combo" element={<ComboPage />} />
         <Route path="/userprofile" element={<UserProfile />} />
+        <Route path="/cart" element={<Cart />} />
       </Routes>
     </Router>
   );
