@@ -3,13 +3,15 @@ from django.forms import ValidationError
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import IsAuthenticated
-from .models import Category, Product, ProductImage
-from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .models import Category, Product, ProductImage, Ratings
+from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer, RatingSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.exceptions import ObjectDoesNotExist
+from .pagination import StandardResultsSetPagination
+from django.shortcuts import get_object_or_404
 
 
 # List all categories / create a new category
@@ -237,3 +239,44 @@ class ProductSearchView(ListCreateAPIView):
         queryset = queryset.annotate(average_rating=Avg("ratings__rating"))
 
         return queryset
+
+# ============== Product Rating ==============
+
+class ProductRatingListView(ListCreateAPIView):
+    serializer_class = RatingSerializer
+    pagination_class = StandardResultsSetPagination
+    
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            # Nếu là POST, yêu cầu IsAuthenticated
+            self.permission_classes = [IsAuthenticated]
+        else:
+            # Nếu là GET, cho phép tất cả
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
+
+    def get_queryset(self):
+        product_id = self.kwargs.get('product_id')
+        # Kiểm tra xem Product có tồn tại không
+        product = get_object_or_404(Product, pk=product_id)
+        # .select_related('user') sẽ JOIN bảng user vào truy vấn này
+        return Ratings.objects.filter(product=product).select_related('user').order_by('-created_at')
+
+    def perform_create(self, serializer):
+        product_id = self.kwargs.get('product_id')
+        try:
+            product = Product.objects.get(pk=product_id)
+        except Product.DoesNotExist:
+            raise serializers.ValidationError("Product does not exist")
+        
+        has_rated = Ratings.objects.filter(
+            user=self.request.user, 
+            product=product
+        ).exists()
+
+        if has_rated:
+            raise serializers.ValidationError(
+                "You have already rated this product"
+            )
+            
+        serializer.save(user=self.request.user, product=product)

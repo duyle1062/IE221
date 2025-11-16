@@ -1,5 +1,8 @@
 from django.urls import path, re_path, include
 from . import views
+from .views import (
+    ProductRatingListView
+)
 
 urlpatterns = [
     # Product Search endpoint (must be before category-specific routes)
@@ -42,5 +45,11 @@ urlpatterns = [
         "products/<int:product_id>/images/<int:image_id>/set-primary/",
         views.ProductImageSetPrimaryView.as_view(),
         name="product_image_set_primary",
+    ),
+    # Rating Product
+    path(
+        "products/<int:product_id>/ratings/",
+        views.ProductRatingListView.as_view(),
+        name="product_rating_list_create",
     ),
 ]
