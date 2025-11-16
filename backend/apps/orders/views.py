@@ -90,7 +90,7 @@ class PlaceOrderView(APIView):
                     total=total,
                     payment_method=payment_method,
                     status="PAID",
-                    payment_status="PENDING",
+                    payment_status="SUCCEEDED",
                 )
 
                 # Create order items from cart items
@@ -157,6 +157,43 @@ class OrderDetailView(APIView):
             return Response(
                 {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class CancelOrderView(APIView):
+    """
+    POST /api/orders/<order_id>/cancel/
+    Cancel an order - only allowed if status is PAID
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, order_id):
+        try:
+            order = Order.objects.get(id=order_id, user=request.user)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if order can be cancelled
+        if order.status != "PAID":
+            return Response(
+                {
+                    "error": f"Cannot cancel order. Order status is '{order.status}'. Only orders with status 'PAID' can be cancelled."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Cancel the order
+        order.status = "CANCELLED"
+        order.payment_status = "REFUNDED"
+        order.save()
+
+        serializer = OrderSerializer(order)
+        return Response(
+            {"message": "Order cancelled successfully", "order": serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
 
 class AddressListCreateView(APIView):
