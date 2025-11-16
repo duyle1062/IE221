@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from apps.users.permissions import IsOwner, IsRegularUser
 from .models import Cart, CartItem
 from apps.product.models import Product
 from .serializers import (
@@ -14,7 +15,10 @@ from .serializers import (
 # GET /api/cart
 # Lấy thông tin giỏ hàng của user. Tự động tạo nếu chưa có
 class CartAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    GET: IsAuthenticated + IsRegularUser - Get user's cart (USER only, NOT admin)
+    """
+    permission_classes = [IsAuthenticated, IsRegularUser]
 
     def get(self, request):
         cart, created = Cart.objects.get_or_create(user=request.user)
@@ -25,7 +29,10 @@ class CartAPIView(APIView):
 # Body: { "product_id": 123, "quantity": 2 }
 # Thêm món hàng vào giỏ, có logic cộng dồn
 class CartItemAddView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    POST: IsAuthenticated + IsRegularUser - Add item to cart (USER only, NOT admin)
+    """
+    permission_classes = [IsAuthenticated, IsRegularUser]
 
     def post(self, request):
         cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -55,7 +62,11 @@ class CartItemAddView(APIView):
 # Body: { "quantity": 3 }
 # Cập nhật số lượng của 1 món hàng
 class CartItemDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    PATCH: IsAuthenticated + IsRegularUser + IsOwner - Update cart item quantity (USER only)
+    DELETE: IsAuthenticated + IsRegularUser + IsOwner - Remove item from cart (USER only)
+    """
+    permission_classes = [IsAuthenticated, IsRegularUser, IsOwner]
 
     def get_object(self, pk, user):
         try:
@@ -63,6 +74,8 @@ class CartItemDetailView(APIView):
                 pk=pk,
                 cart__user=user
             )
+            # Check object-level permission
+            self.check_object_permissions(self.request, item)
             return item
         except CartItem.DoesNotExist:
             return None
@@ -93,3 +106,4 @@ class CartItemDetailView(APIView):
 
         cart_serializer = CartSerializer(cart)
         return Response(cart_serializer.data, status=status.HTTP_200_OK)
+    

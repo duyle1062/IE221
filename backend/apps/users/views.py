@@ -7,11 +7,15 @@ from rest_framework.exceptions import ValidationError
 from .models import UserAccount
 from .serializers import UserProfileSerializer, UserUpdateProfileSerializer
 from django.utils import timezone
-from .permissions import IsAdminUser
+from .permissions import IsAdminUser, IsRegularUser
 
 @api_view(['GET', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsRegularUser])
 def user_profile_view(request):
+    """
+    GET: IsAuthenticated + IsRegularUser - Get user profile (USER only, NOT admin)
+    PATCH: IsAuthenticated + IsRegularUser - Update user profile (USER only, NOT admin)
+    """
     try:
         # request.user đã được authenticate qua JWT token
         user = request.user
