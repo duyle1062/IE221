@@ -30,6 +30,7 @@ urlpatterns = [
     path("api/cart/", include("apps.carts.urls")),
     path("api/orders/", include("apps.orders.urls")),
     path("api/admin/", include(admin_router.urls)),
+    path("api/admin/", include("apps.orders.admin_urls")),
 ]
 
 # Catch-all for frontend - comment out if only using API

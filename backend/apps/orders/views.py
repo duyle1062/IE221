@@ -8,6 +8,7 @@ from decimal import Decimal
 from .models import Order, OrderItem, Address
 from apps.carts.models import Cart, CartItem
 from .serializers import OrderSerializer, PlaceOrderSerializer, AddressSerializer
+from .permissions import IsAdminUser
 
 
 class PlaceOrderView(APIView):
@@ -265,3 +266,28 @@ class AddressDetailView(APIView):
         return Response(
             {"message": "Address deleted successfully"}, status=status.HTTP_200_OK
         )
+
+
+# ============== Admin Order Views ==============
+
+
+class AdminOrderDetailView(APIView):
+    """
+    GET /api/admin/orders/<order_id>/
+    Admin view to get order details by order ID
+    Only accessible by users with ADMIN role
+    """
+
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request, order_id):
+        try:
+            order = Order.objects.prefetch_related("items__product", "address").get(
+                id=order_id
+            )
+            serializer = OrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
+            )
