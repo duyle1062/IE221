@@ -35,22 +35,6 @@ class Product(models.Model):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
 
-# Add new model representing product_images table
-class ProductImages(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    image_data = models.BinaryField()
-    image_content_type = models.CharField(max_length=50)
-    is_primary = models.BooleanField()
-    sort_order = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    product = models.ForeignKey('Product', models.DO_NOTHING)
-
-    class Meta:
-        db_table = 'product_images'
-        verbose_name = 'Product Image'
-        verbose_name_plural = 'Product Images'
-
 class ProductImage(models.Model):
     """Store multiple images for each product as bytea in PostgreSQL"""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', db_column='product_id')

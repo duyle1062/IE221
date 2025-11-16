@@ -2,13 +2,17 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 from django.db import transaction
 from decimal import Decimal
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
 
-from .models import Order, OrderItem, Address
+from .models import Order, OrderItem, Address, OrderStatus
 from apps.carts.models import Cart, CartItem
 from .serializers import OrderSerializer, PlaceOrderSerializer, AddressSerializer
 from .permissions import IsAdminUser
+from apps.product.pagination import StandardResultsSetPagination
 
 
 class PlaceOrderView(APIView):
@@ -270,24 +274,114 @@ class AddressDetailView(APIView):
 
 # ============== Admin Order Views ==============
 
-
-class AdminOrderDetailView(APIView):
+class AdminOrderListView(ListAPIView):
     """
-    GET /api/admin/orders/<order_id>/
-    Admin view to get order details by order ID
-    Only accessible by users with ADMIN role
+    GET /api/admin/orders/
+  
+    Query Parameters:
+    - status: Filter by order status (PAID, CONFIRMED, PREPARING, READY, DELIVERED, CANCELLED)
+    - payment_status: Filter by payment status (PENDING, SUCCEEDED, FAILED, REFUNDED)
+    - payment_method: Filter by payment method (CARD, CASH, WALLET, THIRD_PARTY)
+    - ordering: Sort by field (id, created_at, total, status) - prefix with '-' for descending
+    - page: Page number
+    - page_size: Items per page (max 100)
     """
 
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['status', 'payment_status', 'payment_method', 'type']
+    ordering_fields = ['id', 'created_at', 'updated_at', 'total', 'status']
+    ordering = ['id']  # Default ordering by ID
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        """
+        Get all orders with related data optimized
+        """
+        queryset = Order.objects.select_related('user', 'address').prefetch_related(
+            'items__product'
+        )
+        return queryset
+
+class AdminChangeStatusView(APIView):
+    """
+    PATCH /api/admin/orders/<order_id>/update-status/
+
+    Body:
+    {
+        "status": "PREPARING" | "READY" | "DELIVERED" | "CANCELLED"
+    }
+
+    """
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def get(self, request, order_id):
+    VALID_TRANSITIONS = {
+        "PAID": ["PREPARING", "CANCELLED"],
+        "CONFIRMED": ["PREPARING"],  
+        "PREPARING": ["READY", "CANCELLED"],
+        "READY": ["DELIVERED"],
+        "DELIVERED": [],  
+        "CANCELLED": [],  
+    }
+
+    def patch(self, request, order_id):
+        # Get the order
         try:
-            order = Order.objects.prefetch_related("items__product", "address").get(
-                id=order_id
-            )
-            serializer = OrderSerializer(order)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
             return Response(
                 {"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+        # Get new status from request
+        new_status = request.data.get("status")
+
+        if not new_status:
+            return Response(
+                {"error": "Status field is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate new status is a valid OrderStatus
+        if new_status not in [choice.value for choice in OrderStatus]:
+            return Response(
+                {
+                    "error": f"Invalid status. Valid options: {', '.join([s.value for s in OrderStatus])}"
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if transition is valid
+        current_status = order.status
+        valid_next_statuses = self.VALID_TRANSITIONS.get(current_status, [])
+
+        if new_status not in valid_next_statuses:
+            return Response(
+                {
+                    "error": f"Invalid status transition from '{current_status}' to '{new_status}'",
+                    "current_status": current_status,
+                    "allowed_transitions": valid_next_statuses
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Update order status
+        order.status = new_status
+
+        # If cancelled, update payment status to REFUNDED
+        if new_status == OrderStatus.CANCELLED:
+            order.payment_status = "REFUNDED"
+
+        order.save()
+
+        # Return updated order
+        serializer = OrderSerializer(order)
+        return Response(
+            {
+                "message": f"Order status updated to '{new_status}'",
+                "order": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+

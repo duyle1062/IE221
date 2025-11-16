@@ -76,14 +76,43 @@ class RatingUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email'] 
 
 class RatingSerializer(serializers.ModelSerializer):
-    user = RatingUserSerializer(read_only=True) 
+    user = RatingUserSerializer(read_only=True)
 
     class Meta:
         model = Ratings
         fields = ['id', 'user', 'rating', 'comment', 'created_at']
         read_only_fields = ['user', 'created_at']
-    
+
     def validate_rating(self, value):
         if not 1 <= value <= 5:
             raise serializers.ValidationError("Rating must be from 1 to 5 stars")
         return value
+
+class AdminProductListSerializer(serializers.ModelSerializer):
+    """Admin serializer showing all products with category details"""
+    category = CategorySerializer(read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    total_ratings = serializers.SerializerMethodField()
+    is_deleted = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'slug', 'description', 'price',
+            'category', 'restaurant', 'is_active', 'available',
+            'average_rating', 'total_ratings', 'is_deleted',
+            'created_at', 'updated_at', 'deleted_at'
+        ]
+
+    def get_average_rating(self, obj):
+        if hasattr(obj, 'average_rating'):
+            return round(obj.average_rating, 2) if obj.average_rating else None
+        return obj.get_average_rating()
+
+    def get_total_ratings(self, obj):
+        if hasattr(obj, 'total_ratings'):
+            return obj.total_ratings
+        return Ratings.objects.filter(product=obj).count()
+
+    def get_is_deleted(self, obj):
+        return obj.deleted_at is not None
