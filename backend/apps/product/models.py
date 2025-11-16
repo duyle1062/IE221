@@ -36,17 +36,16 @@ class Product(models.Model):
         verbose_name_plural = 'Products'
 
 class ProductImage(models.Model):
-    """Store multiple images for each product as bytea in PostgreSQL"""
+    """Store multiple image URLs for each product"""
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', db_column='product_id')
-    image_data = models.BinaryField(editable=True)  # Store image as bytea (PNG, JPG, WEBP)
-    image_content_type = models.CharField(max_length=50)  # e.g., 'image/png', 'image/jpeg', 'image/webp'
+    image_url = models.TextField()  # Store image URL as text
     is_primary = models.BooleanField(default=False)  # Mark primary/thumbnail image
     sort_order = models.IntegerField(default=0)  # For ordering images in gallery
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Image for {self.product.name} ({self.image_content_type})"
+        return f"Image for {self.product.name}"
     
     class Meta:
         db_table = 'product_images'
