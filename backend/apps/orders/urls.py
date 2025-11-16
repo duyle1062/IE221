@@ -3,6 +3,7 @@ from .views import (
     PlaceOrderView,
     OrderListView,
     OrderDetailView,
+    CancelOrderView,
     AddressListCreateView,
     AddressDetailView,
 )
@@ -14,6 +15,7 @@ urlpatterns = [
     path("place/", PlaceOrderView.as_view(), name="place-order"),
     path("", OrderListView.as_view(), name="order-list"),
     path("<int:order_id>/", OrderDetailView.as_view(), name="order-detail"),
+    path("<int:order_id>/cancel/", CancelOrderView.as_view(), name="cancel-order"),
     # Address endpoints
     path("addresses/", AddressListCreateView.as_view(), name="address-list-create"),
     path(
