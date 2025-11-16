@@ -180,10 +180,9 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
 class ProductImageListView(ListCreateAPIView):
     """
     GET: AllowAny - List all images of a product
-    POST: IsAdminUser - Upload new image (ADMIN only)
+    POST: IsAdminUser - Add new image URL (ADMIN only)
     """
     serializer_class = ProductImageSerializer
-    parser_classes = [MultiPartParser, FormParser]
     
     def get_permissions(self):
         if self.request.method == 'POST':
@@ -216,7 +215,6 @@ class ProductImageDetailView(RetrieveUpdateDestroyAPIView):
     DELETE: IsAdminUser - Delete image (ADMIN only)
     """
     serializer_class = ProductImageSerializer
-    parser_classes = [MultiPartParser, FormParser]
     lookup_field = "pk"
     
     def get_permissions(self):
@@ -233,9 +231,8 @@ class ProductImageDetailView(RetrieveUpdateDestroyAPIView):
 
 class ProductImageBulkUploadView(APIView):
     """
-    POST: IsAdminUser - Upload multiple images at once (ADMIN only)
+    POST: IsAdminUser - Add multiple image URLs at once (ADMIN only)
     """
-    parser_classes = [MultiPartParser, FormParser]
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request, product_id):
@@ -246,21 +243,21 @@ class ProductImageBulkUploadView(APIView):
                 {"error": "Product does not exist"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        # Get multiple files with key 'images'
-        files = request.FILES.getlist("images")
+        # Get array of image URLs with key 'image_urls'
+        image_urls = request.data.get("image_urls", [])
 
-        if not files:
+        if not image_urls or not isinstance(image_urls, list):
             return Response(
-                {"error": "No images provided. Use 'images' field for multiple files."},
+                {"error": "No image URLs provided. Use 'image_urls' field with array of URLs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         created_images = []
         errors = []
 
-        for idx, file in enumerate(files):
+        for idx, url in enumerate(image_urls):
             serializer = ProductImageSerializer(
-                data={"image_file": file, "is_primary": idx == 0, "sort_order": idx}
+                data={"image_url": url, "is_primary": idx == 0, "sort_order": idx}
             )
 
             if serializer.is_valid():
@@ -268,7 +265,7 @@ class ProductImageBulkUploadView(APIView):
                 created_images.append(serializer.data)
             else:
                 errors.append(
-                    {"index": idx, "filename": file.name, "errors": serializer.errors}
+                    {"index": idx, "url": url, "errors": serializer.errors}
                 )
 
         return Response(

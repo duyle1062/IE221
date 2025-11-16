@@ -1,6 +1,5 @@
 from django.contrib import admin
 from .models import Product, Category, ProductImage, Ratings
-import base64
 from django.utils.html import format_html
 
 
@@ -9,18 +8,15 @@ class ProductImageInline(admin.TabularInline):
 
     model = ProductImage
     extra = 1
-    fields = ["image_preview", "image_content_type", "is_primary", "sort_order"]
+    fields = ["image_preview", "image_url", "is_primary", "sort_order"]
     readonly_fields = ["image_preview"]
 
     def image_preview(self, obj):
         """Display thumbnail in admin"""
-        if obj.image_data:
-            # Create base64 data URL
-            encoded = base64.b64encode(obj.image_data).decode("utf-8")
-            data_url = f"data:{obj.image_content_type};base64,{encoded}"
+        if obj.image_url:
             return format_html(
                 '<img src="{}" style="max-height: 100px; max-width: 200px;" />',
-                data_url,
+                obj.image_url,
             )
         return "No image"
 
@@ -81,13 +77,12 @@ class ProductImageAdmin(admin.ModelAdmin):
         "id",
         "product",
         "image_preview",
-        "image_content_type",
         "is_primary",
         "sort_order",
         "created_at",
     ]
-    list_filter = ["is_primary", "image_content_type", "created_at"]
-    search_fields = ["product__name"]
+    list_filter = ["is_primary", "created_at"]
+    search_fields = ["product__name", "image_url"]
     ordering = ["product", "sort_order"]
     readonly_fields = ["image_preview", "created_at", "updated_at"]
 
@@ -95,7 +90,7 @@ class ProductImageAdmin(admin.ModelAdmin):
         ("Product", {"fields": ("product",)}),
         (
             "Image Data",
-            {"fields": ("image_preview", "image_data", "image_content_type")},
+            {"fields": ("image_preview", "image_url")},
         ),
         ("Settings", {"fields": ("is_primary", "sort_order")}),
         (
@@ -106,12 +101,10 @@ class ProductImageAdmin(admin.ModelAdmin):
 
     def image_preview(self, obj):
         """Display image preview"""
-        if obj.image_data:
-            encoded = base64.b64encode(obj.image_data).decode("utf-8")
-            data_url = f"data:{obj.image_content_type};base64,{encoded}"
+        if obj.image_url:
             return format_html(
                 '<img src="{}" style="max-height: 300px; max-width: 400px; border: 1px solid #ddd;" />',
-                data_url,
+                obj.image_url,
             )
         return "No image"
 
