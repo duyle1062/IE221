@@ -5,7 +5,7 @@ from django.views.generic import TemplateView
 # Import Router của DRF
 from rest_framework.routers import DefaultRouter
 
-# Import ViewSet Admin 
+# Import ViewSet Admin
 from apps.users.views import UserAdminViewSet
 
 admin_router = DefaultRouter()
@@ -13,26 +13,22 @@ admin_router = DefaultRouter()
 # Đăng ký các ViewSet của Admin vào router này
 #    - 'users' chính là tiền tố URL -> sẽ tạo ra /api/admin/users/
 #    - basename='admin-user' là bắt buộc khi dùng get_queryset
-admin_router.register(r'users', UserAdminViewSet, basename='admin-user')
+admin_router.register(r"users", UserAdminViewSet, basename="admin-user")
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    
     # Authentication URLs using Djoser
     # Checkout Djoser base endpoints: https://djoser.readthedocs.io/en/latest/base_endpoints.html
     path("auth/", include("djoser.urls")),
-    
     # JWT token management endpoints: https://djoser.readthedocs.io/en/latest/jwt_endpoints.html
     path("auth/login/", include("djoser.urls.jwt")),
-
     # category list
     path("api/", include("apps.product.urls")),
-    
     # API endpoints
     path("api/users/", include("apps.users.urls")),
     # path("api/auth/", include("apps.authentication.urls")),
     path("api/cart/", include("apps.carts.urls")),
-
+    path("api/orders/", include("apps.orders.urls")),
     path("api/admin/", include(admin_router.urls)),
 ]
 
