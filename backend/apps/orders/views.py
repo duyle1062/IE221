@@ -11,8 +11,9 @@ from apps.users.permissions import IsOwner, IsAdminUser, IsRegularUser
 
 from .models import Order, OrderItem, Address, OrderStatus
 from apps.carts.models import Cart, CartItem
-from .serializers import OrderSerializer, PlaceOrderSerializer, AddressSerializer
+from .serializers import OrderSerializer, PlaceOrderSerializer
 from apps.product.pagination import StandardResultsSetPagination
+from apps.addresses.serializers import AddressSerializer
 
 
 class PlaceOrderView(APIView):
@@ -200,77 +201,6 @@ class CancelOrderView(APIView):
         return Response(
             {"message": "Order cancelled successfully", "order": serializer.data},
             status=status.HTTP_200_OK,
-        )
-
-
-class AddressListCreateView(APIView):
-    """
-    GET /api/addresses/ - List all addresses (USER only)
-    POST /api/addresses/ - Create new address (USER only)
-    """
-
-    permission_classes = [IsAuthenticated, IsRegularUser]
-
-    def get(self, request):
-        addresses = Address.objects.filter(user=request.user, is_active=True)
-        serializer = AddressSerializer(addresses, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        serializer = AddressSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class AddressDetailView(APIView):
-    """
-    GET: IsAuthenticated + IsRegularUser - Get address details (USER only)
-    PUT: IsAuthenticated + IsRegularUser - Update address (USER only)
-    DELETE: IsAuthenticated + IsRegularUser - Delete address/soft delete (USER only)
-    """
-
-    permission_classes = [IsAuthenticated, IsRegularUser]
-
-    def get_object(self, address_id, user):
-        try:
-            return Address.objects.get(id=address_id, user=user, is_active=True)
-        except Address.DoesNotExist:
-            return None
-
-    def get(self, request, address_id):
-        address = self.get_object(address_id, request.user)
-        if not address:
-            return Response(
-                {"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-        serializer = AddressSerializer(address)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def put(self, request, address_id):
-        address = self.get_object(address_id, request.user)
-        if not address:
-            return Response(
-                {"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-        serializer = AddressSerializer(address, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, address_id):
-        address = self.get_object(address_id, request.user)
-        if not address:
-            return Response(
-                {"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-        # Soft delete
-        address.is_active = False
-        address.save()
-        return Response(
-            {"message": "Address deleted successfully"}, status=status.HTTP_200_OK
         )
 
 

@@ -34,4 +34,13 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD_CONFIRM: "/auth/users/reset_password_confirm/",
     GET_USER: "/auth/users/me/",
   },
+  USERS: {
+    PROFILE: "/api/users/profile",
+    CHANGE_PASSWORD: "/api/users/change-password",
+  },
+  ADDRESSES: {
+    LIST: "/api/addresses/",
+    DETAIL: (id: number) => `/api/addresses/${id}/`,
+    SET_DEFAULT: (id: number) => `/api/addresses/${id}/set-default/`,
+  },
 };

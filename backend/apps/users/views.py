@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError
 
 from .models import UserAccount
 from .serializers import UserProfileSerializer, UserUpdateProfileSerializer
+from .change_password_serializer import ChangePasswordSerializer
 from django.utils import timezone
 from .permissions import IsAdminUser, IsRegularUser
 
@@ -88,6 +89,45 @@ def user_profile_view(request):
             'message': 'An error occurred while retrieving user information',
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsRegularUser])
+def change_password_view(request):
+    """
+    POST: IsAuthenticated + IsRegularUser - Change user password (USER only, NOT admin)
+    Body: {
+        "current_password": "oldpassword123",
+        "new_password": "newpassword123",
+        "confirm_password": "newpassword123"
+    }
+    """
+    try:
+        serializer = ChangePasswordSerializer(
+            data=request.data, 
+            context={'request': request}
+        )
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Password changed successfully'
+            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'success': False,
+            'message': 'Password change failed',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': 'An error occurred',
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class UserAdminViewSet(mixins.ListModelMixin,   
                        mixins.RetrieveModelMixin,   
