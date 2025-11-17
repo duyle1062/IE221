@@ -145,6 +145,11 @@
   z-index: 1;
 }
 
+.dropdown a {
+  text-decoration: none;
+  color: inherit;
+}
+
 .dropdown p {
   margin: 0;
   padding: 10px 16px;

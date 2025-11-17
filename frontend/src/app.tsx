@@ -16,27 +16,59 @@ import ProductPage from "./pages/ProductDetailPage/ProductDetailPage";
 import UserProfile from "./pages/UserProfile/UserProfile";
 import Cart from "./pages/Cart/Cart";
 
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forget-password" element={<ForgetPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/register" element={<RegisterForm />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/homepage" element={<HomePage />} />
-        <Route path="/product/:id" element={<ProductPage />} />
+    <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forget-password" element={<ForgetPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/register" element={<RegisterForm />} />
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/product/:id" element={<HomePage />} />
+          <Route path="/category/pizza" element={<PizzaPage />} />
+          <Route path="/category/chicken" element={<ChickenPage />} />
+          <Route path="/category/salad" element={<SaladPage />} />
+          <Route path="/category/drink" element={<DrinkPage />} />
+          <Route path="/category/vegetarian" element={<VegetarianPage />} />
+          <Route path="/category/combo" element={<ComboPage />} />
+          
+          {/* Protected Routes - Require Authentication */}
+          <Route 
+            path="/userprofile" 
+            element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/cart" 
+            element={
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+            } 
+          />
 
-        <Route path="/category/pizza" element={<PizzaPage />} />
-        <Route path="/category/chicken" element={<ChickenPage />} />
-        <Route path="/category/salad" element={<SaladPage />} />
-        <Route path="/category/drink" element={<DrinkPage />} />
-        <Route path="/category/vegetarian" element={<VegetarianPage />} />
-        <Route path="/category/combo" element={<ComboPage />} />
-        <Route path="/userprofile" element={<UserProfile />} />
-        <Route path="/cart" element={<Cart />} />
-      </Routes>
-    </Router>
+          {/* Admin Only Routes - Require Admin Role */}
+          {/* Example: Uncomment and add admin routes as needed */}
+          {/* <Route 
+            path="/admin/dashboard" 
+            element={
+              <ProtectedRoute adminOnly>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          /> */}
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }

@@ -22,11 +22,12 @@ urlpatterns = [
     path("auth/", include("djoser.urls")),
     # JWT token management endpoints: https://djoser.readthedocs.io/en/latest/jwt_endpoints.html
     path("auth/login/", include("djoser.urls.jwt")),
+    # Custom auth endpoints (logout)
+    path("api/auth/", include("apps.authentication.urls")),
     # category list
     path("api/", include("apps.product.urls")),
     # API endpoints
     path("api/users/", include("apps.users.urls")),
-    # path("api/auth/", include("apps.authentication.urls")),
     path("api/cart/", include("apps.carts.urls")),
     path("api/orders/", include("apps.orders.urls")),
     path("api/group-orders/", include("apps.orders.group_order_urls")),

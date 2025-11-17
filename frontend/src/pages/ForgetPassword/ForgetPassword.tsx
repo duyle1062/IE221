@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import styles from './ForgetPassword.module.css';
+import authService from '../../services/auth.service';
 
 interface FormState {
   email: string;
@@ -15,6 +16,7 @@ const ForgetPassword: React.FC = () => {
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate(); 
 
   const isFormValid = (): boolean => {
@@ -29,7 +31,7 @@ const ForgetPassword: React.FC = () => {
     setSuccessMessage('');
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors: Errors = {};
 
@@ -42,9 +44,40 @@ const ForgetPassword: React.FC = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      setSuccessMessage('Reset password link has been sent to your email!');
+      setLoading(true);
       setServerError('');
-      alert('Reset password link sent successfully!');
+      setSuccessMessage('');
+      
+      try {
+        await authService.forgotPassword({ email: formState.email });
+        setSuccessMessage('Reset password link has been sent to your email!');
+        
+        // Optional: Clear form after success
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } catch (error: any) {
+        console.error('Forgot password error:', error);
+        
+        if (error.response?.data) {
+          const serverErrors = error.response.data;
+          if (serverErrors.email) {
+            setServerError(
+              Array.isArray(serverErrors.email)
+                ? serverErrors.email[0]
+                : serverErrors.email
+            );
+          } else if (serverErrors.detail) {
+            setServerError(serverErrors.detail);
+          } else {
+            setServerError('Failed to send reset link. Please try again.');
+          }
+        } else {
+          setServerError('Network error. Please try again later.');
+        }
+      } finally {
+        setLoading(false);
+      }
     }    
   };
 
@@ -76,10 +109,11 @@ const ForgetPassword: React.FC = () => {
             {errors.email && <span className={styles.error}>{errors.email}</span>}
           </div>
           <button
-            className={`${styles.formButton} ${isFormValid() ? styles.active : ''}`}
+            className={`${styles.formButton} ${isFormValid() && !loading ? styles.active : ''}`}
             type="submit"
+            disabled={loading}
           >
-            Send Reset Link
+            {loading ? 'Sending...' : 'Send Reset Link'}
           </button>
           <div className={styles.formNavigateLogin}>
             <label className={styles.formNavigateText}>
