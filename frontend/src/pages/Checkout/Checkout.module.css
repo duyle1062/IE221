@@ -1,0 +1,406 @@
+.checkoutContainer {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-color-dark);
+}
+
+.checkoutLayout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section {
+  background: var(--text-color-white);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--text-color-dark);
+}
+
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.option {
+  position: relative;
+}
+
+.option input[type="radio"] {
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.option label {
+  display: block;
+  padding: 1rem;
+  border: 2px solid var(--border-color-light);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.option label:hover {
+  background: var(--background-light);
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.option input[type="radio"]:checked + label {
+  border-color: var(--blue-color);
+  background: var(--background-light);
+  box-shadow: 0 0 5px var(--blue-color);
+  font-weight: 600;
+}
+
+.addressCardWrapper {
+  position: relative;
+}
+
+.addressCard {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  padding-right: 4.5rem;
+}
+
+.addressCard p {
+  margin: 0.25rem 0;
+}
+
+.addressCard strong {
+  color: var(--text-color-black);
+}
+
+.defaultBadge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--success-background-light);
+  color: var(--success-text-dark);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-left: 0.5rem;
+}
+
+.addressActions {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.addressActionButton {
+  background: var(--background-light);
+  border: 1px solid var(--border-color-light);
+  color: var(--text-color-medium);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.addressActionButton:hover {
+  background: var(--btn-background-color);
+  color: var(--text-color-black);
+}
+
+.addressActionButton.delete:hover {
+  background: var(--primary-color-light);
+  color: var(--primary-color);
+}
+
+.addAddressButton {
+  background: none;
+  border: none;
+  color: var(--blue-color);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.addAddressButton:hover {
+  text-decoration: underline;
+}
+
+.orderTypeToggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.summary {
+  position: sticky;
+  top: 2rem;
+}
+
+.summaryBox {
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: var(--text-color-white);
+  box-shadow: 0 4px 12px var(--shadow-light);
+}
+
+.summaryLine {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+  color: var(--text-color-dark-secondary);
+}
+
+.summaryLine span:last-child {
+  font-weight: 600;
+  color: var(--text-color-dark);
+}
+
+.summary hr {
+  border: none;
+  border-top: 1px dashed var(--border-color-medium);
+  margin: 1rem 0 1.5rem;
+}
+
+.summaryTotal {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--text-color-black);
+}
+
+.placeOrderButton {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--blue-color);
+  color: var(--text-color-white);
+  cursor: pointer;
+  margin-top: 1.5rem;
+  transition: background-color 0.2s;
+}
+
+.placeOrderButton:hover {
+  filter: brightness(90%);
+}
+
+.placeOrderButton:disabled {
+  background-color: var(--button-disabled-bg);
+  color: var(--btn-color);
+  cursor: not-allowed;
+}
+
+.reviewItemsList {
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+}
+
+.reviewItem {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.reviewItemImage {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.reviewItemDetails {
+  flex: 1;
+}
+
+.reviewItemName {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.reviewItemInfo {
+  font-size: 0.9rem;
+  color: var(--text-color-medium);
+  margin: 0.25rem 0 0;
+}
+
+.modalBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--backdrop-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: var(--text-color-white);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px var(--shadow-medium);
+  width: 90%;
+  max-width: 500px;
+  z-index: 1001;
+}
+
+.modalContent h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-color-dark);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.modalButtonSecondary {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--btn-background-color);
+  color: var(--btn-color);
+  transition: background-color 0.2s;
+}
+
+.modalButtonSecondary:hover {
+  background-color: var(--btn-color);
+  color: var(--text-color-white);
+}
+
+.modalButtonPrimary {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--blue-color);
+  color: var(--text-color-white);
+}
+.modalButtonPrimary:hover {
+  filter: brightness(90%);
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-color-dark-secondary);
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color-medium);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.confirmModalContent {
+  background: var(--text-color-white);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px var(--shadow-medium);
+  width: 90%;
+  max-width: 400px;
+  z-index: 1001;
+}
+
+.confirmModalContent h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-color-dark);
+  margin-bottom: 0.75rem;
+}
+
+.confirmModalContent p {
+  font-size: 1rem;
+  color: var(--text-color-medium);
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+}
+
+.confirmModalButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.modalButtonDanger {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--primary-color);
+  color: var(--text-color-white);
+}
+
+.modalButtonDanger:hover {
+  filter: brightness(90%);
+}

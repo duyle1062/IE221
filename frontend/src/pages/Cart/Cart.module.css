@@ -24,6 +24,7 @@
 
 .cartItemsList {
   background-color: var(--text-color-white);
+  border: 1px solid var(--border-color-light);
   border-radius: 8px;
 }
 
@@ -62,7 +63,7 @@
 
 .itemPrice {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--primary-color);
 }
 
@@ -92,7 +93,6 @@
   font-size: 0.9rem;
   line-height: 1;
   border-radius: 6px;
-  font-size: 0.6rem;
 }
 
 .quantityButton:hover {
@@ -104,7 +104,7 @@
   min-width: 20px;
   text-align: center;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
 }
 
 .itemRemoveButton {
