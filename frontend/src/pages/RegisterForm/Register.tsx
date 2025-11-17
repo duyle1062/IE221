@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import styles from "./Register.module.css";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../../components/Header/Header";
+import authService, { Gender } from "../../services/auth.service";
 
 interface Errors {
   username?: string;
@@ -13,9 +14,11 @@ interface Errors {
   password?: string;
   confirmPassword?: string;
   agreement?: string;
+  server?: string;
 }
 
 const RegisterForm: React.FC = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [gender, setGender] = useState<string>("");
@@ -27,6 +30,7 @@ const RegisterForm: React.FC = () => {
   const [agreeTerms, setAgreeTerms] = useState<boolean>(false);
   const [agreePrivacy, setAgreePrivacy] = useState<boolean>(false);
   const [errors, setErrors] = useState<Errors>({});
+  const [loading, setLoading] = useState<boolean>(false);
 
   const isFormValid = (): boolean => {
     return (
@@ -43,7 +47,7 @@ const RegisterForm: React.FC = () => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors: Errors = {};
 
@@ -63,7 +67,64 @@ const RegisterForm: React.FC = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      alert("Success");
+      setLoading(true);
+      try {
+        // Map gender to backend format using enum
+        const genderMap: { [key: string]: Gender } = {
+          male: Gender.MALE,
+          female: Gender.FEMALE,
+          other: Gender.OTHER,
+        };
+
+        const selectedGender = genderMap[gender];
+        if (!selectedGender) {
+          throw new Error("Invalid gender selection");
+        }
+
+        await authService.register({
+          email,
+          firstname: username,
+          lastname: lastName,
+          phone,
+          gender: selectedGender,
+          password,
+          re_password: confirmPassword,
+        });
+
+        // Navigate to verify email page with email
+        navigate("/verify-email", { state: { email } });
+      } catch (error: any) {
+        console.error("Registration error:", error);
+        
+        // Handle server errors
+        if (error.response?.data) {
+          const serverErrors = error.response.data;
+          const newServerErrors: Errors = {};
+          
+          if (serverErrors.email) {
+            newServerErrors.email = Array.isArray(serverErrors.email) 
+              ? serverErrors.email[0] 
+              : serverErrors.email;
+          }
+          if (serverErrors.phone) {
+            newServerErrors.phone = Array.isArray(serverErrors.phone)
+              ? serverErrors.phone[0]
+              : serverErrors.phone;
+          }
+          if (serverErrors.password) {
+            newServerErrors.password = Array.isArray(serverErrors.password)
+              ? serverErrors.password[0]
+              : serverErrors.password;
+          }
+          
+          newServerErrors.server = "Registration failed. Please check your information.";
+          setErrors(newServerErrors);
+        } else {
+          setErrors({ server: "Network error. Please try again later." });
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -328,14 +389,22 @@ const RegisterForm: React.FC = () => {
             )}
           </div>
 
+          {/* Server Error */}
+          {errors.server && (
+            <div className={styles.error} style={{ marginBottom: "1rem" }}>
+              {errors.server}
+            </div>
+          )}
+
           {/* Register Button */}
           <button
             className={`${styles["form-button"]} ${
-              isFormValid() ? styles["active"] : ""
+              isFormValid() && !loading ? styles["active"] : ""
             }`}
             type="submit"
+            disabled={loading}
           >
-            Register
+            {loading ? "Registering..." : "Register"}
           </button>
 
           {/* Login Navigate */}

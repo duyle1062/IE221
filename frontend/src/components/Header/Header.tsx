@@ -4,14 +4,30 @@ import { FaShoppingCart } from "react-icons/fa";
 import { IoIosMenu } from "react-icons/io";
 import { FaUser } from "react-icons/fa";
 import { GoSearch } from "react-icons/go";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Header() {
   const [activeLink, setActiveLink] = useState("Home");
   const [openMenu, setOpenMenu] = useState<boolean>(false);
   const avatarRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated, logout, user } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = ["Home", "Menu", "Offers", "Service", "About us"];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setOpenMenu(false);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still navigate to login even if logout API fails
+      setOpenMenu(false);
+      navigate("/login");
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -60,12 +76,14 @@ export default function Header() {
 
       {/* Action */}
       <div className={styles.actions}>
-        {/* Cart */}
-        <div className={styles.cart}>
-          <a href="#">
-            <FaShoppingCart className={styles["cart-icon"]} />
-          </a>
-        </div>
+        {/* Cart - Only show when logged in */}
+        {isAuthenticated && (
+          <div className={styles.cart}>
+            <Link to="/cart">
+              <FaShoppingCart className={styles["cart-icon"]} />
+            </Link>
+          </div>
+        )}
 
         {/* Avatar */}
         <div
@@ -78,11 +96,33 @@ export default function Header() {
 
           {openMenu && (
             <div className={styles.dropdown}>
-              <p>Đăng nhập</p>
-              <p>Đăng ký</p>
-              <p>Theo dõi đơn hàng</p>
-              <p>Đổi điểm</p>
-              <p>Hỗ trợ khách hàng</p>
+              {!isAuthenticated ? (
+                // Menu for guests
+                <>
+                  <Link to="/login" onClick={() => setOpenMenu(false)}>
+                    <p>Sign In</p>
+                  </Link>
+                  <Link to="/register" onClick={() => setOpenMenu(false)}>
+                    <p>Register</p>
+                  </Link>
+                </>
+              ) : (
+                // Menu for logged in users
+                <>
+                  <Link to="/userprofile" onClick={() => setOpenMenu(false)}>
+                    <p>User Profile</p>
+                  </Link>
+                  <Link to="/orders" onClick={() => setOpenMenu(false)}>
+                    <p>Order Tracking</p>
+                  </Link>
+                  <Link to="/forget-password" onClick={() => setOpenMenu(false)}>
+                    <p>Forgot Password</p>
+                  </Link>
+                  <p onClick={handleLogout} style={{ cursor: 'pointer' }}>
+                    Log out
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>

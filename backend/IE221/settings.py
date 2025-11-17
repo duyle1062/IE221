@@ -31,8 +31,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "corsheaders",
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "djoser",
     "apps.users",
     "apps.authentication",
@@ -56,6 +58,9 @@ MIDDLEWARE = [
 CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = "IE221.urls"
+
+# Site ID for django.contrib.sites
+SITE_ID = 1
 
 TEMPLATES = [
     {
@@ -173,10 +178,23 @@ DJOSER = {
     "SET_USERNAME_RETYPE": True,
     "SET_PASSWORD_RETYPE": True,
     "LOGOUT_ON_PASSWORD_CHANGE": True,
-    "PASSWORD_RESET_CONFIRM_URL": "password/reset/confirm/{uid}/{token}",
+    "PASSWORD_RESET_CONFIRM_URL": "reset-password?uid={uid}&token={token}",
     "USERNAME_RESET_CONFIRM_URL": "email/reset/confirm/{uid}/{token}",
-    "ACTIVATION_URL": "activate/{uid}/{token}",
+    "ACTIVATION_URL": "verify-email?uid={uid}&token={token}",
     "SEND_ACTIVATION_EMAIL": True,
+    "DOMAIN": "localhost:3000",
+    "PROTOCOL": "http",
+    "SITE_NAME": "IE221",
+    "PERMISSIONS": {
+        "user_create": ["rest_framework.permissions.AllowAny"],
+        "password_reset": ["rest_framework.permissions.AllowAny"],
+        "password_reset_confirm": ["rest_framework.permissions.AllowAny"],
+        "activation": ["rest_framework.permissions.AllowAny"],
+    },
+    "EMAIL": {
+        "activation": "apps.authentication.email.ActivationEmail",
+        "password_reset": "apps.authentication.email.PasswordResetEmail",
+    },
     "SOCIAL_AUTH_TOKEN_STRATEGY": "djoser.social.token.jwt.TokenStrategy",
     "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": [
         "http://localhost:8000/google",

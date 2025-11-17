@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 import styles from './ResetPassword.module.css';
+import authService from '../../services/auth.service';
 
 interface FormState {
   newPassword: string;
@@ -20,8 +21,14 @@ const ResetPassword: React.FC = () => {
   const [errors, setErrors] = useState<Errors>({});
   const [serverError, setServerError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  
+  // Get uid and token from URL parameters (from email link)
+  const uid = searchParams.get('uid') || location.state?.uid || '';
+  const token = searchParams.get('token') || location.state?.token || '';
   const email = location.state?.email || '';
 
   const isFormValid = (): boolean => {
@@ -40,7 +47,7 @@ const ResetPassword: React.FC = () => {
     setSuccessMessage('');
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors: Errors = {};
 
@@ -57,12 +64,53 @@ const ResetPassword: React.FC = () => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      setSuccessMessage('Password reset successfully!');
+      if (!uid || !token) {
+        setServerError('Invalid reset link. Please request a new password reset.');
+        return;
+      }
+
+      setLoading(true);
       setServerError('');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-      alert('Password reset successfully!');
+      setSuccessMessage('');
+
+      try {
+        await authService.resetPassword({
+          uid,
+          token,
+          new_password: formState.newPassword,
+          re_new_password: formState.confirmPassword,
+        });
+
+        setSuccessMessage('Password reset successfully!');
+        
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } catch (error: any) {
+        console.error('Reset password error:', error);
+        
+        if (error.response?.data) {
+          const serverErrors = error.response.data;
+          
+          if (serverErrors.new_password) {
+            setServerError(
+              Array.isArray(serverErrors.new_password)
+                ? serverErrors.new_password[0]
+                : serverErrors.new_password
+            );
+          } else if (serverErrors.token) {
+            setServerError('Invalid or expired reset link. Please request a new one.');
+          } else if (serverErrors.detail) {
+            setServerError(serverErrors.detail);
+          } else {
+            setServerError('Failed to reset password. Please try again.');
+          }
+        } else {
+          setServerError('Network error. Please try again later.');
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -119,10 +167,11 @@ const ResetPassword: React.FC = () => {
             {errors.confirmPassword && <span className={styles.error}>{errors.confirmPassword}</span>}
           </div>
           <button
-            className={`${styles.formButton} ${isFormValid() ? styles.active : ''}`}
+            className={`${styles.formButton} ${isFormValid() && !loading ? styles.active : ''}`}
             type="submit"
+            disabled={loading}
           >
-            Reset Password
+            {loading ? 'Resetting...' : 'Reset Password'}
           </button>
           <div className={styles.formNavigateLogin}>
             <label className={styles.formNavigateText}>

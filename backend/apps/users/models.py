@@ -43,7 +43,7 @@ class UserAccount(AbstractBaseUser):
 
     # Metadata fields
     role = EnumField(enum=Role, default=Role.USER)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)  # Require email verification
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
