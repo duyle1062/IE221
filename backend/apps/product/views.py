@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from apps.users.permissions import IsAdminUser
+from apps.users.permissions import IsAdminUser, IsRegularUser
 from rest_framework.exceptions import APIException
 from .models import Category, Product, ProductImage, Ratings
 from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer, RatingSerializer, AdminProductListSerializer
@@ -27,19 +27,40 @@ class Gone(APIException):
 
 # List all categories / create a new category
 class CategoryListView(ListCreateAPIView):
+    """
+    GET: AllowAny - List all categories
+    POST: IsAdminUser - Create new category (ADMIN only)
+    """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+    
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
 
 # Retrieve / update / delete the information of categories
 class CategoryDetailView(RetrieveUpdateDestroyAPIView):
+    """
+    GET: AllowAny - Get category details
+    PUT/PATCH: IsAdminUser - Update category (ADMIN only)
+    DELETE: IsAdminUser - Delete category (ADMIN only)
+    """
     lookup_field = "slug_name"
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     def get_object(self):
         return super().get_object()
@@ -47,10 +68,20 @@ class CategoryDetailView(RetrieveUpdateDestroyAPIView):
 
 # List all products or create a new product
 class ProductListView(ListCreateAPIView):
+    """
+    GET: AllowAny - List products by category
+    POST: IsAdminUser - Create new product (ADMIN only)
+    """
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+    
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     def get_queryset(self) -> QuerySet[Product]:
         # Only apply category filtering for GET requests (listing products)
@@ -79,9 +110,20 @@ class ProductListView(ListCreateAPIView):
 
 # Retrieve (load) / update / delete the information of a product
 class ProductDetailView(RetrieveUpdateDestroyAPIView):
+    """
+    GET: AllowAny - Get product details with average rating
+    PUT/PATCH: IsAdminUser - Update product (ADMIN only)
+    DELETE: IsAdminUser - Delete product (ADMIN only)
+    """
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
+    
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     def get_object(self):
         category_name = self.kwargs.get("slug_name", None)
@@ -136,11 +178,18 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
 # ============== Product Image Management ==============
 
 class ProductImageListView(ListCreateAPIView):
-    """List all images of a product or upload new image"""
-
+    """
+    GET: AllowAny - List all images of a product
+    POST: IsAdminUser - Add new image URL (ADMIN only)
+    """
     serializer_class = ProductImageSerializer
-    parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     def get_queryset(self):
         product_id = self.kwargs.get("product_id")
@@ -160,12 +209,20 @@ class ProductImageListView(ListCreateAPIView):
 
 
 class ProductImageDetailView(RetrieveUpdateDestroyAPIView):
-    """Retrieve, update or delete a specific image"""
-
+    """
+    GET: AllowAny - Retrieve image details
+    PUT/PATCH: IsAdminUser - Update image (ADMIN only)
+    DELETE: IsAdminUser - Delete image (ADMIN only)
+    """
     serializer_class = ProductImageSerializer
-    parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
     lookup_field = "pk"
+    
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            self.permission_classes = [IsAuthenticated, IsAdminUser]
+        else:
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
 
     def get_queryset(self):
         product_id = self.kwargs.get("product_id")
@@ -173,10 +230,10 @@ class ProductImageDetailView(RetrieveUpdateDestroyAPIView):
 
 
 class ProductImageBulkUploadView(APIView):
-    """Upload multiple images at once for a product"""
-
-    parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
+    """
+    POST: IsAdminUser - Add multiple image URLs at once (ADMIN only)
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request, product_id):
         try:
@@ -186,21 +243,21 @@ class ProductImageBulkUploadView(APIView):
                 {"error": "Product does not exist"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        # Get multiple files with key 'images'
-        files = request.FILES.getlist("images")
+        # Get array of image URLs with key 'image_urls'
+        image_urls = request.data.get("image_urls", [])
 
-        if not files:
+        if not image_urls or not isinstance(image_urls, list):
             return Response(
-                {"error": "No images provided. Use 'images' field for multiple files."},
+                {"error": "No image URLs provided. Use 'image_urls' field with array of URLs."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         created_images = []
         errors = []
 
-        for idx, file in enumerate(files):
+        for idx, url in enumerate(image_urls):
             serializer = ProductImageSerializer(
-                data={"image_file": file, "is_primary": idx == 0, "sort_order": idx}
+                data={"image_url": url, "is_primary": idx == 0, "sort_order": idx}
             )
 
             if serializer.is_valid():
@@ -208,7 +265,7 @@ class ProductImageBulkUploadView(APIView):
                 created_images.append(serializer.data)
             else:
                 errors.append(
-                    {"index": idx, "filename": file.name, "errors": serializer.errors}
+                    {"index": idx, "url": url, "errors": serializer.errors}
                 )
 
         return Response(
@@ -227,9 +284,10 @@ class ProductImageBulkUploadView(APIView):
 
 
 class ProductImageSetPrimaryView(APIView):
-    """Set an image as primary for a product"""
-
-    permission_classes = [IsAuthenticated]
+    """
+    PATCH: IsAdminUser - Set an image as primary for a product (ADMIN only)
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def patch(self, request, product_id, image_id):
         try:
@@ -256,10 +314,11 @@ class ProductImageSetPrimaryView(APIView):
 
 
 class ProductSearchView(ListCreateAPIView):
-    """Search products by name across all categories"""
-
+    """
+    GET: AllowAny - Search products by name across all categories
+    """
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active", "category"]
 
@@ -286,8 +345,8 @@ class ProductRatingListView(ListCreateAPIView):
     
     def get_permissions(self):
         if self.request.method == 'POST':
-            # Nếu là POST, yêu cầu IsAuthenticated
-            self.permission_classes = [IsAuthenticated]
+            # Nếu là POST, yêu cầu IsAuthenticated + IsRegularUser
+            self.permission_classes = [IsAuthenticated, IsRegularUser]
         else:
             # Nếu là GET, cho phép tất cả
             self.permission_classes = [AllowAny]

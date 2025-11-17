@@ -4,6 +4,7 @@ from apps.product.models import Product
 
 
 class OrderStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
     PAID = "PAID", "Paid"
     CONFIRMED = "CONFIRMED", "Confirmed"
     PREPARING = "PREPARING", "Preparing"
@@ -114,3 +115,89 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} - Order #{self.order.id}"
+
+
+# ============== Group Order Models ==============
+
+
+class GroupOrder(models.Model):
+    creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        db_column="creator_id",
+        related_name="created_group_orders",
+    )
+    restaurant_id = models.IntegerField(default=1)
+    code = models.CharField(max_length=50, unique=True)
+    status = models.CharField(
+        max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "group_orders"
+        verbose_name = "Group Order"
+        verbose_name_plural = "Group Orders"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Group Order #{self.id} - Code: {self.code}"
+
+
+class GroupOrderMember(models.Model):
+    group_order = models.ForeignKey(
+        GroupOrder,
+        on_delete=models.CASCADE,
+        db_column="group_order_id",
+        related_name="members",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        db_column="user_id",
+        related_name="group_order_memberships",
+    )
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "group_order_members"
+        verbose_name = "Group Order Member"
+        verbose_name_plural = "Group Order Members"
+        unique_together = ("group_order", "user")
+
+    def __str__(self):
+        return f"{self.user.email} in Group Order #{self.group_order.id}"
+
+
+class GroupOrderItem(models.Model):
+    group_order = models.ForeignKey(
+        GroupOrder,
+        on_delete=models.CASCADE,
+        db_column="group_order_id",
+        related_name="items",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        db_column="user_id",
+        related_name="group_order_items",
+    )
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, db_column="product_id"
+    )
+    product_name = models.TextField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.IntegerField()
+    line_total = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "group_order_items"
+        verbose_name = "Group Order Item"
+        verbose_name_plural = "Group Order Items"
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product_name} by {self.user.email}"

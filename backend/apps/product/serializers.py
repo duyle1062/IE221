@@ -1,49 +1,20 @@
 from rest_framework import serializers
 from .models import Product, Category, ProductImage, Ratings
-import base64
 from apps.users.models import UserAccount as User
 
 class ProductImageSerializer(serializers.ModelSerializer):
-    """Serializer for ProductImage model - File upload only"""
-    image_file = serializers.ImageField(write_only=True, required=True)
-    image = serializers.SerializerMethodField(read_only=True)
+    """Serializer for ProductImage model - URL based"""
     
     class Meta:
         model = ProductImage
-        fields = ['id', 'image_file', 'image', 'image_content_type', 'is_primary', 'sort_order', 'created_at']
-        read_only_fields = ['id', 'created_at', 'image_content_type']
+        fields = ['id', 'image_url', 'is_primary', 'sort_order', 'created_at']
+        read_only_fields = ['id', 'created_at']
     
-    def get_image(self, obj):
-        """Convert binary image data to base64 for response"""
-        if obj.image_data:
-            encoded = base64.b64encode(obj.image_data).decode('utf-8')
-            return f"data:{obj.image_content_type};base64,{encoded}"
-        return None
-    
-    def create(self, validated_data):
-        """Handle file upload during creation"""
-        image_file = validated_data.pop('image_file')
-        
-        try:
-            validated_data['image_data'] = image_file.read()
-            validated_data['image_content_type'] = image_file.content_type or 'image/jpeg'
-        except Exception as e:
-            raise serializers.ValidationError(f"Invalid image file: {str(e)}")
-        
-        return super().create(validated_data)
-    
-    def update(self, instance, validated_data):
-        """Handle file upload during update"""
-        image_file = validated_data.pop('image_file', None)
-        
-        if image_file:
-            try:
-                validated_data['image_data'] = image_file.read()
-                validated_data['image_content_type'] = image_file.content_type or 'image/jpeg'
-            except Exception as e:
-                raise serializers.ValidationError(f"Invalid image file: {str(e)}")
-        
-        return super().update(instance, validated_data)
+    def validate_image_url(self, value):
+        """Validate that image_url is not empty"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Image URL cannot be empty")
+        return value
 
         
 class CategorySerializer(serializers.ModelSerializer):

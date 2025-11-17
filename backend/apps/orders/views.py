@@ -1,24 +1,23 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
+from rest_framework import status, viewsets, mixins
 from rest_framework.generics import ListAPIView
 from django.db import transaction
 from decimal import Decimal
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
+from apps.users.permissions import IsOwner, IsAdminUser, IsRegularUser
 
 from .models import Order, OrderItem, Address, OrderStatus
 from apps.carts.models import Cart, CartItem
 from .serializers import OrderSerializer, PlaceOrderSerializer, AddressSerializer
-from .permissions import IsAdminUser
 from apps.product.pagination import StandardResultsSetPagination
 
 
 class PlaceOrderView(APIView):
     """
-    POST /api/orders/place/
-    Convert cart to order
+    POST: IsAuthenticated + IsRegularUser - Convert cart to order (USER only, NOT admin)
     Body: {
         "address_id": 1,
         "payment_method": "CASH",
@@ -28,7 +27,7 @@ class PlaceOrderView(APIView):
     }
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsRegularUser]
 
     def post(self, request):
         serializer = PlaceOrderSerializer(data=request.data)
@@ -130,10 +129,10 @@ class PlaceOrderView(APIView):
 class OrderListView(APIView):
     """
     GET /api/orders/
-    Get all orders for the authenticated user
+    Get all orders for the authenticated user (USER only, NOT admin)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsRegularUser]
 
     def get(self, request):
         orders = Order.objects.filter(user=request.user).prefetch_related(
@@ -147,9 +146,12 @@ class OrderDetailView(APIView):
     """
     GET /api/orders/<order_id>/
     Get details of a specific order
+
+    GET: IsAuthenticated + IsRegularUser + IsOwner - Get details (USER only)
+    DELETE: IsAuthenticated + IsRegularUser + IsOwner - Cancel order (USER only)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsRegularUser, IsOwner]
 
     def get(self, request, order_id):
         try:
@@ -167,10 +169,10 @@ class OrderDetailView(APIView):
 class CancelOrderView(APIView):
     """
     POST /api/orders/<order_id>/cancel/
-    Cancel an order - only allowed if status is PAID
+    Cancel an order - only allowed if status is PAID (USER only, NOT admin)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsRegularUser]
 
     def post(self, request, order_id):
         try:
@@ -203,11 +205,11 @@ class CancelOrderView(APIView):
 
 class AddressListCreateView(APIView):
     """
-    GET /api/addresses/ - List all addresses
-    POST /api/addresses/ - Create new address
+    GET /api/addresses/ - List all addresses (USER only)
+    POST /api/addresses/ - Create new address (USER only)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsRegularUser]
 
     def get(self, request):
         addresses = Address.objects.filter(user=request.user, is_active=True)
@@ -224,12 +226,12 @@ class AddressListCreateView(APIView):
 
 class AddressDetailView(APIView):
     """
-    GET /api/addresses/<address_id>/ - Get address details
-    PUT /api/addresses/<address_id>/ - Update address
-    DELETE /api/addresses/<address_id>/ - Delete address (soft delete)
+    GET: IsAuthenticated + IsRegularUser - Get address details (USER only)
+    PUT: IsAuthenticated + IsRegularUser - Update address (USER only)
+    DELETE: IsAuthenticated + IsRegularUser - Delete address/soft delete (USER only)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsRegularUser]
 
     def get_object(self, address_id, user):
         try:
