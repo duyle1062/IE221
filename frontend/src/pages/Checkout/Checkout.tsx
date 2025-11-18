@@ -211,7 +211,7 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
   );
 };
 
-const CheckoutScreen: React.FC = () => {
+const Checkout: React.FC = () => {
   const [cartItems] = useState<CartItem[]>(mockCartItems);
   const [userAddresses, setUserAddresses] =
     useState<Address[]>(mockUserAddresses);
@@ -552,4 +552,4 @@ const CheckoutScreen: React.FC = () => {
   );
 };
 
-export default CheckoutScreen;
+export default Checkout;
