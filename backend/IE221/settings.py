@@ -165,10 +165,18 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("JWT",),
     "TOKEN_OBTAIN_SERIALIZER": "apps.authentication.serializers.CustomTokenObtainPairSerializer",
     "PASSWORD_RESET_TIMEOUT": timedelta(minutes=10),  # in minutes
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),  # in minutes
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),  # in days
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),  # in minutes
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # in days
     "UPDATE_LAST_LOGIN": True,
 }
+
+# AWS configuration for media file storage
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='ie221')
+AWS_S3_REGION_NAME = 'ap-southeast-1'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_CLOUDFRONT_DOMAIN = config('AWS_CLOUDFRONT_DOMAIN', default=None)
 
 DJOSER = {
     "LOGIN_FIELD": "email",

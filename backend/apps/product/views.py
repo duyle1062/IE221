@@ -1,6 +1,6 @@
 from django.db.models import QuerySet, Avg, Q, Count
 from django.forms import ValidationError
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
@@ -9,14 +9,18 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from apps.users.permissions import IsAdminUser, IsRegularUser
 from rest_framework.exceptions import APIException
 from .models import Category, Product, ProductImage, Ratings
-from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer, RatingSerializer, AdminProductListSerializer
+from .serializers import (
+    ProductSerializer, CategorySerializer, ProductImageSerializer,
+    RatingSerializer, AdminProductListSerializer,
+    BulkPresignedURLRequestSerializer, BulkConfirmUploadSerializer
+)
+from .utils import s3_handler
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from django.core.exceptions import ObjectDoesNotExist
 from .pagination import StandardResultsSetPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-
 
 
 # Custom exception for HTTP 410 Gone
@@ -175,9 +179,9 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# ============== Product Image Management ==============
+# ============== Product Image Management (in Database) ==============
 
-class ProductImageListView(ListCreateAPIView):
+class ProductImageListView(ListAPIView):
     """
     GET: AllowAny - List all images of a product
     POST: IsAdminUser - Add new image URL (ADMIN only)
@@ -195,28 +199,15 @@ class ProductImageListView(ListCreateAPIView):
         product_id = self.kwargs.get("product_id")
         return ProductImage.objects.filter(product_id=product_id)
 
-    def perform_create(self, serializer):
-        product_id = self.kwargs.get("product_id")
-        try:
-            product = Product.objects.get(pk=product_id)
-        except ObjectDoesNotExist:
-            raise ValidationError("Product does not exist")
-
-        # Get the current max sort_order for this product
-        max_order = ProductImage.objects.filter(product=product).count()
-
-        serializer.save(product=product, sort_order=max_order)
-
 
 class ProductImageDetailView(RetrieveUpdateDestroyAPIView):
     """
     GET: AllowAny - Retrieve image details
-    PUT/PATCH: IsAdminUser - Update image (ADMIN only)
     DELETE: IsAdminUser - Delete image (ADMIN only)
     """
     serializer_class = ProductImageSerializer
     lookup_field = "pk"
-    
+
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
             self.permission_classes = [IsAuthenticated, IsAdminUser]
@@ -228,59 +219,20 @@ class ProductImageDetailView(RetrieveUpdateDestroyAPIView):
         product_id = self.kwargs.get("product_id")
         return ProductImage.objects.filter(product_id=product_id)
 
+    def destroy(self, request, *args, **kwargs):
+        """Delete image from S3 before deleting from database"""
+        instance = self.get_object()
 
-class ProductImageBulkUploadView(APIView):
-    """
-    POST: IsAdminUser - Add multiple image URLs at once (ADMIN only)
-    """
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def post(self, request, product_id):
         try:
-            product = Product.objects.get(pk=product_id)
-        except ObjectDoesNotExist:
-            return Response(
-                {"error": "Product does not exist"}, status=status.HTTP_404_NOT_FOUND
-            )
+            s3_key = instance.image_url  # Already the S3 key
+            if s3_key:
+                s3_handler.delete_product_image(s3_key)
+        except Exception as e:
+            print(f"Error deleting image from S3: {str(e)}")
 
-        # Get array of image URLs with key 'image_urls'
-        image_urls = request.data.get("image_urls", [])
+        # Delete from database
+        return super().destroy(request, *args, **kwargs)
 
-        if not image_urls or not isinstance(image_urls, list):
-            return Response(
-                {"error": "No image URLs provided. Use 'image_urls' field with array of URLs."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        created_images = []
-        errors = []
-
-        for idx, url in enumerate(image_urls):
-            serializer = ProductImageSerializer(
-                data={"image_url": url, "is_primary": idx == 0, "sort_order": idx}
-            )
-
-            if serializer.is_valid():
-                serializer.save(product=product)
-                created_images.append(serializer.data)
-            else:
-                errors.append(
-                    {"index": idx, "url": url, "errors": serializer.errors}
-                )
-
-        return Response(
-            {
-                "success": len(created_images),
-                "failed": len(errors),
-                "created_images": created_images,
-                "errors": errors,
-            },
-            status=(
-                status.HTTP_201_CREATED
-                if created_images
-                else status.HTTP_400_BAD_REQUEST
-            ),
-        )
 
 
 class ProductImageSetPrimaryView(APIView):
@@ -308,6 +260,193 @@ class ProductImageSetPrimaryView(APIView):
 
         serializer = ProductImageSerializer(image)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ============== S3 Direct Upload ==============
+
+class GetPresignedURLView(APIView):
+    """
+    POST: IsAdminUser - Get multiple presigned URLs for bulk upload
+
+    Request:
+    {
+      "files": [
+        {"filename": "img1.jpg", "content_type": "image/jpeg"},
+        {"filename": "img2.jpg", "content_type": "image/png"}
+      ]
+    }
+
+    Response:
+    {
+      "uploads": [
+        {"s3_key": "...", "presigned_url": "...", "fields": {...}, "public_url": "..."},
+        ...
+      ]
+    }
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, product_id):
+        # Check if product exists
+        try:
+            Product.objects.get(pk=product_id)
+        except ObjectDoesNotExist:
+            return Response(
+                {"error": "Product does not exist"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validate request data
+        serializer = BulkPresignedURLRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        files = serializer.validated_data['files']
+        uploads = []
+        errors = []
+
+        for idx, file_data in enumerate(files):
+            try:
+                # Generate presigned URL for each file
+                presigned_data = s3_handler.generate_presigned_upload_url(
+                    product_id=product_id,
+                    filename=file_data['filename'],
+                    content_type=file_data['content_type']
+                )
+
+                uploads.append({
+                    's3_key': presigned_data['s3_key'],
+                    'presigned_url': presigned_data['url'],
+                    'fields': presigned_data['fields'],
+                    'public_url': presigned_data['public_url']
+                })
+
+            except Exception as e:
+                errors.append({
+                    'index': idx,
+                    'filename': file_data['filename'],
+                    'error': str(e)
+                })
+
+        if errors:
+            return Response(
+                {
+                    'success': len(uploads),
+                    'failed': len(errors),
+                    'uploads': uploads,
+                    'errors': errors
+                },
+                status=status.HTTP_207_MULTI_STATUS
+            )
+
+        return Response({'uploads': uploads}, status=status.HTTP_200_OK)
+
+
+class ConfirmUploadView(APIView):
+    """
+    POST: IsAdminUser - Confirm multiple uploads and save to database
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, product_id):
+        # Check if product exists
+        try:
+            product = Product.objects.get(pk=product_id)
+        except ObjectDoesNotExist:
+            return Response(
+                {"error": "Product does not exist"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validate request data
+        serializer = BulkConfirmUploadSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        uploads = serializer.validated_data['uploads']
+        created_images = []
+        errors = []
+
+        # Count how many images are marked as primary
+        primary_count = sum(1 for u in uploads if u.get('is_primary', False))
+
+        # Reject if multiple primaries
+        if primary_count > 1:
+            return Response(
+                {"error": "Only one image can be marked as primary"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # If no primary specified, auto-set first image as primary
+        if primary_count == 0 and len(uploads) > 0:
+            uploads[0]['is_primary'] = True
+
+        # Get current max sort_order
+        current_max_order = ProductImage.objects.filter(product=product).count()
+
+        for idx, upload_data in enumerate(uploads):
+            s3_key = upload_data['s3_key']
+            is_primary = upload_data.get('is_primary', False)
+            sort_order = upload_data.get('sort_order', current_max_order + idx)
+
+            # Verify s3_key belongs to this product
+            expected_prefix = f"product/{product_id}/"
+            if not s3_key.startswith(expected_prefix):
+                errors.append({
+                    'index': idx,
+                    's3_key': s3_key,
+                    'error': 'S3 key does not match product ID'
+                })
+                continue
+
+            # Verify file exists on S3
+            try:
+                if not s3_handler.file_exists(s3_key):
+                    errors.append({
+                        'index': idx,
+                        's3_key': s3_key,
+                        'error': 'File not found on S3'
+                    })
+                    continue
+            except Exception as e:
+                errors.append({
+                    'index': idx,
+                    's3_key': s3_key,
+                    'error': f'Failed to verify file: {str(e)}'
+                })
+                continue
+
+            # If this is primary, unset other primary images
+            if is_primary:
+                ProductImage.objects.filter(product=product).update(is_primary=False)
+
+            # Save to database
+            try:
+                product_image = ProductImage.objects.create(
+                    product=product,
+                    image_url=s3_key,
+                    is_primary=is_primary,
+                    sort_order=sort_order
+                )
+                image_serializer = ProductImageSerializer(product_image)
+                created_images.append(image_serializer.data)
+
+            except Exception as e:
+                errors.append({
+                    'index': idx,
+                    's3_key': s3_key,
+                    'error': f'Failed to save to database: {str(e)}'
+                })
+
+        return Response(
+            {
+                'success': len(created_images),
+                'failed': len(errors),
+                'created_images': created_images,
+                'errors': errors
+            },
+            status=status.HTTP_201_CREATED if created_images else status.HTTP_400_BAD_REQUEST
+        )
 
 
 # ============== Product Search ==============
