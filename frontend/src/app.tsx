@@ -18,6 +18,7 @@ import Cart from "./pages/Cart/Cart";
 
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import CheckoutScreen from "./pages/Checkout/Checkout";
 
 export default function App() {
   return (
@@ -38,23 +39,24 @@ export default function App() {
           <Route path="/category/drink" element={<DrinkPage />} />
           <Route path="/category/vegetarian" element={<VegetarianPage />} />
           <Route path="/category/combo" element={<ComboPage />} />
-          
+          <Route path="/checkout" element={<CheckoutScreen />} />
+
           {/* Protected Routes - Require Authentication */}
-          <Route 
-            path="/userprofile" 
+          <Route
+            path="/userprofile"
             element={
               <ProtectedRoute>
                 <UserProfile />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/cart" 
+          <Route
+            path="/cart"
             element={
               <ProtectedRoute>
                 <Cart />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Admin Only Routes - Require Admin Role */}

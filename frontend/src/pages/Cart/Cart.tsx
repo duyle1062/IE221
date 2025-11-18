@@ -2,6 +2,8 @@ import React, { useState, useMemo } from "react";
 import styles from "./Cart.module.css";
 import { FaPlus, FaMinus, FaTrash, FaShoppingCart } from "react-icons/fa";
 
+import { useNavigate } from "react-router-dom";
+
 interface CartItem {
   id: string;
   productId: string;
@@ -47,6 +49,8 @@ const formatCurrency = (amount: number) => {
 };
 
 const CartScreen: React.FC = () => {
+  const navigate = useNavigate();
+
   const [cartItems, setCartItems] = useState<CartItem[]>(mockCartItems);
   const [shippingFee] = useState<number>(15000);
 
@@ -90,7 +94,7 @@ const CartScreen: React.FC = () => {
   };
 
   const handleCheckout = () => {
-    console.log("Proceeding to checkout with total:", total);
+    navigate("/checkout");
   };
 
   const renderEmptyCart = () => (
