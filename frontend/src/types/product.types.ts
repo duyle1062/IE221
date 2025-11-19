@@ -50,6 +50,18 @@ export interface Rating {
   created_at: string;
 }
 
+export interface RatingListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Rating[];
+}
+
+export interface CreateRatingData {
+  rating: number;
+  comment: string;
+}
+
 export interface ProductDetailResponse extends Product {
-  ratings?: Rating[];
+  ratings?: RatingListResponse;
 }

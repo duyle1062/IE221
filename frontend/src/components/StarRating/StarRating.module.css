@@ -14,13 +14,16 @@
 }
 
 .starHalf {
-  color: #ffc107;
   position: relative;
+  display: inline-block;
+  color: #e0e0e0;
 }
 
 .starHalf::before {
   content: "★";
   position: absolute;
+  left: 0;
+  top: 0;
   width: 50%;
   overflow: hidden;
   color: #ffc107;
