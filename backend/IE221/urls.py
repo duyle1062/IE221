@@ -32,6 +32,7 @@ urlpatterns = [
     path("api/orders/", include("apps.orders.urls")),
     path("api/group-orders/", include("apps.orders.group_order_urls")),
     path("api/addresses/", include("apps.addresses.urls")),
+    path("api/payments/", include("apps.payment.urls")),
     path("api/admin/", include(admin_router.urls)),
     path("api/admin/", include("apps.orders.admin_urls")),
 ]
