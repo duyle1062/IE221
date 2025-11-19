@@ -49,4 +49,8 @@ export const API_ENDPOINTS = {
     UPDATE_ITEM: (id: number) => `/api/cart/items/${id}/`,
     DELETE_ITEM: (id: number) => `/api/cart/items/${id}/`,
   },
+  RATINGS: {
+    LIST: (productId: number) => `/api/products/${productId}/ratings/`,
+    CREATE: (productId: number) => `/api/products/${productId}/ratings/`,
+  },
 };

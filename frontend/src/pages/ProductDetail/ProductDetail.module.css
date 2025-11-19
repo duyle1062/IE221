@@ -317,3 +317,89 @@
   padding: 10px 16px;
   font-size: 14px;
 }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 0;
+  border-top: 1px solid #eee;
+}
+
+.paginationBtn {
+  padding: 8px 16px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.paginationBtn:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.paginationBtn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pageInfo {
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
+}
+
+.errorText {
+  color: #e74c3c;
+  font-size: 14px;
+  padding: 8px 0;
+}
+
+.loginPrompt {
+  font-size: 14px;
+  color: #555;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.loginPrompt a {
+  color: #e74c3c;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.loginPrompt a:hover {
+  text-decoration: underline;
+}
+
+.submitError {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-left: 4px solid #e74c3c;
+  color: #c0392b;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
