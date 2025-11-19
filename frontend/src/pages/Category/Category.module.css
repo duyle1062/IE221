@@ -58,3 +58,30 @@
   color: var(--primary-color);
   margin-top: 0.5rem;
 }
+
+.ratingContainer {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.loadingContainer,
+.errorContainer {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.errorContainer {
+  color: #d32f2f;
+}
+
+.emptyMessage {
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 1.1rem;
+  color: #999;
+  padding: 3rem 1rem;
+}

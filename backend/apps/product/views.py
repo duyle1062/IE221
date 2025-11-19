@@ -77,8 +77,11 @@ class ProductListView(ListCreateAPIView):
     POST: IsAdminUser - Create new product (ADMIN only)
     """
     serializer_class = ProductSerializer
+    permission_classes = [AllowAny]  # Default permission
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
+    # Remove pagination to return all products
+    pagination_class = None
     
     def get_permissions(self):
         if self.request.method == 'POST':
@@ -120,6 +123,7 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
     DELETE: IsAdminUser - Delete product (ADMIN only)
     """
     serializer_class = ProductSerializer
+    permission_classes = [AllowAny]  # Default permission
     filter_backends = [DjangoFilterBackend]
     
     def get_permissions(self):
@@ -131,10 +135,10 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         category_name = self.kwargs.get("slug_name", None)
-        product_id = self.kwargs.get("pk", None)
+        product_identifier = self.kwargs.get("pk", None)
 
-        if category_name is None or product_id is None:
-            raise ValidationError("Category name and Product ID are required")
+        if category_name is None or product_identifier is None:
+            raise ValidationError("Category name and Product identifier are required")
 
         if self.request.method == "GET":
             try:
@@ -143,14 +147,18 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
                 raise ObjectDoesNotExist("Category does not exist")
 
             try:
+                # Try to get product by slug first, fallback to ID for backwards compatibility
                 # Annotate with average rating for performance
-                product = Product.objects.annotate(
+                products_query = Product.objects.annotate(
                     average_rating=Avg('ratings__rating')
-                ).get(pk=product_id, category=category)
-
-                # Check if product is soft deleted - raise 410 Gone
-                if product.deleted_at is not None:
-                    raise Gone("This product has been deleted.")
+                ).filter(category=category, deleted_at__isnull=True)
+                
+                # Try slug first (must include category to ensure uniqueness)
+                try:
+                    product = products_query.get(slug=product_identifier, category=category)
+                except (ObjectDoesNotExist, ValueError):
+                    # Fallback to ID
+                    product = products_query.get(pk=product_identifier)
 
                 return product
 
@@ -158,7 +166,11 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
                 raise ObjectDoesNotExist("Product does not exist in this category")
 
         else:
-            product = Product.objects.get(pk=product_id, category__slug_name=category_name)
+            # For UPDATE/DELETE, try slug first then fallback to ID
+            try:
+                product = Product.objects.get(slug=product_identifier, category__slug_name=category_name)
+            except (ObjectDoesNotExist, ValueError):
+                product = Product.objects.get(pk=product_identifier, category__slug_name=category_name)
 
             # Check if product is soft deleted for UPDATE/DELETE operations - raise 410 Gone
             if product.deleted_at is not None:

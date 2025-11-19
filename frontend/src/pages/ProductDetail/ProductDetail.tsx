@@ -1,61 +1,76 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
+import StarRating from "../../components/StarRating/StarRating";
 import cartService from "../../services/cart.service";
+import productService from "../../services/product.service";
 import { useAuth } from "../../context/AuthContext";
+import { ProductDetailResponse } from "../../types/product.types";
 import styles from "./ProductDetail.module.css";
 
-const mockProduct = {
-  id: 1,
-  name: "Pizza Hải Sản Xốt Pesto",
-  price: 149000,
-  description:
-    "Pizza hảo hạng với hải sản tươi, sốt pesto thơm lừng, phô mai tan chảy. Đế bánh giòn, nhân đầy đặn.",
-  image: "https://via.placeholder.com/600x500?text=Pizza+Detail",
-  images: [
-    "https://via.placeholder.com/600x500?text=Pizza+1",
-    "https://via.placeholder.com/600x500?text=Pizza+2",
-    "https://via.placeholder.com/600x500?text=Pizza+3",
-  ],
-};
-
-const mockReviews = [
-  {
-    id: 1,
-    userName: "Nguyễn Văn A",
-    rating: 5,
-    comment: "Pizza ngon, giao hàng nhanh, rất hài lòng!",
-  },
-  {
-    id: 2,
-    userName: "Trần Thị B",
-    rating: 4,
-    comment: "Ngon nhưng hơi ít topping so với giá.",
-  },
-  {
-    id: 3,
-    userName: "Lê Văn C",
-    rating: 5,
-    comment: "Yêu thích món này, sẽ đặt lại!",
-  },
-];
-
 const ProductDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { categorySlug, productSlug } = useParams<{ categorySlug: string; productSlug: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const [selectedImage, setSelectedImage] = useState(mockProduct.images[0]);
-  const [activeTab, setActiveTab] = useState<"description" | "reviews">(
-    "description"
-  );
+  const [product, setProduct] = useState<ProductDetailResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"description" | "reviews">("description");
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
+  useEffect(() => {
+    const abortController = new AbortController();
+
+    const fetchProduct = async () => {
+      if (!categorySlug || !productSlug) return;
+      
+      setLoading(true);
+      setError(null);
+      setProduct(null); // Reset product
+      
+      try {
+        const data = await productService.getProductDetail(categorySlug, productSlug, abortController.signal);
+        setProduct(data);
+        // Set initial selected image
+        if (data.images && data.images.length > 0) {
+          const primaryImage = data.images.find(img => img.is_primary);
+          setSelectedImage(primaryImage?.image_url ?? data.images?.[0]?.image_url ?? "");
+        }
+      } catch (err: any) {
+        // Ignore abort errors
+        if (err.name === 'CanceledError' || err.name === 'AbortError') {
+          return;
+        }
+        console.error("Failed to fetch product:", err);
+        const errorMessage = err?.response?.data?.detail || 
+                           err?.detail || 
+                           err?.message || 
+                           "Không thể tải thông tin sản phẩm. Vui lòng thử lại!";
+        setError(errorMessage);
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProduct();
+
+    // Cleanup function to abort request on unmount
+    return () => {
+      abortController.abort();
+    };
+  }, [categorySlug, productSlug]);
+
   const handleAddToCart = async () => {
+    if (!product) return;
+    
     // Check if user is authenticated
     if (!isAuthenticated) {
       alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
@@ -66,10 +81,10 @@ const ProductDetailPage: React.FC = () => {
     setIsAddingToCart(true);
     try {
       await cartService.addToCart({
-        product_id: mockProduct.id,
+        product_id: product.id,
         quantity: quantity,
       });
-      alert(`Đã thêm ${quantity} ${mockProduct.name} vào giỏ hàng!`);
+      alert(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`);
       setQuantity(1); // Reset quantity after successful add
     } catch (error: any) {
       console.error("Add to cart failed:", error);
@@ -107,143 +122,162 @@ const ProductDetailPage: React.FC = () => {
   return (
     <>
       <Header />
-      <div className={styles.container}>
-        <div className={styles.productLayout}>
-          <div className={styles.imageSection}>
-            <div className={styles.mainImage}>
-              <img src={selectedImage} alt={mockProduct.name} />
-            </div>
-            <div className={styles.thumbnailList}>
-              {mockProduct.images.map((img, idx) => (
-                <img
-                  key={idx}
-                  src={img}
-                  alt={`Thumbnail ${idx + 1}`}
-                  className={selectedImage === img ? styles.activeThumb : ""}
-                  onClick={() => setSelectedImage(img)}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.infoSection}>
-            <h1 className={styles.productName}>{mockProduct.name}</h1>
-
-            <div className={styles.price}>
-              {mockProduct.price.toLocaleString("vi-VN")} đ
-            </div>
-
-            <div className={styles.quantitySection}>
-              <label className={styles.quantityLabel}>Số lượng:</label>
-              <div className={styles.quantityControls}>
-                <button
-                  className={styles.quantityBtn}
-                  onClick={handleDecreaseQuantity}
-                  disabled={quantity <= 1}
-                >
-                  -
-                </button>
-                <span className={styles.quantityValue}>{quantity}</span>
-                <button
-                  className={styles.quantityBtn}
-                  onClick={handleIncreaseQuantity}
-                >
-                  +
-                </button>
+      {loading ? (
+        <div className={styles.loadingContainer}>
+          <p>Đang tải thông tin sản phẩm...</p>
+        </div>
+      ) : error ? (
+        <div className={styles.errorContainer}>
+          <p>{error}</p>
+          <button onClick={() => navigate(-1)} className={styles.backButton}>
+            Quay lại
+          </button>
+        </div>
+      ) : product ? (
+        <div className={styles.container}>
+          <div className={styles.productLayout}>
+            <div className={styles.imageSection}>
+              <div className={styles.mainImage}>
+                <img src={selectedImage} alt={product.name} />
               </div>
-            </div>
-
-            <button
-              className={styles.addToCartBtn}
-              onClick={handleAddToCart}
-              disabled={isAddingToCart}
-            >
-              {isAddingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
-            </button>
-
-            <div className={styles.tabs}>
-              <button
-                className={activeTab === "description" ? styles.activeTab : ""}
-                onClick={() => setActiveTab("description")}
-              >
-                Mô tả
-              </button>
-              <button
-                className={activeTab === "reviews" ? styles.activeTab : ""}
-                onClick={() => setActiveTab("reviews")}
-              >
-                Đánh giá ({mockReviews.length})
-              </button>
-            </div>
-
-            <div className={styles.tabContent}>
-              {activeTab === "description" ? (
-                <p className={styles.description}>{mockProduct.description}</p>
-              ) : (
-                <div>
-                  <div className={styles.reviewsList}>
-                    {mockReviews.map((review) => (
-                      <div key={review.id} className={styles.reviewItem}>
-                        <div className={styles.reviewHeader}>
-                          <strong>{review.userName}</strong>
-                          <div className={styles.stars}>
-                            {[...Array(5)].map((_, i) => (
-                              <span
-                                key={i}
-                                className={
-                                  i < review.rating
-                                    ? styles.starFilled
-                                    : styles.starEmpty
-                                }
-                              >
-                                ☆
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <p className={styles.reviewComment}>{review.comment}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className={styles.addReview}>
-                    <h3>Viết đánh giá của bạn</h3>
-                    <div className={styles.ratingInput}>
-                      <span>Đánh giá: </span>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span
-                          key={star}
-                          className={
-                            star <= rating
-                              ? styles.starFilled
-                              : styles.starEmpty
-                          }
-                          onClick={() => setRating(star)}
-                          style={{ cursor: "pointer", fontSize: "24px" }}
-                        >
-                          ☆
-                        </span>
-                      ))}
-                    </div>
-                    <textarea
-                      placeholder="Nhập bình luận của bạn..."
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      className={styles.commentInput}
+              {product.images && product.images.length > 0 && (
+                <div className={styles.thumbnailList}>
+                  {product.images.map((img, idx) => (
+                    <img
+                      key={img.id}
+                      src={img.image_url}
+                      alt={`${product.name} ${idx + 1}`}
+                      className={selectedImage === img.image_url ? styles.activeThumb : ""}
+                      onClick={() => setSelectedImage(img.image_url)}
                     />
-                    <button
-                      onClick={handleSubmitReview}
-                      className={styles.submitReviewBtn}
-                    >
-                      Gửi đánh giá
-                    </button>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
+
+            <div className={styles.infoSection}>
+              <h1 className={styles.productName}>{product.name}</h1>
+
+              <div className={styles.price}>
+                {productService.formatPrice(product.price)}
+              </div>
+
+              <div className={styles.quantitySection}>
+                <label className={styles.quantityLabel}>Số lượng:</label>
+                <div className={styles.quantityControls}>
+                  <button
+                    className={styles.quantityBtn}
+                    onClick={handleDecreaseQuantity}
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </button>
+                  <span className={styles.quantityValue}>{quantity}</span>
+                  <button
+                    className={styles.quantityBtn}
+                    onClick={handleIncreaseQuantity}
+                  >
+                    +
+                  </button>
+                </div>
+                <div className={styles.ratingDisplay}>
+                  <StarRating 
+                    rating={product.average_rating} 
+                    size="medium" 
+                    showText={true}
+                  />
+                </div>
+              </div>
+
+              <button
+                className={styles.addToCartBtn}
+                onClick={handleAddToCart}
+                disabled={isAddingToCart || !product.available}
+              >
+                {!product.available 
+                  ? "Sản phẩm tạm hết hàng"
+                  : isAddingToCart 
+                    ? "Đang thêm..." 
+                    : "Thêm vào giỏ hàng"}
+              </button>
+
+              <div className={styles.tabs}>
+                <button
+                  className={activeTab === "description" ? styles.activeTab : ""}
+                  onClick={() => setActiveTab("description")}
+                >
+                  Mô tả
+                </button>
+                <button
+                  className={activeTab === "reviews" ? styles.activeTab : ""}
+                  onClick={() => setActiveTab("reviews")}
+                >
+                  Đánh giá ({product.ratings?.length || 0})
+                </button>
+              </div>
+
+              <div className={styles.tabContent}>
+                {activeTab === "description" ? (
+                  <p className={styles.description}>{product.description}</p>
+                ) : (
+                  <div>
+                    <div className={styles.reviewsList}>
+                      {product.ratings && product.ratings.length > 0 ? (
+                        product.ratings.map((review) => (
+                          <div key={review.id} className={styles.reviewItem}>
+                            <div className={styles.reviewHeader}>
+                              <strong>
+                                {review.user.first_name} {review.user.last_name}
+                              </strong>
+                              <StarRating 
+                                rating={review.rating} 
+                                size="small" 
+                                showText={false}
+                              />
+                            </div>
+                            <p className={styles.reviewComment}>{review.comment}</p>
+                            <span className={styles.reviewDate}>
+                              {new Date(review.created_at).toLocaleDateString("vi-VN")}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className={styles.noReviews}>Chưa có đánh giá nào.</p>
+                      )}
+                    </div>
+
+                    <div className={styles.addReview}>
+                      <h3>Viết đánh giá của bạn</h3>
+                      <div className={styles.ratingInput}>
+                        <span>Đánh giá: </span>
+                        <StarRating 
+                          rating={rating} 
+                          size="large"
+                          showText={false}
+                          interactive={true}
+                          onRatingChange={setRating}
+                        />
+                      </div>
+                      <textarea
+                        placeholder="Nhập bình luận của bạn..."
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        className={styles.commentInput}
+                      />
+                      <button
+                        onClick={handleSubmitReview}
+                        className={styles.submitReviewBtn}
+                      >
+                        Gửi đánh giá
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
       <Footer />
     </>
   );
