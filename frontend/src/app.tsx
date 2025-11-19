@@ -14,6 +14,7 @@ import Cart from "./pages/Cart/Cart";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Checkout from "./pages/Checkout/Checkout";
+import OrderTracking from "./pages/OrderTracking/OrderTracking";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/product/:id" element={<HomePage />} />
           <Route path="/category/:slug" element={<Category />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders" element={<OrderTracking />} />
 
           {/* Protected Routes - Require Authentication */}
           <Route

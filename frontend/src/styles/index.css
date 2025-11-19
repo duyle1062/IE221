@@ -33,6 +33,23 @@
 
   --pink-button-bg: #f7a7a7;
   --pink-light-bg: #fef0f0;
+
+  --status-pending-bg: #fff3cd;
+  --status-pending-text: #856404;
+
+  --status-paid-bg: #d1ecf1;
+  --status-paid-text: #0c5460;
+
+  --status-confirmed-bg: #cce5ff;
+  --status-confirmed-text: #004085;
+
+  --status-preparing-bg: #e2e3e5;
+  --status-preparing-text: #383d41;
+
+  --status-cancelled-bg: #f8d7da;
+  --status-cancelled-text: #721c24;
+
+  --timeline-bg-grey: #e9ecef;
 }
 
 *,

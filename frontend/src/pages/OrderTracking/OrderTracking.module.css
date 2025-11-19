@@ -1,0 +1,316 @@
+.container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-color-dark);
+  margin: 0;
+}
+
+.orderList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.orderCard {
+  background: var(--text-color-white);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: box-shadow 0.2s ease;
+}
+
+.orderCard:hover {
+  box-shadow: 0 4px 12px var(--shadow-light);
+}
+
+.orderInfo h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: var(--text-color-dark);
+}
+
+.orderMeta {
+  display: flex;
+  gap: 1rem;
+  color: var(--text-color-medium);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.totalPrice {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.viewDetailButton {
+  padding: 0.6rem 1.2rem;
+  background-color: var(--text-color-white);
+  border: 1px solid var(--blue-color);
+  color: var(--blue-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.viewDetailButton:hover {
+  background-color: var(--blue-color);
+  color: var(--text-color-white);
+}
+
+.badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+.status_pending {
+  background-color: var(--status-pending-bg);
+  color: var(--status-pending-text);
+}
+
+.status_paid {
+  background-color: var(--status-paid-bg);
+  color: var(--status-paid-text);
+}
+
+.status_confirmed {
+  background-color: var(--status-confirmed-bg);
+  color: var(--status-confirmed-text);
+}
+
+.status_preparing {
+  background-color: var(--status-preparing-bg);
+  color: var(--status-preparing-text);
+}
+
+.status_ready {
+  background-color: var(--success-background-light);
+  color: var(--success-text-dark);
+}
+
+.status_delivered {
+  background-color: var(--success-background-light);
+  color: var(--success-text-dark);
+  border: 1px solid var(--success-border-color);
+}
+
+.status_cancelled {
+  background-color: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+}
+
+.backButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: var(--text-color-medium);
+  margin-bottom: 1.5rem;
+}
+
+.backButton:hover {
+  color: var(--blue-color);
+}
+
+.detailContainer {
+  background: var(--text-color-white);
+  border: 1px solid var(--border-color-light);
+  border-radius: 8px;
+  padding: 2rem;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color-light);
+  padding-bottom: 1rem;
+}
+
+.detailHeaderInfo h2 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-color-dark);
+}
+
+.detailHeaderInfo p {
+  margin: 0;
+  color: var(--text-color-medium);
+}
+
+.trackingContainer {
+  margin: 2.5rem 0;
+  padding: 0 1rem;
+}
+
+.progressBar {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.progressBar::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background-color: var(--timeline-bg-grey);
+  z-index: 1;
+}
+
+.progressLineFill {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  height: 4px;
+  background-color: var(--success-color);
+  z-index: 1;
+  transition: width 0.3s ease;
+}
+
+.stepItem {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.stepCircle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: var(--timeline-bg-grey);
+  color: var(--text-color-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  border: 2px solid var(--text-color-white);
+  transition: all 0.3s ease;
+}
+
+.stepLabel {
+  font-size: 0.85rem;
+  color: var(--text-color-medium);
+  font-weight: 500;
+}
+
+.stepItem.active .stepCircle {
+  background-color: var(--success-color);
+  color: var(--text-color-white);
+}
+
+.stepItem.active .stepLabel {
+  color: var(--text-color-dark);
+  font-weight: 700;
+}
+
+.cancelledState {
+  text-align: center;
+  padding: 1rem;
+  background-color: var(--status-cancelled-bg);
+  color: var(--status-cancelled-text);
+  border-radius: 8px;
+  margin: 2rem 0;
+  font-weight: 600;
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+}
+
+.itemsTable th {
+  text-align: left;
+  padding: 1rem;
+  border-bottom: 2px solid var(--border-color-light);
+  color: var(--text-color-medium);
+  font-weight: 600;
+}
+
+.itemsTable td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color-light);
+  color: var(--text-color-dark);
+}
+
+.itemImage {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border-color-light);
+}
+
+.summarySection {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.summaryBox {
+  width: 300px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  color: var(--text-color-dark-secondary);
+}
+
+.summaryRow.total {
+  font-weight: 700;
+  color: var(--text-color-dark);
+  font-size: 1.2rem;
+  border-top: 1px dashed var(--border-color-medium);
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.cancelButton {
+  margin-top: 1.5rem;
+  width: 100%;
+  padding: 0.8rem;
+  background-color: var(--primary-color);
+  color: var(--text-color-white);
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+
+.cancelButton:hover {
+  filter: brightness(90%);
+}
