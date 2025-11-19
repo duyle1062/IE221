@@ -2,7 +2,7 @@ import React, { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import styles from "./UserProfile.module.css";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import userService, { UpdateProfileData } from "../../services/user.service";
-import addressService, { Address, CreateAddressData } from "../../services/address.service";
+import addressService, { CreateAddressData } from "../../services/address.service";
 import { useAuth } from "../../context/AuthContext";
 import { Gender } from "../../services/auth.service";
 

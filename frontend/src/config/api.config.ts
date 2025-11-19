@@ -43,4 +43,10 @@ export const API_ENDPOINTS = {
     DETAIL: (id: number) => `/api/addresses/${id}/`,
     SET_DEFAULT: (id: number) => `/api/addresses/${id}/set-default/`,
   },
+  CART: {
+    GET: "/api/cart/",
+    ADD_ITEM: "/api/cart/items/",
+    UPDATE_ITEM: (id: number) => `/api/cart/items/${id}/`,
+    DELETE_ITEM: (id: number) => `/api/cart/items/${id}/`,
+  },
 };
