@@ -29,11 +29,9 @@ const LayoutAdmin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Dữ liệu tạm (sau này thay bằng AuthContext)
   const userName = "Admin User";
   const logout = () => {
     alert("Đã đăng xuất (tạm thời)");
-    // navigate('/login');
   };
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -51,7 +49,6 @@ const LayoutAdmin: React.FC = () => {
 
   const toggleCollapsed = () => setCollapsed(!collapsed);
 
-  // Tự động highlight menu dựa trên URL
   const getCurrentKey = () => {
     const path = location.pathname;
     if (path.includes("/orders-admin")) return "orders";
@@ -96,7 +93,6 @@ const LayoutAdmin: React.FC = () => {
 
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
-      {/* Sidebar */}
       <Box className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
         <Menu
           theme="dark"
@@ -109,9 +105,7 @@ const LayoutAdmin: React.FC = () => {
         />
       </Box>
 
-      {/* Main Content */}
       <Box className={styles.mainContent}>
-        {/* AppBar */}
         <AppBar className={styles.appBar}>
           <Toolbar className={styles.toolbar}>
             <Box className={styles.userProfile} onClick={handleMenuClick}>
@@ -137,13 +131,11 @@ const LayoutAdmin: React.FC = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Nội dung trang */}
         <Box className={styles.content}>
           <Outlet />
         </Box>
       </Box>
 
-      {/* Nút toggle sidebar */}
       <Button
         type="text"
         onClick={toggleCollapsed}

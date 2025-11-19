@@ -32,8 +32,7 @@
     height: 40px !important;
     line-height: 40px !important;
   }
-  
-  /* Thu nhỏ icon của submenu (Recommend Products, User Interactions) */
+
   .ant-menu-sub .ant-menu-item .anticon {
     font-size: 17px !important;
     min-width: 22px;
@@ -42,8 +41,7 @@
     align-items: center;
     justify-content: center;
   }
-  
-  /* Sidebar styles */
+
   .sidebar {
     width: 250px;
     transition: width 0.2s;
@@ -56,8 +54,7 @@
   .sidebarCollapsed {
     width: 80px;
   }
-  
-  /* Main Content styles */
+
   .mainContent {
     flex-grow: 1;
     margin-left: 250px;
@@ -65,39 +62,33 @@
     display: flex;
     flex-direction: column;
   }
-  
-  /* AppBar styles */
+
   .appBar {
     z-index: 1100;
     height: 64px;
   }
-  
-  /* Toolbar styles */
+
   .toolbar {
     min-height: 64px !important;
     justify-content: flex-end;
   }
-  
-  /* User Profile styles */
+
   .userProfile {
     display: flex;
     align-items: center;
     cursor: pointer;
   }
-  
-  /* User Info styles */
+
   .userInfo {
     margin-left: 1rem;
   }
-  
-  /* Content styles */
+
   .content {
     flex-grow: 1;
     margin-top: 64px;
     padding: 24px;
   }
-  
-  /* Toggle Button styles */
+
   .toggleButton {
     position: fixed;
     top: 6px;
@@ -112,25 +103,22 @@
 :global(.ant-menu-dark .ant-menu-sub),
 :global(.ant-menu-dark .ant-menu-submenu) {
   background-color: #ff5900 !important;
-  height: 100%; /* ← ĐỔI MÀU NỀN Ở ĐÂY */
+  height: 100%;
 }
 
-/* Màu chữ menu item */
 :global(.ant-menu-dark .ant-menu-item),
 :global(.ant-menu-dark .ant-menu-submenu-title) {
   color: #ffffff !important; 
   font-weight: 400;
 }
 
-/* Màu item được chọn */
 :global(.ant-menu-dark .ant-menu-item-selected),
 :global(.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title) {
-  background-color: #ffffff !important; /* ← MÀU KHI ĐƯỢC CHỌN */
+  background-color: #ffffff !important;
   color: #ff5900 !important;
-  border-left: 4px solid #ff5900 !important; /* ← Viền trái nổi bật */
+  border-left: 4px solid #ff5900 !important;
 }
 
-/* Màu khi hover item được chọn */
 :global(.ant-menu-dark .ant-menu-item-selected:hover) {
   background-color: #ff9500 !important;
   color: #ffffff !important;
