@@ -35,6 +35,7 @@ urlpatterns = [
     path("api/payments/", include("apps.payment.urls")),
     path("api/admin/", include(admin_router.urls)),
     path("api/admin/", include("apps.orders.admin_urls")),
+    path("api/admin/reports/", include("apps.orders.reports_urls")),
 ]
 
 # Catch-all for frontend - comment out if only using API
