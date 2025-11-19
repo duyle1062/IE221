@@ -19,8 +19,8 @@ urlpatterns = [
     # Product endpoints
     # 1. List (Create) products by category
     path("category/<slug:slug_name>/products/", views.ProductListView.as_view(), name="list_product_by_category"),
-    # 2. Retrieve (load) / update / delete the information of a product
-    path("category/<slug:slug_name>/products/<int:pk>/", views.ProductDetailView.as_view(), name="product_detail"),
+    # 2. Retrieve (load) / update / delete the information of a product - accepts both slug and ID
+    path("category/<slug:slug_name>/products/<slug:pk>/", views.ProductDetailView.as_view(), name="product_detail"),
     
     
     # Product Image endpoints

@@ -28,7 +28,7 @@ export default function App() {
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/" element={<HomePage />} />
-          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/product/:categorySlug/:productSlug" element={<ProductDetailPage />} />
           <Route path="/category/:slug" element={<Category />} />
 
           {/* Protected Routes - Require Authentication */}

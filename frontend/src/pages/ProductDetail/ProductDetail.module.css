@@ -94,6 +94,7 @@
   align-items: center;
   gap: 15px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
 .quantityLabel {
@@ -108,6 +109,10 @@
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 5px 10px;
+}
+
+.ratingDisplay {
+  margin-left: auto;
 }
 
 .quantityBtn {
@@ -237,6 +242,52 @@
   background: #1e8449;
 }
 
+.loadingContainer,
+.errorContainer {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.errorContainer {
+  color: #d32f2f;
+}
+
+.backButton {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+.backButton:hover {
+  background: #c0392b;
+}
+
+.noReviews {
+  color: #999;
+  font-style: italic;
+  padding: 1rem 0;
+}
+
+.reviewDate {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+  display: block;
+}
+
 @media (max-width: 768px) {
   .productLayout {
     grid-template-columns: 1fr;
@@ -251,8 +302,18 @@
     font-size: 20px;
   }
 
-  .tabs button {
-    padding: 10px 16px;
-    font-size: 14px;
+  .quantitySection {
+    flex-direction: column;
+    align-items: flex-start;
   }
+
+  .ratingDisplay {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+.tabs button {
+  padding: 10px 16px;
+  font-size: 14px;
 }
