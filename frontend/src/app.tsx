@@ -7,7 +7,7 @@ import LoginForm from "./pages/LoginForm/Login";
 import HomePage from "./pages/HomePage/HomePage";
 
 import Category from "./pages/Category/Category";
-import ProductPage from "./pages/ProductDetailPage/ProductDetailPage";
+import ProductDetailPage from "./pages/ProductDetail/ProductDetail";
 import UserProfile from "./pages/UserProfile/UserProfile";
 import Cart from "./pages/Cart/Cart";
 
@@ -28,10 +28,8 @@ export default function App() {
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/" element={<HomePage />} />
-          <Route path="/product/:id" element={<HomePage />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/category/:slug" element={<Category />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/orders" element={<OrderTracking />} />
 
           {/* Protected Routes - Require Authentication */}
           <Route
@@ -47,6 +45,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Cart />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute>
+                <OrderTracking />
               </ProtectedRoute>
             }
           />

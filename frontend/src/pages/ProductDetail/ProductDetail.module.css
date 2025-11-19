@@ -77,10 +77,69 @@
   cursor: pointer;
   transition: background 0.3s;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .addToCartBtn:hover {
   background: #c0392b;
+}
+
+.addToCartBtn:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+.quantitySection {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.quantityLabel {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.quantityControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+
+.quantityBtn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantityBtn:hover:not(:disabled) {
+  background: #c0392b;
+}
+
+.quantityBtn:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+.quantityValue {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
 }
 
 .tabs {
