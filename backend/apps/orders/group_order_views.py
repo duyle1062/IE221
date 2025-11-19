@@ -387,7 +387,7 @@ class PlaceGroupOrderView(APIView):
         # Create order with transaction
         try:
             with transaction.atomic():
-                # Create order
+                # Create order with PENDING status
                 order = Order.objects.create(
                     user=request.user,  # Creator pays
                     restaurant_id=1,
@@ -399,8 +399,8 @@ class PlaceGroupOrderView(APIView):
                     discount=discount,
                     total=total,
                     payment_method=payment_method,
-                    status="PAID",
-                    payment_status="SUCCEEDED",
+                    status="PENDING",
+                    payment_status="PENDING",
                 )
 
                 # Convert group order items to order items
@@ -417,19 +417,83 @@ class PlaceGroupOrderView(APIView):
 
                 OrderItem.objects.bulk_create(order_items)
 
-                # Update group order status
-                group_order.status = "PAID"
-                group_order.save()
+                # Create payment record
+                from apps.payment.models import Payment
+                from apps.payment.vnpay_service import VNPayService
 
-                # Return created order
-                order_serializer = OrderSerializer(order)
-                return Response(
-                    {
-                        "message": "Group order placed successfully",
-                        "order": order_serializer.data,
-                    },
-                    status=status.HTTP_201_CREATED,
+                payment = Payment.objects.create(
+                    order=order,
+                    amount=order.total,
+                    method=payment_method,
+                    status="PENDING",
                 )
+
+                # Handle CASH, WALLET, THIRD_PARTY - auto succeed
+                # WALLET and THIRD_PARTY auto-succeed because VNPAYQR/INTCARD are not enabled
+                if payment_method in ["CASH", "WALLET", "THIRD_PARTY"]:
+                    payment.status = "SUCCEEDED"
+                    payment.save()
+
+                    order.status = "PAID"
+                    order.payment_status = "SUCCEEDED"
+                    order.save()
+
+                    # Update group order status
+                    group_order.status = "PAID"
+                    group_order.save()
+
+                    order_serializer = OrderSerializer(order)
+                    return Response(
+                        {
+                            "message": "Group order placed successfully",
+                            "order": order_serializer.data,
+                        },
+                        status=status.HTTP_201_CREATED,
+                    )
+
+                # Handle CARD payment via VNPAY gateway
+                elif payment_method == "CARD":
+                    vnpay_service = VNPayService()
+                    amount = int(order.total)
+
+                    # Get client IP
+                    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+                    if x_forwarded_for:
+                        ip_address = x_forwarded_for.split(",")[0]
+                    else:
+                        ip_address = request.META.get("REMOTE_ADDR", "127.0.0.1")
+
+                    result = vnpay_service.create_payment(
+                        order_id=order.id,
+                        amount=amount,
+                        order_info=f"Thanh toan don hang nhom #{group_order.id}",
+                        ip_address=ip_address,
+                        payment_method=payment_method,
+                    )
+
+                    if result["success"]:
+                        # Store transaction reference
+                        payment.gateway_transaction_id = result["txn_ref"]
+                        payment.save()
+
+                        order_serializer = OrderSerializer(order)
+                        return Response(
+                            {
+                                "message": "Group order created, please complete payment",
+                                "order": order_serializer.data,
+                                "payment": {
+                                    "id": payment.id,
+                                    "status": payment.status,
+                                    "payment_url": result["payment_url"],
+                                },
+                            },
+                            status=status.HTTP_201_CREATED,
+                        )
+                    else:
+                        # If VNPAY fails, rollback will happen automatically
+                        raise Exception(
+                            f"Payment gateway error: {result.get('message')}"
+                        )
 
         except Exception as e:
             return Response(

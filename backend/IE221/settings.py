@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.product",
     "apps.orders",
     "apps.addresses",
+    "apps.payment",
 ]
 
 MIDDLEWARE = [
@@ -171,12 +172,12 @@ SIMPLE_JWT = {
 }
 
 # AWS configuration for media file storage
-AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='ie221')
-AWS_S3_REGION_NAME = 'ap-southeast-1'
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_CLOUDFRONT_DOMAIN = config('AWS_CLOUDFRONT_DOMAIN', default=None)
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME", default="ie221")
+AWS_S3_REGION_NAME = "ap-southeast-1"
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_CLOUDFRONT_DOMAIN = config("AWS_CLOUDFRONT_DOMAIN", default=None)
 
 DJOSER = {
     "LOGIN_FIELD": "email",
@@ -218,3 +219,19 @@ DJOSER = {
 }
 
 AUTH_USER_MODEL = "users.UserAccount"
+
+# VNPAY Payment Gateway Configuration
+# Documentation: https://sandbox.vnpayment.vn/apis/docs/
+VNPAY_TMN_CODE = os.environ.get("VNPAY_TMN_CODE", "BG6RGL0E")
+VNPAY_HASH_SECRET = os.environ.get(
+    "VNPAY_HASH_SECRET", "N9G7A5AEQPUT1S17LTU3J8SSPXEAL03Z"
+)
+VNPAY_PAYMENT_URL = os.environ.get(
+    "VNPAY_PAYMENT_URL", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
+)
+VNPAY_RETURN_URL = os.environ.get(
+    "VNPAY_RETURN_URL", "http://localhost:3000/payment/result"
+)
+VNPAY_API_URL = os.environ.get(
+    "VNPAY_API_URL", "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"
+)

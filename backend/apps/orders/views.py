@@ -83,7 +83,7 @@ class PlaceOrderView(APIView):
         # Create order with transaction
         try:
             with transaction.atomic():
-                # Create order
+                # Create order with PENDING status
                 order = Order.objects.create(
                     user=user,
                     restaurant_id=1,  # Always 1 as per requirement
@@ -94,8 +94,8 @@ class PlaceOrderView(APIView):
                     discount=discount,
                     total=total,
                     payment_method=payment_method,
-                    status="PAID",
-                    payment_status="SUCCEEDED",
+                    status="PENDING",
+                    payment_status="PENDING",
                 )
 
                 # Create order items from cart items
@@ -116,9 +116,79 @@ class PlaceOrderView(APIView):
                 # Clear cart after successful order
                 cart_items.delete()
 
-                # Return created order
-                order_serializer = OrderSerializer(order)
-                return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+                # Create payment record
+                from apps.payment.models import Payment
+                from apps.payment.vnpay_service import VNPayService
+
+                payment = Payment.objects.create(
+                    order=order,
+                    amount=order.total,
+                    method=payment_method,
+                    status="PENDING",
+                )
+
+                # Handle CASH, WALLET, THIRD_PARTY - auto succeed
+                # WALLET and THIRD_PARTY auto-succeed because VNPAYQR/INTCARD are not enabled
+                if payment_method in ["CASH", "WALLET", "THIRD_PARTY"]:
+                    payment.status = "SUCCEEDED"
+                    payment.save()
+
+                    order.status = "PAID"
+                    order.payment_status = "SUCCEEDED"
+                    order.save()
+
+                    order_serializer = OrderSerializer(order)
+                    return Response(
+                        {
+                            "message": "Order placed successfully",
+                            "order": order_serializer.data,
+                        },
+                        status=status.HTTP_201_CREATED,
+                    )
+
+                # Handle CARD payment via VNPAY gateway
+                elif payment_method == "CARD":
+                    vnpay_service = VNPayService()
+                    amount = int(order.total)
+
+                    # Get client IP
+                    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+                    if x_forwarded_for:
+                        ip_address = x_forwarded_for.split(",")[0]
+                    else:
+                        ip_address = request.META.get("REMOTE_ADDR", "127.0.0.1")
+
+                    result = vnpay_service.create_payment(
+                        order_id=order.id,
+                        amount=amount,
+                        order_info=f"Thanh toan don hang #{order.id}",
+                        ip_address=ip_address,
+                        payment_method=payment_method,
+                    )
+
+                    if result["success"]:
+                        # Store transaction reference
+                        payment.gateway_transaction_id = result["txn_ref"]
+                        payment.save()
+
+                        order_serializer = OrderSerializer(order)
+                        return Response(
+                            {
+                                "message": "Order created, please complete payment",
+                                "order": order_serializer.data,
+                                "payment": {
+                                    "id": payment.id,
+                                    "status": payment.status,
+                                    "payment_url": result["payment_url"],
+                                },
+                            },
+                            status=status.HTTP_201_CREATED,
+                        )
+                    else:
+                        # If VNPAY fails, rollback will happen automatically
+                        raise Exception(
+                            f"Payment gateway error: {result.get('message')}"
+                        )
 
         except Exception as e:
             return Response(
@@ -206,10 +276,11 @@ class CancelOrderView(APIView):
 
 # ============== Admin Order Views ==============
 
+
 class AdminOrderListView(ListAPIView):
     """
     GET /api/admin/orders/
-  
+
     Query Parameters:
     - status: Filter by order status (PAID, CONFIRMED, PREPARING, READY, DELIVERED, CANCELLED)
     - payment_status: Filter by payment status (PENDING, SUCCEEDED, FAILED, REFUNDED)
@@ -222,19 +293,20 @@ class AdminOrderListView(ListAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['status', 'payment_status', 'payment_method', 'type']
-    ordering_fields = ['id', 'created_at', 'updated_at', 'total', 'status']
-    ordering = ['id']  # Default ordering by ID
+    filterset_fields = ["status", "payment_status", "payment_method", "type"]
+    ordering_fields = ["id", "created_at", "updated_at", "total", "status"]
+    ordering = ["id"]  # Default ordering by ID
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         """
         Get all orders with related data optimized
         """
-        queryset = Order.objects.select_related('user', 'address').prefetch_related(
-            'items__product'
+        queryset = Order.objects.select_related("user", "address").prefetch_related(
+            "items__product"
         )
         return queryset
+
 
 class AdminChangeStatusView(APIView):
     """
@@ -246,15 +318,16 @@ class AdminChangeStatusView(APIView):
     }
 
     """
+
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     VALID_TRANSITIONS = {
         "PAID": ["PREPARING", "CANCELLED"],
-        "CONFIRMED": ["PREPARING"],  
+        "CONFIRMED": ["PREPARING"],
         "PREPARING": ["READY", "CANCELLED"],
         "READY": ["DELIVERED"],
-        "DELIVERED": [],  
-        "CANCELLED": [],  
+        "DELIVERED": [],
+        "CANCELLED": [],
     }
 
     def patch(self, request, order_id):
@@ -272,7 +345,7 @@ class AdminChangeStatusView(APIView):
         if not new_status:
             return Response(
                 {"error": "Status field is required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Validate new status is a valid OrderStatus
@@ -281,7 +354,7 @@ class AdminChangeStatusView(APIView):
                 {
                     "error": f"Invalid status. Valid options: {', '.join([s.value for s in OrderStatus])}"
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Check if transition is valid
@@ -293,9 +366,9 @@ class AdminChangeStatusView(APIView):
                 {
                     "error": f"Invalid status transition from '{current_status}' to '{new_status}'",
                     "current_status": current_status,
-                    "allowed_transitions": valid_next_statuses
+                    "allowed_transitions": valid_next_statuses,
                 },
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Update order status
@@ -312,8 +385,7 @@ class AdminChangeStatusView(APIView):
         return Response(
             {
                 "message": f"Order status updated to '{new_status}'",
-                "order": serializer.data
+                "order": serializer.data,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
-
