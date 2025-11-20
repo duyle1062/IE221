@@ -1,8 +1,10 @@
 :root {
   --primary-color: #c8102e;
+  --primary-color-hover: #a60d26;
   --blue-color: #2d68f8;
 
   --success-color: #28a745;
+  --success-color-hover: #1e8449;
   --success-background-light: #d4edda;
   --success-text-dark: #155724;
   --success-border-color: #c3e6cb;
@@ -22,6 +24,7 @@
 
   --border-color-light: #e0e0e0;
   --border-color-medium: #ccc;
+  --border-color-lighter: #eee;
 
   --shadow-light: rgba(0, 0, 0, 0.05);
   --shadow-medium: rgba(0, 0, 0, 0.3);
@@ -38,6 +41,37 @@
 
   --orange-button-bg: #ff5900;
   --orange-medium-bg: #ff9500;
+  --status-pending-bg: #fff3cd;
+  --status-pending-text: #856404;
+
+  --status-paid-bg: #d1ecf1;
+  --status-paid-text: #0c5460;
+
+  --status-confirmed-bg: #cce5ff;
+  --status-confirmed-text: #004085;
+
+  --status-preparing-bg: #e2e3e5;
+  --status-preparing-text: #383d41;
+
+  --status-cancelled-bg: #f8d7da;
+  --status-cancelled-text: #721c24;
+
+  --timeline-bg-grey: #e9ecef;
+
+  --group-bg-light: #f8f9fa;
+  --group-border-color: #e9ecef;
+  --text-color-secondary: #6c757d;
+  --text-color-placeholder: #999;
+
+  --warning-bg-light: #fff3cd;
+  --warning-text-dark: #856404;
+
+  --star-color: #f39c12;
+  --star-empty-color: #ddd;
+  --error-color: #d32f2f;
+
+  --disabled-bg: #95a5a6;
+  --disabled-text: #fff;
 }
 
 *,

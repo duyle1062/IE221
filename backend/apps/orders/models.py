@@ -74,7 +74,7 @@ class Order(models.Model):
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(
-        max_length=20, choices=OrderStatus.choices, default=OrderStatus.PAID
+        max_length=20, choices=OrderStatus.choices, default=OrderStatus.PENDING
     )
     payment_method = models.CharField(
         max_length=20, choices=PaymentMethod.choices, null=True, blank=True

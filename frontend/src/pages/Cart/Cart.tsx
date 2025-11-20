@@ -1,44 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import styles from "./Cart.module.css";
 import { FaPlus, FaMinus, FaTrash, FaShoppingCart } from "react-icons/fa";
-
 import { useNavigate } from "react-router-dom";
-
-interface CartItem {
-  id: string;
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  imageUrl: string;
-}
-
-const mockCartItems: CartItem[] = [
-  {
-    id: "ci1",
-    productId: "p1",
-    name: "Shake Potato Cheese",
-    price: 35000,
-    quantity: 6,
-    imageUrl: "",
-  },
-  {
-    id: "ci2",
-    productId: "p2",
-    name: "Cheese Stick",
-    price: 36000,
-    quantity: 1,
-    imageUrl: "",
-  },
-  {
-    id: "ci3",
-    productId: "p3",
-    name: "Shake Chicken Cheese",
-    price: 44000,
-    quantity: 1,
-    imageUrl: "",
-  },
-];
+import cartService from "../../services/cart.service";
+import { Cart as CartType, CartItem } from "../../types/cart.types";
+import { useAuth } from "../../context/AuthContext";
 
 const formatCurrency = (amount: number) => {
   return (
@@ -50,97 +16,167 @@ const formatCurrency = (amount: number) => {
 
 const CartScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
-  const [cartItems, setCartItems] = useState<CartItem[]>(mockCartItems);
+  const [cart, setCart] = useState<CartType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState<number | null>(null);
   const [shippingFee] = useState<number>(15000);
 
+  // Fetch cart on component mount
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    fetchCart();
+  }, [isAuthenticated]);
+
+  const fetchCart = async () => {
+    setLoading(true);
+    try {
+      const cartData = await cartService.getCart();
+      setCart(cartData);
+    } catch (error: any) {
+      console.error("Failed to fetch cart:", error);
+      const errorMessage =
+        error?.detail || "Không thể tải giỏ hàng. Vui lòng thử lại!";
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const subtotal = useMemo(() => {
-    return cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  }, [cartItems]);
+    return cart?.total_price || 0;
+  }, [cart]);
 
   const total = useMemo(() => {
     return subtotal + shippingFee;
   }, [subtotal, shippingFee]);
 
-  const handleIncreaseQuantity = (itemId: string) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
-  };
-
-  const handleDecreaseQuantity = (itemId: string) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) => {
-        if (item.id === itemId && item.quantity > 1) {
-          return { ...item, quantity: item.quantity - 1 };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleRemoveItem = (itemId: string) => {
-    if (
-      window.confirm(
-        "Are you sure you want to remove this item from your cart?"
-      )
-    ) {
-      setCartItems((prevItems) =>
-        prevItems.filter((item) => item.id !== itemId)
+  const handleIncreaseQuantity = async (item: CartItem) => {
+    setUpdating(item.id);
+    try {
+      const updatedCart = await cartService.increaseQuantity(
+        item.id,
+        item.quantity
       );
+      setCart(updatedCart);
+    } catch (error: any) {
+      console.error("Failed to increase quantity:", error);
+      alert("Không thể cập nhật số lượng. Vui lòng thử lại!");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleDecreaseQuantity = async (item: CartItem) => {
+    if (item.quantity <= 1) return;
+
+    setUpdating(item.id);
+    try {
+      const updatedCart = await cartService.decreaseQuantity(
+        item.id,
+        item.quantity
+      );
+      setCart(updatedCart);
+    } catch (error: any) {
+      console.error("Failed to decrease quantity:", error);
+      alert("Không thể cập nhật số lượng. Vui lòng thử lại!");
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleRemoveItem = async (itemId: number) => {
+    if (
+      !window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?")
+    ) {
+      return;
+    }
+
+    setUpdating(itemId);
+    try {
+      await cartService.deleteCartItem(itemId);
+      // Refresh cart after deletion
+      await fetchCart();
+    } catch (error: any) {
+      console.error("Failed to remove item:", error);
+      alert("Không thể xóa sản phẩm. Vui lòng thử lại!");
+    } finally {
+      setUpdating(null);
     }
   };
 
   const handleCheckout = () => {
+    if (!cart || cart.items.length === 0) return;
     navigate("/checkout");
   };
 
   const renderEmptyCart = () => (
     <div className={styles.emptyCart}>
       <FaShoppingCart className={styles.emptyCartIcon} />
-      <p className={styles.emptyCartMessage}>Your cart is empty</p>
+      <p className={styles.emptyCartMessage}>Giỏ hàng của bạn trống</p>
       <p className={styles.emptyCartSubMessage}>
-        Add items from <a href="/">our menu</a>!
+        Hãy thêm sản phẩm từ <a href="/">thực đơn</a>!
       </p>
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className={styles.cartContainer}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>Giỏ hàng của tôi</h1>
+        </header>
+        <div className={styles.loadingContainer}>
+          <p>Đang tải giỏ hàng...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.cartContainer}>
       <header className={styles.header}>
-        <h1 className={styles.title}>My Cart</h1>
+        <h1 className={styles.title}>Giỏ hàng của tôi</h1>
       </header>
 
-      {cartItems.length === 0 ? (
+      {!cart || cart.items.length === 0 ? (
         renderEmptyCart()
       ) : (
         <div className={styles.cartLayout}>
           <div className={styles.cartItemsList}>
-            {cartItems.map((item) => (
+            {cart.items.map((item) => (
               <div key={item.id} className={styles.cartItem}>
                 <img
-                  src={item.imageUrl}
-                  alt={item.name}
+                  src="https://via.placeholder.com/100x100?text=Product"
+                  alt={item.product.name}
                   className={styles.itemImage}
                 />
                 <div className={styles.itemDetails}>
                   <div>
-                    <p className={styles.itemName}>{item.name}</p>
+                    <p className={styles.itemName}>{item.product.name}</p>
                     <p className={styles.itemPrice}>
-                      {formatCurrency(item.price * item.quantity)}
+                      {formatCurrency(item.total_item_price)}
                     </p>
                   </div>
                   <div className={styles.itemActions}>
                     <div className={styles.itemQuantityControls}>
                       <button
                         className={styles.quantityButton}
-                        onClick={() => handleDecreaseQuantity(item.id)}
+                        onClick={() => handleDecreaseQuantity(item)}
+                        disabled={item.quantity <= 1 || updating === item.id}
                         style={{
                           cursor:
-                            item.quantity <= 1 ? "not-allowed" : "pointer",
-                          opacity: item.quantity <= 1 ? 0.5 : 1,
+                            item.quantity <= 1 || updating === item.id
+                              ? "not-allowed"
+                              : "pointer",
+                          opacity:
+                            item.quantity <= 1 || updating === item.id
+                              ? 0.5
+                              : 1,
                         }}
                       >
                         <FaMinus />
@@ -150,7 +186,8 @@ const CartScreen: React.FC = () => {
                       </span>
                       <button
                         className={styles.quantityButton}
-                        onClick={() => handleIncreaseQuantity(item.id)}
+                        onClick={() => handleIncreaseQuantity(item)}
+                        disabled={updating === item.id}
                       >
                         <FaPlus />
                       </button>
@@ -158,7 +195,8 @@ const CartScreen: React.FC = () => {
                     <button
                       className={styles.itemRemoveButton}
                       onClick={() => handleRemoveItem(item.id)}
-                      title="Remove item"
+                      title="Xóa sản phẩm"
+                      disabled={updating === item.id}
                     >
                       <FaTrash />
                     </button>
@@ -171,24 +209,24 @@ const CartScreen: React.FC = () => {
           <aside className={styles.summary}>
             <div className={styles.summaryBox}>
               <div className={styles.summaryLine}>
-                <span>Subtotal</span>
+                <span>Tạm tính</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className={styles.summaryLine}>
-                <span>Shipping Fee</span>
+                <span>Phí vận chuyển</span>
                 <span>{formatCurrency(shippingFee)}</span>
               </div>
               <hr />
               <div className={styles.summaryTotal}>
-                <span>Total</span>
+                <span>Tổng cộng</span>
                 <span>{formatCurrency(total)}</span>
               </div>
               <button
                 className={styles.checkoutButton}
                 onClick={handleCheckout}
-                disabled={cartItems.length === 0}
+                disabled={!cart || cart.items.length === 0}
               >
-                Checkout
+                Thanh toán
               </button>
             </div>
           </aside>
