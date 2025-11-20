@@ -10,7 +10,7 @@ import { Product } from "../../types/product.types";
 export default function Category() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,24 +20,28 @@ export default function Category() {
 
     const fetchProducts = async () => {
       if (!slug) return;
-      
+
       setLoading(true);
       setError(null);
       setProducts([]); // Reset products array
-      
+
       try {
-        const products = await productService.getProductsByCategory(slug, abortController.signal);
+        const products = await productService.getProductsByCategory(
+          slug,
+          abortController.signal
+        );
         setProducts(products || []);
       } catch (err: any) {
         // Ignore abort errors
-        if (err.name === 'CanceledError' || err.name === 'AbortError') {
+        if (err.name === "CanceledError" || err.name === "AbortError") {
           return;
         }
         console.error("Failed to fetch products:", err);
-        const errorMessage = err?.response?.data?.detail || 
-                           err?.detail || 
-                           err?.message || 
-                           "Không thể tải sản phẩm. Vui lòng thử lại!";
+        const errorMessage =
+          err?.response?.data?.detail ||
+          err?.detail ||
+          err?.message ||
+          "Không thể tải sản phẩm. Vui lòng thử lại!";
         setError(errorMessage);
         setProducts([]); // Ensure products is empty array on error
       } finally {
@@ -77,8 +81,8 @@ export default function Category() {
           <div className={styles.productGrid}>
             {products && products.length > 0 ? (
               products.map((product) => (
-                <div 
-                  key={product.id} 
+                <div
+                  key={product.id}
                   className={styles.productCard}
                   onClick={() => handleProductClick(product)}
                 >
@@ -92,9 +96,9 @@ export default function Category() {
                     {productService.formatPrice(product.price)}
                   </p>
                   <div className={styles.ratingContainer}>
-                    <StarRating 
-                      rating={product.average_rating} 
-                      size="small" 
+                    <StarRating
+                      rating={product.average_rating}
+                      size="small"
                       showText={true}
                     />
                   </div>

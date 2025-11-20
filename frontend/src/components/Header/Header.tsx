@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import styles from "./Header.module.css";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart, FaUser, FaUsers } from "react-icons/fa";
 import { IoIosMenu } from "react-icons/io";
-import { FaUser } from "react-icons/fa";
 import { GoSearch } from "react-icons/go";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -78,11 +77,13 @@ export default function Header() {
       <div className={styles.actions}>
         {/* Cart - Only show when logged in */}
         {isAuthenticated && (
-          <div className={styles.cart}>
-            <Link to="/cart">
-              <FaShoppingCart className={styles["cart-icon"]} />
-            </Link>
-          </div>
+          <>
+            <div className={styles.cart}>
+              <Link to="/cart">
+                <FaShoppingCart className={styles["cart-icon"]} />
+              </Link>
+            </div>
+          </>
         )}
 
         {/* Avatar */}
@@ -115,10 +116,16 @@ export default function Header() {
                   <Link to="/orders" onClick={() => setOpenMenu(false)}>
                     <p>Order Tracking</p>
                   </Link>
-                  <Link to="/forget-password" onClick={() => setOpenMenu(false)}>
+                  <Link to="/group-order" onClick={() => setOpenMenu(false)}>
+                    <p>View Group Order</p>
+                  </Link>
+                  <Link
+                    to="/forget-password"
+                    onClick={() => setOpenMenu(false)}
+                  >
                     <p>Forgot Password</p>
                   </Link>
-                  <p onClick={handleLogout} style={{ cursor: 'pointer' }}>
+                  <p onClick={handleLogout} style={{ cursor: "pointer" }}>
                     Log out
                   </p>
                 </>
