@@ -7,11 +7,70 @@ import cartService from "../../services/cart.service";
 import productService from "../../services/product.service";
 import ratingService from "../../services/rating.service";
 import { useAuth } from "../../context/AuthContext";
-import { ProductDetailResponse, RatingListResponse } from "../../types/product.types";
+import {
+  ProductDetailResponse,
+  RatingListResponse,
+} from "../../types/product.types";
 import styles from "./ProductDetail.module.css";
+import { FaUsers } from "react-icons/fa";
 
 const ProductDetailPage: React.FC = () => {
-  const { categorySlug, productSlug } = useParams<{ categorySlug: string; productSlug: string }>();
+  // Thêm logic kiểm tra group hiện tại khi nhấn Add To Group Order
+  const handleAddToGroupOrder = () => {
+    const groupOrderRaw = localStorage.getItem("groupOrder");
+    let groupOrder = null;
+    try {
+      groupOrder = groupOrderRaw ? JSON.parse(groupOrderRaw) : null;
+    } catch {
+      groupOrder = null;
+    }
+
+    if (!groupOrder) {
+      // Chưa có group, chuyển sang trang group order để tạo/join
+      navigate("/group-order");
+      return;
+    }
+
+    // Đã có group, thêm món vào group item của user hiện tại
+    // Giả lập thêm vào localStorage, thực tế nên gọi API
+    const currentUserId = groupOrder.currentUser?.id || groupOrder.creator_id;
+    const currentUserName = groupOrder.currentUser?.name || "Bạn";
+    const productName = product?.name || "";
+    const unitPrice = Number(product?.price) || 0;
+    if (!productName || !currentUserId) {
+      alert("Không thể thêm sản phẩm vào group order!");
+      return;
+    }
+    // Tìm item của user hiện tại và sản phẩm này
+    const existedIdx = groupOrder.items.findIndex(
+      (item: any) =>
+        item.user_id === currentUserId && item.product_name === productName
+    );
+    if (existedIdx !== -1) {
+      // Tăng số lượng
+      groupOrder.items[existedIdx].quantity += quantity;
+      groupOrder.items[existedIdx].line_total =
+        Number(groupOrder.items[existedIdx].quantity) * unitPrice;
+    } else {
+      // Thêm mới
+      groupOrder.items.push({
+        id: Math.floor(Math.random() * 100000),
+        user_id: currentUserId,
+        user_name: currentUserName,
+        product_name: productName,
+        quantity,
+        unit_price: unitPrice,
+        line_total: Number(quantity) * unitPrice,
+      });
+    }
+    localStorage.setItem("groupOrder", JSON.stringify(groupOrder));
+    alert(`Đã thêm ${quantity} ${productName} vào Group Order!`);
+    setQuantity(1);
+  };
+  const { categorySlug, productSlug } = useParams<{
+    categorySlug: string;
+    productSlug: string;
+  }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -19,12 +78,14 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"description" | "reviews">("description");
+  const [activeTab, setActiveTab] = useState<"description" | "reviews">(
+    "description"
+  );
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  
+
   // Rating states
   const [ratings, setRatings] = useState<RatingListResponse | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
@@ -40,29 +101,36 @@ const ProductDetailPage: React.FC = () => {
 
     const fetchProduct = async () => {
       if (!categorySlug || !productSlug) return;
-      
+
       setLoading(true);
       setError(null);
       setProduct(null); // Reset product
-      
+
       try {
-        const data = await productService.getProductDetail(categorySlug, productSlug, abortController.signal);
+        const data = await productService.getProductDetail(
+          categorySlug,
+          productSlug,
+          abortController.signal
+        );
         setProduct(data);
         // Set initial selected image
         if (data.images && data.images.length > 0) {
-          const primaryImage = data.images.find(img => img.is_primary);
-          setSelectedImage(primaryImage?.image_url ?? data.images?.[0]?.image_url ?? "");
+          const primaryImage = data.images.find((img) => img.is_primary);
+          setSelectedImage(
+            primaryImage?.image_url ?? data.images?.[0]?.image_url ?? ""
+          );
         }
       } catch (err: any) {
         // Ignore abort errors
-        if (err.name === 'CanceledError' || err.name === 'AbortError') {
+        if (err.name === "CanceledError" || err.name === "AbortError") {
           return;
         }
         console.error("Failed to fetch product:", err);
-        const errorMessage = err?.response?.data?.detail || 
-                           err?.detail || 
-                           err?.message || 
-                           "Không thể tải thông tin sản phẩm. Vui lòng thử lại!";
+        const errorMessage =
+          err?.response?.data?.detail ||
+          err?.detail ||
+          err?.message ||
+          "Không thể tải thông tin sản phẩm. Vui lòng thử lại!";
         setError(errorMessage);
       } finally {
         if (!abortController.signal.aborted) {
@@ -99,14 +167,15 @@ const ProductDetailPage: React.FC = () => {
         setRatings(data);
       } catch (err: any) {
         // Ignore abort errors
-        if (err.name === 'CanceledError' || err.name === 'AbortError') {
+        if (err.name === "CanceledError" || err.name === "AbortError") {
           return;
         }
         console.error("Failed to fetch ratings:", err);
-        const errorMessage = err?.response?.data?.detail || 
-                           err?.detail || 
-                           err?.message || 
-                           "Không thể tải đánh giá.";
+        const errorMessage =
+          err?.response?.data?.detail ||
+          err?.detail ||
+          err?.message ||
+          "Không thể tải đánh giá.";
         setRatingsError(errorMessage);
       } finally {
         if (!abortController.signal.aborted) {
@@ -124,7 +193,7 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = async () => {
     if (!product) return;
-    
+
     // Check if user is authenticated
     if (!isAuthenticated) {
       alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
@@ -185,7 +254,7 @@ const ProductDetailPage: React.FC = () => {
       });
 
       alert("Thanks for your review!");
-      
+
       // Reset form
       setRating(0);
       setComment("");
@@ -193,33 +262,41 @@ const ProductDetailPage: React.FC = () => {
 
       // Refresh ratings list
       setCurrentPage(1); // Go back to first page
-      const updatedRatings = await ratingService.getRatings(product.id, 1, pageSize);
+      const updatedRatings = await ratingService.getRatings(
+        product.id,
+        1,
+        pageSize
+      );
       setRatings(updatedRatings);
 
       // Refresh product to update average rating
       if (categorySlug && productSlug) {
-        const updatedProduct = await productService.getProductDetail(categorySlug, productSlug);
+        const updatedProduct = await productService.getProductDetail(
+          categorySlug,
+          productSlug
+        );
         setProduct(updatedProduct);
       }
     } catch (error: any) {
       console.error("Submit rating failed:", error);
       console.log("Error response:", error?.response);
-      
+
       // Extract error message from response
       const responseData = error?.response?.data;
       let errorMessage = "Unable to submit review. Please try again!";
-      
+
       if (responseData) {
-        const errorText = 
-          responseData.non_field_errors?.[0] || 
-          responseData.detail ||                  
-          responseData[0] ||                       
-          (typeof responseData === 'string' ? responseData : null);
-        
+        const errorText =
+          responseData.non_field_errors?.[0] ||
+          responseData.detail ||
+          responseData[0] ||
+          (typeof responseData === "string" ? responseData : null);
+
         if (errorText) {
           // Check for "already rated" pattern
           if (errorText.toLowerCase().includes("already rated")) {
-            errorMessage = "You have already rated this product. Only one rating per user!";
+            errorMessage =
+              "You have already rated this product. Only one rating per user!";
           } else {
             errorMessage = errorText;
           }
@@ -274,7 +351,11 @@ const ProductDetailPage: React.FC = () => {
                       key={img.id}
                       src={img.image_url}
                       alt={`${product.name} ${idx + 1}`}
-                      className={selectedImage === img.image_url ? styles.activeThumb : ""}
+                      className={
+                        selectedImage === img.image_url
+                          ? styles.activeThumb
+                          : ""
+                      }
                       onClick={() => setSelectedImage(img.image_url)}
                     />
                   ))}
@@ -308,9 +389,9 @@ const ProductDetailPage: React.FC = () => {
                   </button>
                 </div>
                 <div className={styles.ratingDisplay}>
-                  <StarRating 
-                    rating={product.average_rating} 
-                    size="medium" 
+                  <StarRating
+                    rating={product.average_rating}
+                    size="medium"
                     showText={true}
                   />
                 </div>
@@ -321,16 +402,25 @@ const ProductDetailPage: React.FC = () => {
                 onClick={handleAddToCart}
                 disabled={isAddingToCart || !product.available}
               >
-                {!product.available 
+                {!product.available
                   ? "Sản phẩm tạm hết hàng"
-                  : isAddingToCart 
-                    ? "Đang thêm..." 
-                    : "Thêm vào giỏ hàng"}
+                  : isAddingToCart
+                  ? "Đang thêm..."
+                  : "Thêm vào giỏ hàng"}
+              </button>
+
+              <button
+                className={styles.groupOrderBtn}
+                onClick={handleAddToGroupOrder}
+              >
+                <FaUsers /> Add To Group Order
               </button>
 
               <div className={styles.tabs}>
                 <button
-                  className={activeTab === "description" ? styles.activeTab : ""}
+                  className={
+                    activeTab === "description" ? styles.activeTab : ""
+                  }
                   onClick={() => setActiveTab("description")}
                 >
                   Mô tả
@@ -359,36 +449,46 @@ const ProductDetailPage: React.FC = () => {
                             <div key={review.id} className={styles.reviewItem}>
                               <div className={styles.reviewHeader}>
                                 <strong>
-                                  {review.user.first_name} {review.user.last_name}
+                                  {review.user.first_name}{" "}
+                                  {review.user.last_name}
                                 </strong>
-                                <StarRating 
-                                  rating={review.rating} 
-                                  size="small" 
+                                <StarRating
+                                  rating={review.rating}
+                                  size="small"
                                   showText={false}
                                 />
                               </div>
-                              <p className={styles.reviewComment}>{review.comment}</p>
+                              <p className={styles.reviewComment}>
+                                {review.comment}
+                              </p>
                               <span className={styles.reviewDate}>
-                                {new Date(review.created_at).toLocaleDateString("vi-VN")}
+                                {new Date(review.created_at).toLocaleDateString(
+                                  "vi-VN"
+                                )}
                               </span>
                             </div>
                           ))}
-                          
+
                           {/* Pagination controls */}
                           {ratings.count > pageSize && (
                             <div className={styles.pagination}>
                               <button
-                                onClick={() => handlePageChange(currentPage - 1)}
+                                onClick={() =>
+                                  handlePageChange(currentPage - 1)
+                                }
                                 disabled={!ratings.previous || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
                                 Trang trước
                               </button>
                               <span className={styles.pageInfo}>
-                                Trang {currentPage} / {Math.ceil(ratings.count / pageSize)}
+                                Trang {currentPage} /{" "}
+                                {Math.ceil(ratings.count / pageSize)}
                               </span>
                               <button
-                                onClick={() => handlePageChange(currentPage + 1)}
+                                onClick={() =>
+                                  handlePageChange(currentPage + 1)
+                                }
                                 disabled={!ratings.next || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
@@ -398,7 +498,9 @@ const ProductDetailPage: React.FC = () => {
                           )}
                         </>
                       ) : (
-                        <p className={styles.noReviews}>Chưa có đánh giá nào.</p>
+                        <p className={styles.noReviews}>
+                          Chưa có đánh giá nào.
+                        </p>
                       )}
                     </div>
 
@@ -413,8 +515,8 @@ const ProductDetailPage: React.FC = () => {
                           )}
                           <div className={styles.ratingInput}>
                             <span>Đánh giá: </span>
-                            <StarRating 
-                              rating={rating} 
+                            <StarRating
+                              rating={rating}
                               size="large"
                               showText={false}
                               interactive={true}
@@ -439,12 +541,15 @@ const ProductDetailPage: React.FC = () => {
                             className={styles.submitReviewBtn}
                             disabled={isSubmittingRating}
                           >
-                            {isSubmittingRating ? "Đang gửi..." : "Gửi đánh giá"}
+                            {isSubmittingRating
+                              ? "Đang gửi..."
+                              : "Gửi đánh giá"}
                           </button>
                         </>
                       ) : (
                         <p className={styles.loginPrompt}>
-                          Vui lòng <a href="/login">đăng nhập</a> để đánh giá sản phẩm.
+                          Vui lòng <a href="/login">đăng nhập</a> để đánh giá
+                          sản phẩm.
                         </p>
                       )}
                     </div>
