@@ -1,75 +1,94 @@
 import React, { useState } from "react";
 import styles from "./Register.module.css";
-import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import Header from "../../components/Header/Header";
+import Footer from "../../components/Footer/Footer";
 import authService, { Gender } from "../../services/auth.service";
 
 interface Errors {
-  username?: string;
+  firstName?: string;
   lastName?: string;
   gender?: string;
   phone?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
-  agreement?: string;
+  terms?: string;
   server?: string;
 }
 
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [gender, setGender] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [confirmPassword, setConfirmPassword] = useState<string>("");
-  const [agreeTerms, setAgreeTerms] = useState<boolean>(false);
-  const [agreePrivacy, setAgreePrivacy] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState<boolean>(false);
 
   const isFormValid = (): boolean => {
     return (
-      username.trim() !== "" &&
+      firstName.trim() !== "" &&
       lastName.trim() !== "" &&
       gender !== "" &&
       phone.trim() !== "" &&
       email.trim() !== "" &&
       password.trim() !== "" &&
       confirmPassword.trim() !== "" &&
-      password === confirmPassword &&
-      agreeTerms &&
-      agreePrivacy
+      acceptedTerms
     );
+  };
+
+  const validateForm = (): Errors => {
+    const newErrors: Errors = {};
+
+    if (!firstName.trim()) newErrors.firstName = "First name is required";
+    if (!lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!gender) newErrors.gender = "Please select your gender";
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Email is invalid";
+    }
+    if (!phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\d{10,}$/.test(phone.replace(/\D/g, ""))) {
+      newErrors.phone = "Phone number must be at least 10 digits";
+    }
+    if (!password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    if (!acceptedTerms) {
+      newErrors.terms = "You must accept the terms and conditions";
+    }
+
+    return newErrors;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const newErrors: Errors = {};
-
-    if (!username.trim()) newErrors.username = "Required";
-    if (!lastName.trim()) newErrors.lastName = "Required";
-    if (!gender) newErrors.gender = "Please select your gender";
-    if (!phone.trim()) newErrors.phone = "Required";
-    if (!email.trim()) newErrors.email = "Required";
-    if (!password.trim()) newErrors.password = "Required";
-    if (password !== confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match";
-    if (!agreeTerms || !agreePrivacy) {
-      newErrors.agreement =
-        "Please agree to Terms of Use and Privacy Policy before proceeding";
-    }
+    const newErrors = validateForm();
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
       try {
-        // Map gender to backend format using enum
+        // Map gender to backend format
         const genderMap: { [key: string]: Gender } = {
           male: Gender.MALE,
           female: Gender.FEMALE,
@@ -83,7 +102,7 @@ const RegisterForm: React.FC = () => {
 
         await authService.register({
           email,
-          firstname: username,
+          firstname: firstName,
           lastname: lastName,
           phone,
           gender: selectedGender,
@@ -95,30 +114,33 @@ const RegisterForm: React.FC = () => {
         navigate("/verify-email", { state: { email } });
       } catch (error: any) {
         console.error("Registration error:", error);
-        
-        // Handle server errors
+
         if (error.response?.data) {
           const serverErrors = error.response.data;
-          const newServerErrors: Errors = {};
-          
-          if (serverErrors.email) {
-            newServerErrors.email = Array.isArray(serverErrors.email) 
-              ? serverErrors.email[0] 
-              : serverErrors.email;
+
+          if (serverErrors.detail) {
+            setErrors({ server: serverErrors.detail });
+          } else if (serverErrors.email) {
+            setErrors({
+              email: Array.isArray(serverErrors.email)
+                ? serverErrors.email[0]
+                : serverErrors.email,
+            });
+          } else if (serverErrors.phone) {
+            setErrors({
+              phone: Array.isArray(serverErrors.phone)
+                ? serverErrors.phone[0]
+                : serverErrors.phone,
+            });
+          } else if (serverErrors.password) {
+            setErrors({
+              password: Array.isArray(serverErrors.password)
+                ? serverErrors.password[0]
+                : serverErrors.password,
+            });
+          } else {
+            setErrors({ server: "Registration failed. Please try again." });
           }
-          if (serverErrors.phone) {
-            newServerErrors.phone = Array.isArray(serverErrors.phone)
-              ? serverErrors.phone[0]
-              : serverErrors.phone;
-          }
-          if (serverErrors.password) {
-            newServerErrors.password = Array.isArray(serverErrors.password)
-              ? serverErrors.password[0]
-              : serverErrors.password;
-          }
-          
-          newServerErrors.server = "Registration failed. Please check your information.";
-          setErrors(newServerErrors);
         } else {
           setErrors({ server: "Network error. Please try again later." });
         }
@@ -132,124 +154,109 @@ const RegisterForm: React.FC = () => {
     <>
       <Header />
       <div className={styles.container}>
-        {/* Form */}
-        <form
-          action=""
-          className={styles.wrapper}
-          onSubmit={handleSubmit}
-          noValidate
-        >
-          {/* Header */}
-          <h1 className={styles.header}>Sign up</h1>
-
-          {/* Name */}
-          <div className={styles["form-name"]}>
-            <label className={styles["form-name-text"]}>
-              Fullname <span className={styles.asterisk}>*</span>
-            </label>
-            <div className={styles["form-name-input"]}>
-              {/* First Name */}
-              <div className={styles["form-input-group"]}>
-                <input
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    if (e.target.value.trim()) {
-                      setErrors((prev) => ({ ...prev, username: "" }));
-                    }
-                  }}
-                  type="text"
-                  placeholder="First Name"
-                />
-                {errors.username && (
-                  <span className={styles.error}>{errors.username}</span>
-                )}
-              </div>
-
-              {/* Last Name */}
-              <div className={styles["form-input-group"]}>
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  value={lastName}
-                  onChange={(e) => {
-                    setLastName(e.target.value);
-                    if (e.target.value.trim()) {
-                      setErrors((prev) => ({ ...prev, lastName: "" }));
-                    }
-                  }}
-                />
-                {errors.lastName && (
-                  <span className={styles.error}>{errors.lastName}</span>
-                )}
-              </div>
+        {/* Left Side - Branding */}
+        <div className={styles.brandSection}>
+          <div className={styles.brandContent}>
+            <h1 className={styles.brandTitle}>
+              EASY TO ORDER
+              <br />
+              FAST DELIVERY
+            </h1>
+            <div className={styles.brandLogo}>
+              {/* Replace with your actual logo */}
+              <div className={styles.logoPlaceholder}>YOUR LOGO</div>
             </div>
           </div>
+        </div>
 
-          {/* Gender */}
-          <div className={styles["form-gender"]}>
-            <label className={styles["form-gender-text"]}>
-              Gender <span className={styles.asterisk}>*</span>
-            </label>
-            <div className={styles["form-gender-selection"]}>
-              <label htmlFor="male">
-                <input
-                  type="radio"
-                  id="male"
-                  value="male"
-                  name="gender"
-                  checked={gender === "male"}
-                  onChange={(e) => {
-                    setGender(e.target.value);
-                    setErrors((prev) => ({ ...prev, gender: "" }));
-                  }}
-                />
-                Male
-              </label>
-              <label htmlFor="female">
-                <input
-                  type="radio"
-                  id="female"
-                  name="gender"
-                  value="female"
-                  checked={gender === "female"}
-                  onChange={(e) => {
-                    setGender(e.target.value);
-                    setErrors((prev) => ({ ...prev, gender: "" }));
-                  }}
-                />
-                Female
-              </label>
-              <label htmlFor="other">
-                <input
-                  type="radio"
-                  id="other"
-                  name="gender"
-                  value="other"
-                  checked={gender === "other"}
-                  onChange={(e) => {
-                    setGender(e.target.value);
-                    setErrors((prev) => ({ ...prev, gender: "" }));
-                  }}
-                />
-                Other
-              </label>
-            </div>
-            {errors.gender && (
-              <span className={styles.error}>{errors.gender}</span>
-            )}
-          </div>
+        {/* Right Side - Form */}
+        <div className={styles.formSection}>
+          <form className={styles.wrapper} onSubmit={handleSubmit} noValidate>
+            {/* Header */}
+            <h1 className={styles.header}>CREATE ACCOUNT</h1>
 
-          {/* Phone */}
-          <div className={styles["form-phone"]}>
-            <label htmlFor="" className={styles["form-phone-text"]}>
-              Phone <span className={styles.asterisk}>*</span>
-            </label>
-            <div className={styles["input-wrapper"]}>
+            {/* First Name */}
+            <div className={styles.formGroup}>
+              <label htmlFor="firstName" className={styles.label}>
+                First name *
+              </label>
               <input
-                className={styles["form-phone-input"]}
+                id="firstName"
+                className={styles.input}
+                type="text"
+                placeholder="Enter your first name"
+                value={firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  if (e.target.value.trim()) {
+                    setErrors((prev) => ({ ...prev, firstName: "" }));
+                  }
+                }}
+              />
+              {errors.firstName && (
+                <span className={styles.error}>{errors.firstName}</span>
+              )}
+            </div>
+
+            {/* Last Name */}
+            <div className={styles.formGroup}>
+              <label htmlFor="lastName" className={styles.label}>
+                Last name *
+              </label>
+              <input
+                id="lastName"
+                className={styles.input}
+                type="text"
+                placeholder="Enter your last name"
+                value={lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  if (e.target.value.trim()) {
+                    setErrors((prev) => ({ ...prev, lastName: "" }));
+                  }
+                }}
+              />
+              {errors.lastName && (
+                <span className={styles.error}>{errors.lastName}</span>
+              )}
+            </div>
+
+            {/* Gender */}
+            <div className={styles.formGroup}>
+              <label htmlFor="gender" className={styles.label}>
+                Gender *
+              </label>
+              <select
+                id="gender"
+                className={styles.input}
+                value={gender}
+                onChange={(e) => {
+                  setGender(e.target.value);
+                  if (e.target.value) {
+                    setErrors((prev) => ({ ...prev, gender: "" }));
+                  }
+                }}
+              >
+                <option value="">Select your gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+              {errors.gender && (
+                <span className={styles.error}>{errors.gender}</span>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div className={styles.formGroup}>
+              <label htmlFor="phone" className={styles.label}>
+                Phone number *
+              </label>
+              <input
+                id="phone"
+                className={styles.input}
                 type="tel"
-                placeholder="Input your phone number"
+                placeholder="Enter your phone number"
                 value={phone}
                 onChange={(e) => {
                   setPhone(e.target.value);
@@ -258,22 +265,21 @@ const RegisterForm: React.FC = () => {
                   }
                 }}
               />
+              {errors.phone && (
+                <span className={styles.error}>{errors.phone}</span>
+              )}
             </div>
-            {errors.phone && (
-              <span className={styles.error}>{errors.phone}</span>
-            )}
-          </div>
 
-          {/* Email */}
-          <div className={styles["form-email"]}>
-            <label htmlFor="" className={styles["form-email-text"]}>
-              Email <span className={styles.asterisk}>*</span>
-            </label>
-            <div className={styles["input-wrapper"]}>
+            {/* Email */}
+            <div className={styles.formGroup}>
+              <label htmlFor="email" className={styles.label}>
+                Email address *
+              </label>
               <input
-                className={styles["form-email-input"]}
+                id="email"
+                className={styles.input}
                 type="email"
-                placeholder="Input your email address"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -282,142 +288,130 @@ const RegisterForm: React.FC = () => {
                   }
                 }}
               />
+              {errors.email && (
+                <span className={styles.error}>{errors.email}</span>
+              )}
             </div>
-            {errors.email && (
-              <span className={styles.error}>{errors.email}</span>
-            )}
-          </div>
 
-          {/* Password */}
-          <div className={styles["form-password"]}>
-            <label htmlFor="" className={styles["form-password-text"]}>
-              Password <span className={styles.asterisk}>*</span>
-            </label>
-            <div className={styles["input-wrapper"]}>
-              <input
-                className={styles["form-password-input"]}
-                type={showPassword ? "text" : "password"}
-                placeholder="Input your password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (e.target.value.trim()) {
-                    setErrors((prev) => ({ ...prev, password: "" }));
-                  }
-                }}
-              />
-              <span
-                className={styles["toggle-eye"]}
-                onClick={() => setShowPassword((prev) => !prev)}
-              >
-                {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
-              </span>
-            </div>
-            {errors.password && (
-              <span className={styles.error}>{errors.password}</span>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div className={styles["form-confirm-password"]}>
-            <label htmlFor="" className={styles["form-confirm-password-text"]}>
-              Confirm Password <span className={styles.asterisk}>*</span>
-            </label>
-            <input
-              className={styles["form-confirm-password-input"]}
-              type="password"
-              placeholder="Re-enter your password"
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                if (e.target.value.trim()) {
-                  setErrors((prev) => ({ ...prev, confirmPassword: "" }));
-                }
-              }}
-            />
-            {errors.confirmPassword && (
-              <span className={styles.error}>{errors.confirmPassword}</span>
-            )}
-          </div>
-
-          {/* License */}
-          <div className={styles["license"]}>
-            <div className={styles["form-license"]}>
-              <input
-                className={styles["form-license-input"]}
-                type="checkbox"
-                checked={agreeTerms}
-                onChange={(e) => {
-                  setAgreeTerms(e.target.checked);
-                  if (e.target.checked && agreePrivacy) {
-                    setErrors((prev) => ({ ...prev, agreement: "" }));
-                  }
-                }}
-              />
-              <label htmlFor="" className={styles["form-license-text"]}>
-                I agree to receive news about IE221 via email and registered
-                phone number
+            {/* Password */}
+            <div className={styles.formGroup}>
+              <label htmlFor="password" className={styles.label}>
+                Password *
               </label>
+              <div className={styles.passwordWrapper}>
+                <input
+                  id="password"
+                  className={styles.input}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (e.target.value.trim()) {
+                      setErrors((prev) => ({ ...prev, password: "" }));
+                    }
+                  }}
+                />
+                <span
+                  className={styles.toggleEye}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+                </span>
+              </div>
+              {errors.password && (
+                <span className={styles.error}>{errors.password}</span>
+              )}
             </div>
 
-            <div className={styles["form-license"]}>
-              <input
-                className={styles["form-license-input"]}
-                type="checkbox"
-                checked={agreePrivacy}
-                onChange={(e) => {
-                  setAgreePrivacy(e.target.checked);
-                  if (e.target.checked && agreeTerms) {
-                    setErrors((prev) => ({ ...prev, agreement: "" }));
-                  }
-                }}
-              />
-              <label htmlFor="" className={styles["form-license-text"]}>
-                I agree to join{" "}
-                <a className={styles["form-license-text-link"]} href="#">
-                  HUT REWARDS membership
-                </a>{" "}
-                and accept the{" "}
-                <a className={styles["form-license-text-link"]} href="#">
-                  terms, conditions and privacy policy of IE221
-                </a>
+            {/* Confirm Password */}
+            <div className={styles.formGroup}>
+              <label htmlFor="confirmPassword" className={styles.label}>
+                Confirm password *
               </label>
+              <div className={styles.passwordWrapper}>
+                <input
+                  id="confirmPassword"
+                  className={styles.input}
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (e.target.value.trim()) {
+                      setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+                    }
+                  }}
+                />
+                <span
+                  className={styles.toggleEye}
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                >
+                  {showConfirmPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+                </span>
+              </div>
+              {errors.confirmPassword && (
+                <span className={styles.error}>{errors.confirmPassword}</span>
+              )}
             </div>
 
-            {errors.agreement && (
-              <span className={styles.error}>{errors.agreement}</span>
+            {/* Terms and Conditions */}
+            <div className={styles.termsGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => {
+                    setAcceptedTerms(e.target.checked);
+                    if (e.target.checked) {
+                      setErrors((prev) => ({ ...prev, terms: "" }));
+                    }
+                  }}
+                  className={styles.checkbox}
+                />
+                <span>
+                  I have read and agree to the{" "}
+                  <Link to="/terms" className={styles.link}>
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" className={styles.link}>
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+              {errors.terms && (
+                <span className={styles.error}>{errors.terms}</span>
+              )}
+            </div>
+
+            {/* Server Error */}
+            {errors.server && (
+              <div className={styles.serverError}>{errors.server}</div>
             )}
-          </div>
 
-          {/* Server Error */}
-          {errors.server && (
-            <div className={styles.error} style={{ marginBottom: "1rem" }}>
-              {errors.server}
-            </div>
-          )}
+            {/* Submit Button */}
+            <button
+              className={`${styles.submitButton} ${
+                isFormValid() && !loading ? styles.active : ""
+              }`}
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Creating account..." : "Create Account"}
+            </button>
 
-          {/* Register Button */}
-          <button
-            className={`${styles["form-button"]} ${
-              isFormValid() && !loading ? styles["active"] : ""
-            }`}
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? "Registering..." : "Register"}
-          </button>
-
-          {/* Login Navigate */}
-          <div className={styles["form-navigate-login"]}>
-            <label htmlFor="" className={styles["form-navigate-text"]}>
+            {/* Login Link */}
+            <div className={styles.loginLink}>
               Already have an account?{" "}
-              <Link to="/login" className={styles["form-navigate-link"]}>
+              <Link to="/login" className={styles.link}>
                 Sign in
               </Link>
-            </label>
-          </div>
-        </form>
+            </div>
+          </form>
+        </div>
       </div>
+      <Footer />
     </>
   );
 };

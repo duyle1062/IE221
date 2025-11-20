@@ -204,6 +204,7 @@ DJOSER = {
     "EMAIL": {
         "activation": "apps.authentication.email.ActivationEmail",
         "password_reset": "apps.authentication.email.PasswordResetEmail",
+        "confirmation": "apps.authentication.email.ConfirmationEmail",
     },
     "SOCIAL_AUTH_TOKEN_STRATEGY": "djoser.social.token.jwt.TokenStrategy",
     "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": [
