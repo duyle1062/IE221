@@ -105,7 +105,11 @@ const LayoutAdmin: React.FC = () => {
         />
       </Box>
 
-      <Box className={styles.mainContent}>
+      <Box
+        className={`${styles.mainContent} ${
+          collapsed ? styles.mainContentCollapsed : ""
+        }`}
+      >
         <AppBar className={styles.appBar}>
           <Toolbar className={styles.toolbar}>
             <Box className={styles.userProfile} onClick={handleMenuClick}>

@@ -1,5 +1,5 @@
 .main {
-    background-color: #ffffff;
+    background-color: var(--text-color-white);
     flex-grow: 1;
     height: calc(100vh - 64px);
     overflow: auto;
@@ -63,6 +63,10 @@
     flex-direction: column;
   }
 
+  .mainContentCollapsed {
+    margin-left: 80px;
+}
+
   .appBar {
     z-index: 1100;
     height: 64px;
@@ -93,8 +97,7 @@
     position: fixed;
     top: 6px;
     z-index: 1300;
-    color: #fff;
-    background: #001529;
+    color: var(--text-color-white);
     border-radius: 4px;
     padding: 4px 8px;
   }
@@ -102,38 +105,38 @@
   :global(.ant-menu-dark),
 :global(.ant-menu-dark .ant-menu-sub),
 :global(.ant-menu-dark .ant-menu-submenu) {
-  background-color: #ff5900 !important;
+  background-color: var(--orange-button-bg) !important;
   height: 100%;
 }
 
 :global(.ant-menu-dark .ant-menu-item),
 :global(.ant-menu-dark .ant-menu-submenu-title) {
-  color: #ffffff !important; 
+  color: var(--text-color-white) !important; 
   font-weight: 400;
 }
 
 :global(.ant-menu-dark .ant-menu-item-selected),
 :global(.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title) {
-  background-color: #ffffff !important;
-  color: #ff5900 !important;
-  border-left: 4px solid #ff5900 !important;
+  background-color: var(--text-color-white) !important;
+  color: var(--orange-button-bg) !important;
+  border-left: 4px solid var(--orange-button-bg) !important;
 }
 
 :global(.ant-menu-dark .ant-menu-item-selected:hover) {
-  background-color: #ff9500 !important;
-  color: #ffffff !important;
+  background-color: var(--orange-medium-bg) !important;
+  color: var(--text-color-white) !important;
 }
 
 :global(.LayoutAdmin_toggleButton__znIfO) {
-  background-color: #ff5900 !important;
-  color: #fff !important;
+  background-color: var(--orange-button-bg) !important;
+  color: var(--text-color-white) !important;
   border-radius: 6px !important;
   transition: all 0.3s ease !important;
 }
 
 :global(.LayoutAdmin_toggleButton__znIfO):hover {
-  background-color: #ff9500 !important;
-  color: #fff !important;
+  background-color: var(--orange-medium-bg) !important;
+  color: var(--text-color-white) !important;
 }
 
 :global(.MuiPopover-paper) {
@@ -144,4 +147,9 @@
 
 :global(.ant-menu-inline-collapsed-tooltip) {
   display: none !important;
+}
+
+:global(.MuiAppBar-root) {
+  /* tui ko biết chọn màu nào cho thanh appbar hợp á, sau này sửa vô đây sau -color: ... !important;  */
+    border: none;
 }
