@@ -15,6 +15,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Checkout from "./pages/Checkout/Checkout";
 import OrderTracking from "./pages/OrderTracking/OrderTracking";
+import GroupOrder from "./pages/GroupOrder/GroupOrder";
 
 export default function App() {
   return (
@@ -28,8 +29,12 @@ export default function App() {
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/" element={<HomePage />} />
-          <Route path="/product/:categorySlug/:productSlug" element={<ProductDetailPage />} />
+          <Route
+            path="/product/:categorySlug/:productSlug"
+            element={<ProductDetailPage />}
+          />
           <Route path="/category/:slug" element={<Category />} />
+          <Route path="/group-order" element={<GroupOrder />} />
 
           {/* Protected Routes - Require Authentication */}
           <Route
