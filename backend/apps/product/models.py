@@ -88,4 +88,39 @@ class Ratings(models.Model):
         verbose_name = 'Rating'
         verbose_name_plural = 'Ratings'
         unique_together = ('product', 'user')
+
+
+class Interact(models.Model):
+    """Track user interactions with products (clicks, views)"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_column='user_id')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='product_id')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.user.email} interacted with {self.product.name}"
+    
+    class Meta:
+        db_table = 'interact'
+        verbose_name = 'Interaction'
+        verbose_name_plural = 'Interactions'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'product']),
+            models.Index(fields=['user', 'created_at']),
+        ]
+
+
+class Recommendation(models.Model):
+    """Store pre-computed recommendations for users"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, db_column='user_id', unique=True)
+    product_ids = models.JSONField(default=list)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Recommendations for {self.user.email}"
+    
+    class Meta:
+        db_table = 'recommendation'
+        verbose_name = 'Recommendation'
+        verbose_name_plural = 'Recommendations'
         

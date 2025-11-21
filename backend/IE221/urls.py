@@ -33,9 +33,13 @@ urlpatterns = [
     path("api/group-orders/", include("apps.orders.group_order_urls")),
     path("api/addresses/", include("apps.addresses.urls")),
     path("api/payments/", include("apps.payment.urls")),
+    # Recommendation system endpoints
+    path("api/", include("apps.product.recommendation_urls")),
+    # Admin endpoints
     path("api/admin/", include(admin_router.urls)),
     path("api/admin/", include("apps.orders.admin_urls")),
     path("api/admin/reports/", include("apps.orders.reports_urls")),
+    path("api/admin/", include("apps.product.admin_recommendation_urls")),
 ]
 
 # Catch-all for frontend - comment out if only using API

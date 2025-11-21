@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Category, ProductImage, Ratings
+from .models import Product, Category, ProductImage, Ratings, Interact, Recommendation
 from apps.users.models import UserAccount as User
 from .utils import s3_handler
 
@@ -143,3 +143,32 @@ class BulkConfirmUploadSerializer(serializers.Serializer):
                 raise serializers.ValidationError(f"Upload at index {idx} has invalid S3 key format")
 
         return value
+
+
+class InteractSerializer(serializers.ModelSerializer):
+    """Serializer for tracking product interactions"""
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = Interact
+        fields = ['id', 'user', 'user_email', 'product', 'product_name', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+
+
+class RecommendationSerializer(serializers.ModelSerializer):
+    """Serializer for user recommendations"""
+    products = serializers.SerializerMethodField()
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = Recommendation
+        fields = ['id', 'user', 'user_email', 'product_ids', 'products', 'updated_at']
+        read_only_fields = ['id', 'updated_at']
+    
+    def get_products(self, obj):
+        """Get full product details for recommended products"""
+        if not obj.product_ids:
+            return []
+        products = Product.objects.filter(id__in=obj.product_ids, is_active=True, available=True)
+        return ProductSerializer(products, many=True).data
