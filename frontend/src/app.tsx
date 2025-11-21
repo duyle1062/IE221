@@ -17,6 +17,13 @@ import Checkout from "./pages/Checkout/Checkout";
 import OrderTracking from "./pages/OrderTracking/OrderTracking";
 import GroupOrder from "./pages/GroupOrder/GroupOrder";
 
+import LayoutAdmin from "./components/LayoutAdmin/LayoutAdmin";
+import Dashboard from "./pages/Admin/Dashboard/Dashboard";
+import OrderManagement from "./pages/Admin/OrderManagement/OrderManagement";
+import ProductManagement from "./pages/Admin/ProductManagement/ProductManagement";
+import UserManagement from "./pages/Admin/UserManagement/UserManagement";
+import Reports from "./pages/Admin/Reports/Reports";
+
 export default function App() {
   return (
     <AuthProvider>
@@ -35,6 +42,15 @@ export default function App() {
           />
           <Route path="/category/:slug" element={<Category />} />
           <Route path="/group-order" element={<GroupOrder />} />
+
+          {/* Tui chưa hiểu đoạn phân quyền dưới á nên để tạm đường dẫn trang của Admin ở đây nha */}
+          <Route element={<LayoutAdmin />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/orders-admin" element={<OrderManagement />} />
+            <Route path="/products-admin" element={<ProductManagement />} />
+            <Route path="/users-admin" element={<UserManagement />} />
+            <Route path="/reports" element={<Reports />} />
+          </Route>
 
           {/* Protected Routes - Require Authentication */}
           <Route

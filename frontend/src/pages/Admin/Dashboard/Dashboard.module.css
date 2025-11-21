@@ -1,0 +1,173 @@
+.container {
+    padding: 28px;
+    background: linear-gradient(135deg, var(--background-light) 0%, var(--text-color-white) 100%);
+    border: 1px solid var(--border-color-light);
+    min-height: 100vh;
+    font-family: OpenSans, sans-serif;
+  }
+  
+  .pageTitle {
+    font-weight: 800 !important;
+    color: var(--text-color-dark);
+    margin-bottom: 32px !important;
+    font-size: 2.2rem !important;
+  }
+
+  .statsGrid {
+    margin-bottom: 32px;
+  }
+  
+  .statCard {
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px var(--shadow-light);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    transition: all 0.3s ease;
+    background: white;
+    height: 160px;
+    border: 1px solid var(--border-color-light);
+    width: 100%;
+  }
+  
+  .statCard:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 16px 35px var(--shadow-medium);
+  }
+  
+  .iconWrapper {
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .statIcon {
+    font-size: 38px !important;
+  }
+  .statCard:nth-child(2) {
+    width: max-content;
+
+  }
+
+  .statTitle {
+    font-size: 15px !important;
+    margin-bottom: 8px !important;
+    color: var(--text-color-medium);
+  }
+  
+  .statValue {
+    font-weight: 800 !important;
+    font-size: 1.4rem !important;
+  }
+
+  .chartCard,
+  .topProductsCard {
+    padding: 28px;
+    border-radius: 20px;
+    background: white;
+    box-shadow: 0 8px 25px var(--shadow-light);
+    border: 1px solid var(--border-color-light);
+  }
+  
+  .sectionTitle {
+    font-weight: 700 !important;
+    color: var(--text-color-dark);
+    margin-bottom: 24px !important;
+    font-size: 1.4rem !important;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--primary-color);
+    display: inline-block;
+  }
+
+  .topList {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  
+  .topItemWithImage {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--border-color-light);
+  }
+  
+  .topItemWithImage:last-child {
+    border-bottom: none;
+  }
+  
+  .rankBadge {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .rankBadge:nth-of-type(-n+3) {
+    background: linear-gradient(135deg, var(--yellow-button-bg), var(--pink-button-bg));
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  }
+  
+  .productImage {
+    width: 70px !important;
+    height: 70px !important;
+    border-radius: 12px !important;
+    object-fit: cover;
+    box-shadow: 0 4px 12px var(--shadow-light);
+    border: 2px solid var(--border-color-light);
+  }
+  
+  .productInfo {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .productName {
+    font-weight: 700 !important;
+    color: var(--text-color-dark-secondary);
+    margin-bottom: 4px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 15px !important;
+  }
+  
+  .productName:hover {
+    color: var(--primary-color);
+  }
+
+  :global(.recharts-tooltip) {
+    background: white !important;
+    border: 1px solid var(--border-color-light) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 25px var(--shadow-medium) !important;
+  }
+
+  @media (max-width: 1200px) {
+    .container { padding: 20px; }
+    .pageTitle { font-size: 1.9rem !important; }
+    .topItemWithImage { gap: 12px; }
+    .productImage { width: 60px !important; height: 60px !important; }
+  }
+  
+  @media (max-width: 768px) {
+    .statCard {
+      height: auto;
+      padding: 20px;
+      flex-direction: column;
+      text-align: center;
+    }
+    .iconWrapper { margin-bottom: 12px; }
+  }
