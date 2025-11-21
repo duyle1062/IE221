@@ -1,108 +1,110 @@
 .main {
-    background-color: var(--text-color-white);
-    flex-grow: 1;
-    height: calc(100vh - 64px);
-    overflow: auto;
-    padding: 24px;
-  }
-  
-  .ant-menu-item, .ant-menu-submenu-title {
-    font-size: 14px !important;
-    height: 52px !important;
-    line-height: 52px !important;
-    display: flex;
-    align-items: center;
-    box-sizing: border-box;
-    padding-right: 24px !important;
-    padding-left: 24px !important;
-  }
-  
-  .ant-menu-item .anticon, .ant-menu-submenu-title .anticon {
-    font-size: 22px !important;
-    margin-right: 16px !important;
-    min-width: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .ant-menu-sub .ant-menu-item {
-    font-size: 13px !important;
-    padding-left: 36px !important;
-    height: 40px !important;
-    line-height: 40px !important;
-  }
-
-  .ant-menu-sub .ant-menu-item .anticon {
-    font-size: 17px !important;
-    min-width: 22px;
-    margin-right: 12px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .sidebar {
-    width: 250px;
-    transition: width 0.2s;
-    position: fixed;
-    height: 100vh;
-    overflow-y: auto;
-    z-index: 1200;
-  }
-  
-  .sidebarCollapsed {
-    width: 80px;
-  }
-
-  .mainContent {
-    flex-grow: 1;
-    margin-left: 250px;
-    transition: margin-left 0.2s;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .mainContentCollapsed {
-    margin-left: 80px;
+  background-color: var(--text-color-white);
+  flex-grow: 1;
+  height: calc(100vh - 64px);
+  overflow: auto;
+  padding: 24px;
 }
 
-  .appBar {
-    z-index: 1100;
-    height: 64px;
-  }
+.ant-menu-item,
+.ant-menu-submenu-title {
+  font-size: 14px !important;
+  height: 52px !important;
+  line-height: 52px !important;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding-right: 24px !important;
+  padding-left: 24px !important;
+}
 
-  .toolbar {
-    min-height: 64px !important;
-    justify-content: flex-end;
-  }
+.ant-menu-item .anticon,
+.ant-menu-submenu-title .anticon {
+  font-size: 22px !important;
+  margin-right: 16px !important;
+  min-width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .userProfile {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-  }
+.ant-menu-sub .ant-menu-item {
+  font-size: 13px !important;
+  padding-left: 36px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
 
-  .userInfo {
-    margin-left: 1rem;
-  }
+.ant-menu-sub .ant-menu-item .anticon {
+  font-size: 17px !important;
+  min-width: 22px;
+  margin-right: 12px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .content {
-    flex-grow: 1;
-    margin-top: 64px;
-    padding: 24px;
-  }
+.sidebar {
+  width: 250px;
+  transition: width 0.2s;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 1200;
+}
 
-  .toggleButton {
-    position: fixed;
-    top: 6px;
-    z-index: 1300;
-    color: var(--text-color-white);
-    border-radius: 4px;
-    padding: 4px 8px;
-  }
+.sidebarCollapsed {
+  width: 80px;
+}
 
-  :global(.ant-menu-dark),
+.mainContent {
+  flex-grow: 1;
+  margin-left: 250px;
+  transition: margin-left 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.mainContentCollapsed {
+  margin-left: 80px;
+}
+
+.appBar {
+  z-index: 1100;
+  height: 64px;
+}
+
+.toolbar {
+  min-height: 64px !important;
+  justify-content: flex-end;
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.userInfo {
+  margin-left: 1rem;
+}
+
+.content {
+  flex-grow: 1;
+  margin-top: 64px;
+  padding: 24px;
+}
+
+.toggleButton {
+  position: fixed;
+  top: 6px;
+  z-index: 1300;
+  color: var(--text-color-white);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+:global(.ant-menu-dark),
 :global(.ant-menu-dark .ant-menu-sub),
 :global(.ant-menu-dark .ant-menu-submenu) {
   background-color: var(--orange-button-bg) !important;
@@ -111,7 +113,7 @@
 
 :global(.ant-menu-dark .ant-menu-item),
 :global(.ant-menu-dark .ant-menu-submenu-title) {
-  color: var(--text-color-white) !important; 
+  color: var(--text-color-white) !important;
   font-weight: 400;
 }
 
@@ -151,5 +153,5 @@
 
 :global(.MuiAppBar-root) {
   /* tui ko biết chọn màu nào cho thanh appbar hợp á, sau này sửa vô đây sau -color: ... !important;  */
-    border: none;
+  border: none;
 }
