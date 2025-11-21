@@ -14,6 +14,7 @@ from .serializers import (
     RatingSerializer, AdminProductListSerializer,
     BulkPresignedURLRequestSerializer, BulkConfirmUploadSerializer
 )
+from .recommendation_service import RecommendationService
 from .utils import s3_handler
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
@@ -177,6 +178,21 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
                 raise Gone("This product has been deleted.")
 
             return product
+    
+    def retrieve(self, request, *args, **kwargs):
+        """Override retrieve to track user interaction"""
+        instance = self.get_object()
+        
+        # Track interaction if user is authenticated
+        if request.user and request.user.is_authenticated:
+            try:
+                RecommendationService.track_interaction(request.user, instance)
+            except Exception as e:
+                # Don't fail the request if interaction tracking fails
+                print(f"Failed to track interaction: {e}")
+        
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):      
         instance = self.get_object()
