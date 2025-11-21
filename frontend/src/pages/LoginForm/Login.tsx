@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import styles from "./Login.module.css";
 import { Link, useNavigate } from "react-router-dom";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
+import { FaApple, FaGoogle } from "react-icons/fa";
 import Header from "../../components/Header/Header";
+import Footer from "../../components/Footer/Footer";
 import { useAuth } from "../../context/AuthContext";
 import { UserRole } from "../../services/auth.service";
 
@@ -38,39 +40,37 @@ const LoginForm: React.FC = () => {
       setLoading(true);
       try {
         await login(email, password);
-        
-        // Get user role and redirect accordingly
+
         const userStr = localStorage.getItem("user");
         if (userStr) {
           const user = JSON.parse(userStr);
           if (user.role === UserRole.ADMIN) {
-            navigate("/admin/dashboard"); // Redirect to admin dashboard
+            navigate("/admin/dashboard");
           } else {
-            navigate("/"); // Redirect to user homepage
+            navigate("/");
           }
         } else {
           navigate("/");
         }
       } catch (error: any) {
         console.error("Login error:", error);
-        
-        // Handle server errors
+
         if (error.response?.data) {
           const serverErrors = error.response.data;
-          
+
           if (serverErrors.detail) {
             setErrors({ server: serverErrors.detail });
           } else if (serverErrors.non_field_errors) {
-            setErrors({ 
+            setErrors({
               server: Array.isArray(serverErrors.non_field_errors)
                 ? serverErrors.non_field_errors[0]
-                : serverErrors.non_field_errors 
+                : serverErrors.non_field_errors
             });
           } else {
             setErrors({ server: "Invalid email or password" });
           }
         } else {
-          setErrors({ server: "Network error. Please try again later." });
+          setErrors({ server: "Your account does not exist. Please try again later." });
         }
       } finally {
         setLoading(false);
@@ -78,30 +78,45 @@ const LoginForm: React.FC = () => {
     }
   };
 
+  const handleSocialLogin = (provider: string) => {
+    // TODO: Implement OAuth login
+    console.log(`Login with ${provider}`);
+  };
+
   return (
     <>
       <Header />
       <div className={styles.container}>
-        {/* Form */}
-        <form
-          action=""
-          className={styles.wrapper}
-          onSubmit={handleSubmit}
-          noValidate
-        >
-          {/* Header */}
-          <h1 className={styles.header}>Sign in</h1>
+        {/* Left Side - Branding */}
+        <div className={styles.brandSection}>
+          <div className={styles.brandContent}>
+            <h1 className={styles.brandTitle}>
+              EASY TO ORDER
+              <br />
+              FAST DELIVERY
+            </h1>
+            <div className={styles.brandLogo}>
+              <div className={styles.logoPlaceholder}>LOGO</div>
+            </div>
+          </div>
+        </div>
 
-          {/* Email */}
-          <div className={styles["form-email"]}>
-            <label htmlFor="" className={styles["form-email-text"]}>
-              Email
-            </label>
-            <div className={styles["input-wrapper"]}>
+        {/* Right Side - Form */}
+        <div className={styles.formSection}>
+          <form className={styles.wrapper} onSubmit={handleSubmit} noValidate>
+            {/* Header */}
+            <h1 className={styles.header}>SIGN IN</h1>
+
+            {/* Email */}
+            <div className={styles.formGroup}>
+              <label htmlFor="email" className={styles.label}>
+                Your email address *
+              </label>
               <input
-                className={styles["form-email-input"]}
+                id="email"
+                className={styles.input}
                 type="email"
-                placeholder="Input your email address"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -110,76 +125,99 @@ const LoginForm: React.FC = () => {
                   }
                 }}
               />
+              {errors.email && (
+                <span className={styles.error}>{errors.email}</span>
+              )}
             </div>
-            {errors.email && (
-              <span className={styles.error}>{errors.email}</span>
-            )}
-          </div>
 
-          {/* Password */}
-          <div className={styles["form-password"]}>
-            <label htmlFor="" className={styles["form-password-text"]}>
-              Password
-            </label>
-            <div className={styles["input-wrapper"]}>
-              <input
-                className={styles["form-password-input"]}
-                type={showPassword ? "text" : "password"}
-                placeholder="Input your password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (e.target.value.trim()) {
-                    setErrors((prev) => ({ ...prev, password: "" }));
-                  }
-                }}
-              />
-              <span
-                className={styles["toggle-eye"]}
-                onClick={() => setShowPassword((prev) => !prev)}
+            {/* Password */}
+            <div className={styles.formGroup}>
+              <label htmlFor="password" className={styles.label}>
+                Password *
+              </label>
+              <div className={styles.passwordWrapper}>
+                <input
+                  id="password"
+                  className={styles.input}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (e.target.value.trim()) {
+                      setErrors((prev) => ({ ...prev, password: "" }));
+                    }
+                  }}
+                />
+                <span
+                  className={styles.toggleEye}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+                </span>
+              </div>
+              {errors.password && (
+                <span className={styles.error}>{errors.password}</span>
+              )}
+            </div>
+
+            {/* Forgot Password */}
+            <div className={styles.forgotPassword}>
+              <Link to="/forget-password">Forgot password?</Link>
+            </div>
+
+            {/* Server Error */}
+            {errors.server && (
+              <div className={styles.serverError}>{errors.server}</div>
+            )}
+
+            {/* Sign In Button */}
+            <button
+              className={`${styles.submitButton} ${
+                isFormValid() && !loading ? styles.active : ""
+              }`}
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+
+            {/* Divider */}
+            <div className={styles.divider}>
+              <span>Or continue with</span>
+            </div>
+
+            {/* Social Login Buttons */}
+            <div className={styles.socialButtons}>
+              <button
+                type="button"
+                className={`${styles.socialButton} ${styles.apple}`}
+                onClick={() => handleSocialLogin("apple")}
               >
-                {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
-              </span>
+                <FaApple className={styles.socialIcon} />
+                Sign in with Apple
+              </button>
+              <button
+                type="button"
+                className={`${styles.socialButton} ${styles.google}`}
+                onClick={() => handleSocialLogin("google")}
+              >
+                <FaGoogle className={styles.socialIcon} />
+                Sign in with Google
+              </button>
             </div>
-            {errors.password && (
-              <span className={styles.error}>{errors.password}</span>
-            )}
-          </div>
 
-          {/* Forgot Password */}
-          <div className={styles["form-forgot-password"]}>
-            <Link to="/forget-password">Forgot password</Link>
-          </div>
-
-          {/* Server Error */}
-          {errors.server && (
-            <div className={styles.error} style={{ marginBottom: "1rem" }}>
-              {errors.server}
-            </div>
-          )}
-
-          {/* Button */}
-          <button
-            className={`${styles["form-button"]} ${
-              isFormValid() && !loading ? styles["active"] : ""
-            }`}
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-
-          {/* Register Navigate */}
-          <div className={styles["form-navigate-register"]}>
-            <label htmlFor="" className={styles["form-navigate-text"]}>
-              Have no account?{" "}
-              <Link to="/register" className={styles["form-navigate-link"]}>
+            {/* Register Navigate */}
+            <div className={styles.registerLink}>
+              Don't have an account?{" "}
+              <Link to="/register" className={styles.link}>
                 Sign up
               </Link>
-            </label>
-          </div>
-        </form>
+            </div>
+          </form>
+        </div>
       </div>
+      <Footer />
     </>
   );
 };

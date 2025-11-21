@@ -17,6 +17,8 @@
   --text-color-dark: #333;
   --text-color-dark-secondary: #444;
   --text-color-medium: #555;
+  --text-color-gray: #666;
+  --text-color-light-gray: #999;
 
   --background-light: #f9f9f9;
   --background-hover-light: #f0f0f0;
@@ -24,6 +26,7 @@
 
   --border-color-light: #e0e0e0;
   --border-color-medium: #ccc;
+  --border-color-gray: #ddd;
   --border-color-lighter: #eee;
 
   --shadow-light: rgba(0, 0, 0, 0.05);
@@ -58,6 +61,28 @@
 
   --timeline-bg-grey: #e9ecef;
 
+  /* Login/Auth Page Colors */
+  --brand-red-primary: #e4002b;
+  --brand-red-dark: #c4001f;
+  --brand-red-darker: #c8102e;
+  --brand-red-hover: #ff1a3f;
+  --brand-gradient: linear-gradient(135deg, #e4002b 0%, #c4001f 100%);
+  
+  --button-green: #22c55e;
+  --button-green-hover: #16a34a;
+  --button-disabled: #ccc;
+  
+  --social-apple: #000;
+  --social-apple-hover: #333;
+  --social-google: #db4437;
+  --social-google-hover: #c23321;
+  
+  --error-bg: #fee;
+  --error-border: #e4002b;
+  --error-text: #e4002b;
+  
+  --input-border: #ddd;
+  --input-focus: #e4002b;
   --group-bg-light: #f8f9fa;
   --group-border-color: #e9ecef;
   --text-color-secondary: #6c757d;
