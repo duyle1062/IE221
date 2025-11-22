@@ -14,8 +14,10 @@ import Cart from "./pages/Cart/Cart";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Checkout from "./pages/Checkout/Checkout";
-import OrderTracking from "./pages/OrderTracking/OrderTracking";
+import OrderHistory from "./pages/OrderHistory/OrderTracking";
 import GroupOrder from "./pages/GroupOrder/GroupOrder";
+import PaymentResult from "./pages/PaymentResult/PaymentResult";
+import Orders from "./pages/Orders/Orders";
 
 import LayoutAdmin from "./components/LayoutAdmin/LayoutAdmin";
 import Dashboard from "./pages/Admin/Dashboard/Dashboard";
@@ -42,6 +44,7 @@ export default function App() {
           />
           <Route path="/category/:slug" element={<Category />} />
           <Route path="/group-order" element={<GroupOrder />} />
+          <Route path="/payment/result" element={<PaymentResult />} />
 
           {/* Tui chưa hiểu đoạn phân quyền dưới á nên để tạm đường dẫn trang của Admin ở đây nha */}
           <Route element={<LayoutAdmin />}>
@@ -81,7 +84,15 @@ export default function App() {
             path="/orders"
             element={
               <ProtectedRoute>
-                <OrderTracking />
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/order-history"
+            element={
+              <ProtectedRoute>
+                <OrderHistory />
               </ProtectedRoute>
             }
           />
