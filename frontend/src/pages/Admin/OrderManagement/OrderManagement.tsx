@@ -16,13 +16,10 @@ import {
   InputLabel,
   Pagination,
   SelectChangeEvent,
-  IconButton,
 } from "@mui/material";
-import { Sync as SyncIcon } from "@mui/icons-material";
 import { message } from "antd";
 import styles from "./OrderManagement.module.css";
 
-// ==================== ENUM ORDER STATUS ====================
 export enum OrderStatus {
   PENDING = "PENDING",
   PAID = "PAID",
@@ -33,18 +30,16 @@ export enum OrderStatus {
   CANCELLED = "CANCELLED",
 }
 
-// ==================== STATUS LABELS ====================
 const statusLabels: Record<OrderStatus, string> = {
-  [OrderStatus.PENDING]: "Chờ thanh toán",
-  [OrderStatus.PAID]: "Đã thanh toán",
-  [OrderStatus.CONFIRMED]: "Đã xác nhận",
-  [OrderStatus.PREPARING]: "Đang chuẩn bị",
-  [OrderStatus.READY]: "Sẵn sàng",
-  [OrderStatus.DELIVERED]: "Đã giao",
-  [OrderStatus.CANCELLED]: "Đã hủy",
+  [OrderStatus.PENDING]: "Pending Payment",
+  [OrderStatus.PAID]: "Paid",
+  [OrderStatus.CONFIRMED]: "Confirmed",
+  [OrderStatus.PREPARING]: "Preparing",
+  [OrderStatus.READY]: "Ready for Pickup",
+  [OrderStatus.DELIVERED]: "Delivered",
+  [OrderStatus.CANCELLED]: "Cancelled",
 };
 
-// ==================== STATUS COLORS (MUI CHIP) ====================
 const statusColors: Record<
   OrderStatus,
   "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"
@@ -58,7 +53,6 @@ const statusColors: Record<
   [OrderStatus.CANCELLED]: "error",
 };
 
-// ==================== MOCK DATA ====================
 const generateMockOrders = () => {
   const fixedOrders = [
     {
@@ -168,7 +162,6 @@ const generateMockOrders = () => {
   return [...fixedOrders, ...randomOrders];
 };
 
-// ==================== COMPONENT ====================
 const OrderManagement: React.FC = () => {
   const [orders, setOrders] = useState(generateMockOrders());
   const [filteredOrders, setFilteredOrders] = useState(orders);
@@ -177,7 +170,6 @@ const OrderManagement: React.FC = () => {
 
   const itemsPerPage = 15;
 
-  // Filter orders
   useEffect(() => {
     const filtered =
       statusFilter === "all"
@@ -188,14 +180,12 @@ const OrderManagement: React.FC = () => {
     setPage(1);
   }, [statusFilter, orders]);
 
-  // Pagination
   const paginatedOrders = filteredOrders.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
 
-  // Change Status
   const handleStatusChange = (orderId: number, newStatus: OrderStatus) => {
     setOrders((prev) =>
       prev.map((order) =>
@@ -227,19 +217,19 @@ const OrderManagement: React.FC = () => {
   return (
     <Box className={styles.container}>
       <Typography variant="h4" className={styles.pageTitle}>
-        Quản lý đơn hàng
+        Order Management
       </Typography>
 
       <Paper className={styles.filterBar}>
         <Box className={styles.filterLeft}>
           <FormControl size="small" className={styles.statusFilter}>
-            <InputLabel>Trạng thái</InputLabel>
+            <InputLabel>Status</InputLabel>
             <Select
               value={statusFilter}
-              label="Trạng thái"
+              label="Status"
               onChange={handleFilterChange}
             >
-              <MenuItem value="all">Tất cả đơn hàng</MenuItem>
+              <MenuItem value="all">All Orders</MenuItem>
               {Object.values(OrderStatus).map((s) => (
                 <MenuItem key={s} value={s}>
                   {statusLabels[s]}
@@ -249,8 +239,8 @@ const OrderManagement: React.FC = () => {
           </FormControl>
         </Box>
 
-        <Typography variant="body2" color="text.secondary">
-          Hiển thị {paginatedOrders.length} / {filteredOrders.length} đơn hàng
+        <Typography variant="body2" color="text.secondary" fontWeight="medium">
+          Total: {filteredOrders.length} orders
         </Typography>
       </Paper>
 
@@ -258,15 +248,15 @@ const OrderManagement: React.FC = () => {
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell className={styles.tableHeader}>Mã đơn</TableCell>
-              <TableCell className={styles.tableHeader}>Khách hàng</TableCell>
-              <TableCell className={styles.tableHeader}>Loại</TableCell>
-              <TableCell className={styles.tableHeader}>Tổng tiền</TableCell>
-              <TableCell className={styles.tableHeader}>Thanh toán</TableCell>
-              <TableCell className={styles.tableHeader}>Thời gian</TableCell>
-              <TableCell className={styles.tableHeader}>Trạng thái</TableCell>
+              <TableCell className={styles.tableHeader}>Order ID</TableCell>
+              <TableCell className={styles.tableHeader}>Customer</TableCell>
+              <TableCell className={styles.tableHeader}>Type</TableCell>
+              <TableCell className={styles.tableHeader}>Total</TableCell>
+              <TableCell className={styles.tableHeader}>Payment</TableCell>
+              <TableCell className={styles.tableHeader}>Created At</TableCell>
+              <TableCell className={styles.tableHeader}>Status</TableCell>
               <TableCell className={styles.tableHeader} align="center">
-                Cập nhật trạng thái
+                Update Status
               </TableCell>
             </TableRow>
           </TableHead>
@@ -290,7 +280,7 @@ const OrderManagement: React.FC = () => {
 
                 <TableCell>
                   <Chip
-                    label={order.type === "DELIVERY" ? "Giao hàng" : "Tại quán"}
+                    label={order.type === "DELIVERY" ? "Delivery" : "Pickup"}
                     size="small"
                     variant="outlined"
                     color={order.type === "DELIVERY" ? "info" : "default"}
