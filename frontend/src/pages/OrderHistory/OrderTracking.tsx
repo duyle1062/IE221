@@ -204,9 +204,10 @@ const OrderTracking: React.FC = () => {
     const currentStepIndex = getStepIndex(selectedOrder.status);
     const isCancelled = selectedOrder.status === "Cancelled";
 
+    // Fixed calculation: fills up to the center of the active step
     const progressPercent = isCancelled
       ? 0
-      : (currentStepIndex / (ORDER_STEPS.length - 1)) * 100;
+      : ((currentStepIndex + 1) / ORDER_STEPS.length) * 100;
 
     return (
       <div className={styles.detailContainer}>
