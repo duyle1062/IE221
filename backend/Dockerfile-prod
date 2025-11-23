@@ -1,5 +1,5 @@
 # 1. Builder stage
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 WORKDIR /app
 
 # System dependencies for PostgreSQL and netcat (for entrypoint wait)
