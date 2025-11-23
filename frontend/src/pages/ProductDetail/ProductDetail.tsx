@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import StarRating from "../../components/StarRating/StarRating";
 import cartService from "../../services/cart.service";
 import productService from "../../services/product.service";
 import ratingService from "../../services/rating.service";
+import { addGroupOrderItem } from "../../services/groupOrder.service";
 import { useAuth } from "../../context/AuthContext";
 import {
   ProductDetailResponse,
@@ -15,57 +17,35 @@ import styles from "./ProductDetail.module.css";
 import { FaUsers } from "react-icons/fa";
 
 const ProductDetailPage: React.FC = () => {
-  // Thêm logic kiểm tra group hiện tại khi nhấn Add To Group Order
-  const handleAddToGroupOrder = () => {
-    const groupOrderRaw = localStorage.getItem("groupOrder");
-    let groupOrder = null;
-    try {
-      groupOrder = groupOrderRaw ? JSON.parse(groupOrderRaw) : null;
-    } catch {
-      groupOrder = null;
-    }
+  // Add to group order using real API
+  const handleAddToGroupOrder = async () => {
+    const activeGroupOrderId = localStorage.getItem("activeGroupOrderId");
 
-    if (!groupOrder) {
-      // Chưa có group, chuyển sang trang group order để tạo/join
+    if (!activeGroupOrderId) {
+      // No active group, navigate to group order page
+      toast.info("Please create or join a group order first");
       navigate("/group-order");
       return;
     }
 
-    // Đã có group, thêm món vào group item của user hiện tại
-    // Giả lập thêm vào localStorage, thực tế nên gọi API
-    const currentUserId = groupOrder.currentUser?.id || groupOrder.creator_id;
-    const currentUserName = groupOrder.currentUser?.name || "Bạn";
-    const productName = product?.name || "";
-    const unitPrice = Number(product?.price) || 0;
-    if (!productName || !currentUserId) {
-      alert("Không thể thêm sản phẩm vào group order!");
+    if (!product?.id) {
+      toast.error("Product information not available");
       return;
     }
-    // Tìm item của user hiện tại và sản phẩm này
-    const existedIdx = groupOrder.items.findIndex(
-      (item: any) =>
-        item.user_id === currentUserId && item.product_name === productName
-    );
-    if (existedIdx !== -1) {
-      // Tăng số lượng
-      groupOrder.items[existedIdx].quantity += quantity;
-      groupOrder.items[existedIdx].line_total =
-        Number(groupOrder.items[existedIdx].quantity) * unitPrice;
-    } else {
-      // Thêm mới
-      groupOrder.items.push({
-        id: Math.floor(Math.random() * 100000),
-        user_id: currentUserId,
-        user_name: currentUserName,
-        product_name: productName,
-        quantity,
-        unit_price: unitPrice,
-        line_total: Number(quantity) * unitPrice,
+
+    try {
+      setIsAddingToCart(true);
+      await addGroupOrderItem(parseInt(activeGroupOrderId), {
+        product_id: product.id,
+        quantity: quantity,
       });
+      toast.success(`Added ${quantity} ${product.name} to group order!`);
+      setQuantity(1);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add item to group order");
+    } finally {
+      setIsAddingToCart(false);
     }
-    localStorage.setItem("groupOrder", JSON.stringify(groupOrder));
-    alert(`Đã thêm ${quantity} ${productName} vào Group Order!`);
-    setQuantity(1);
   };
   const { categorySlug, productSlug } = useParams<{
     categorySlug: string;

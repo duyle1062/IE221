@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import styles from "./GroupOrder.module.css";
 import {
   FaUsers,
@@ -11,58 +12,116 @@ import {
   FaPlus,
   FaChevronDown,
   FaChevronUp,
+  FaMoneyBill,
+  FaCreditCard,
+  FaWallet,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
-
-interface GroupOrderMember {
-  id: number;
-  name: string;
-  joined_at: string;
-  is_creator: boolean;
-}
-
-interface GroupOrderItem {
-  id: number;
-  user_id: number;
-  user_name: string;
-  product_name: string;
-  unit_price: number;
-  quantity: number;
-  line_total: number;
-}
-
-interface GroupOrderData {
-  id: number;
-  code: string;
-  creator_id: number;
-  status: "Pending" | "Confirmed" | "Cancelled";
-  members: GroupOrderMember[];
-  items: GroupOrderItem[];
-}
+import {
+  createGroupOrder,
+  joinGroupOrder,
+  getGroupOrderDetail,
+  updateGroupOrderItem,
+  removeGroupOrderItem,
+  placeGroupOrder,
+  leaveGroupOrder,
+  removeMember,
+} from "../../services/groupOrder.service";
+import { GroupOrder as GroupOrderData } from "../../types/groupOrder.types";
+import { useAuth } from "../../context/AuthContext";
+import addressService, { Address } from "../../services/address.service";
 
 const GroupOrder: React.FC = () => {
-  useEffect(() => {
-    if (!groupData) {
-      const groupOrderRaw = localStorage.getItem("groupOrder");
-      if (groupOrderRaw) {
-        try {
-          const groupOrder = JSON.parse(groupOrderRaw);
-          setGroupData(groupOrder);
-          setViewMode("active");
-        } catch {}
-      }
-    }
-  }, []);
   const navigate = useNavigate();
-
-  const currentUser = { id: 1, name: "Nguyen Van A" };
+  const { user } = useAuth();
 
   const [viewMode, setViewMode] = useState<"selection" | "active">("selection");
   const [joinCode, setJoinCode] = useState("");
   const [groupData, setGroupData] = useState<GroupOrderData | null>(null);
-
+  const [loading, setLoading] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     {}
   );
+  const [paymentMethod, setPaymentMethod] = useState<
+    "CASH" | "CARD" | "WALLET" | "THIRD_PARTY"
+  >("CASH");
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null
+  );
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+
+  // Load group order and addresses from localStorage on mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        const storedGroupOrderId = localStorage.getItem("activeGroupOrderId");
+        if (storedGroupOrderId && !groupData) {
+          await loadGroupOrder(parseInt(storedGroupOrderId));
+        }
+
+        // Load addresses
+        const addressData = await addressService.getAddresses();
+        setAddresses(addressData);
+        const defaultAddress =
+          addressData.find((a) => a.is_default) || addressData[0];
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+        }
+      } catch (error: any) {
+        console.error("Failed to load initial data:", error);
+      }
+    };
+    loadInitialData();
+  }, []);
+
+  // Poll for updates when in active mode
+  useEffect(() => {
+    if (viewMode === "active" && groupData) {
+      const interval = setInterval(() => {
+        loadGroupOrder(groupData.id, true);
+      }, 5000); // Poll every 5 seconds
+      return () => clearInterval(interval);
+    }
+  }, [viewMode, groupData?.id]);
+
+  const loadGroupOrder = async (groupOrderId: number, silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      const data = await getGroupOrderDetail(groupOrderId);
+
+      // Check if group order is still active (PENDING)
+      if (data.status !== "PENDING") {
+        // Always redirect and clear, even in silent mode
+        localStorage.removeItem("activeGroupOrderId");
+        setGroupData(null);
+        setViewMode("selection");
+
+        // Show toast message based on status
+        if (data.status === "PAID") {
+          toast.success("Group order has been finalized and paid!");
+        } else if (data.status === "CANCELLED") {
+          toast.warning("This group order has been cancelled");
+        } else {
+          toast.info("This group order has been completed");
+        }
+        return;
+      }
+
+      setGroupData(data);
+      setViewMode("active");
+      localStorage.setItem("activeGroupOrderId", groupOrderId.toString());
+    } catch (error: any) {
+      if (!silent) {
+        toast.error(error.message || "Failed to load group order");
+        localStorage.removeItem("activeGroupOrderId");
+        setGroupData(null);
+        setViewMode("selection");
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return (
@@ -77,208 +136,180 @@ const GroupOrder: React.FC = () => {
     }));
   };
 
-  const handleCreateGroup = () => {
-    const newGroup: GroupOrderData = {
-      id: Math.floor(Math.random() * 10000),
-      code: "JOLLI" + Math.floor(Math.random() * 1000),
-      creator_id: currentUser.id,
-      status: "Pending",
-      members: [
-        {
-          id: currentUser.id,
-          name: currentUser.name,
-          joined_at: new Date().toISOString(),
-          is_creator: true,
-        },
-      ],
-      items: [],
-    };
-    setGroupData(newGroup);
-    setViewMode("active");
-    localStorage.setItem(
-      "groupOrder",
-      JSON.stringify({ ...newGroup, currentUser })
-    );
+  const handleCreateGroup = async () => {
+    try {
+      setLoading(true);
+      const newGroup = await createGroupOrder();
+      setGroupData(newGroup);
+      setViewMode("active");
+      localStorage.setItem("activeGroupOrderId", newGroup.id.toString());
+      toast.success(`Group created! Code: ${newGroup.code}`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create group order");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleJoinGroup = (e: React.FormEvent) => {
+  const handleJoinGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!joinCode.trim()) {
-      alert("Please enter a code.");
+      toast.error("Please enter a code.");
       return;
     }
-    const mockExistingGroup: GroupOrderData = {
-      id: 999,
-      code: joinCode.toUpperCase(),
-      creator_id: 99,
-      status: "Pending",
-      members: [
-        {
-          id: 99,
-          name: "Admin User",
-          joined_at: "2023-11-01",
-          is_creator: true,
-        },
-        {
-          id: currentUser.id,
-          name: currentUser.name,
-          joined_at: new Date().toISOString(),
-          is_creator: false,
-        },
-      ],
-      items: [
-        {
-          id: 101,
-          user_id: 99,
-          user_name: "Admin User",
-          product_name: "Chicken Bucket",
-          quantity: 1,
-          unit_price: 150000,
-          line_total: 150000,
-        },
-        {
-          id: 102,
-          user_id: 99,
-          user_name: "Admin User",
-          product_name: "Spaghetti Medium",
-          quantity: 1,
-          unit_price: 35000,
-          line_total: 35000,
-        },
-        {
-          id: 103,
-          user_id: currentUser.id,
-          user_name: currentUser.name,
-          product_name: "Spaghetti Medium",
-          quantity: 2,
-          unit_price: 35000,
-          line_total: 70000,
-        },
-      ],
-    };
-    setGroupData(mockExistingGroup);
-    setViewMode("active");
-    localStorage.setItem(
-      "groupOrder",
-      JSON.stringify({ ...mockExistingGroup, currentUser })
-    );
+    try {
+      setLoading(true);
+      const response = await joinGroupOrder({ code: joinCode.toUpperCase() });
+      setGroupData(response.group_order);
+      setViewMode("active");
+      localStorage.setItem(
+        "activeGroupOrderId",
+        response.group_order.id.toString()
+      );
+      toast.success(response.message || "Successfully joined group order!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to join group order");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleRemoveMember = (memberId: number) => {
+  const handleRemoveMember = async (memberId: number, memberName: string) => {
     if (!groupData) return;
-    if (window.confirm("Are you sure you want to remove this member?")) {
-      setGroupData((prev) => {
-        if (!prev) return null;
-        const updatedMembers = prev.members.filter((m) => m.id !== memberId);
-        const updatedItems = prev.items.filter((i) => i.user_id !== memberId);
-        return { ...prev, members: updatedMembers, items: updatedItems };
-      });
+
+    if (
+      !window.confirm(
+        `Remove ${memberName} from the group? Their items will be deleted.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await removeMember(groupData.id, memberId);
+      await loadGroupOrder(groupData.id, true);
+      toast.success(`${memberName} removed from group`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove member");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpdateQuantity = (itemId: number, change: number) => {
-    setGroupData((prev) => {
-      if (!prev) return null;
-      const updatedItems = prev.items.map((item) => {
-        if (item.id === itemId) {
-          const newQty = item.quantity + change;
-          if (newQty < 1) return item;
-          return {
-            ...item,
-            quantity: newQty,
-            line_total: newQty * item.unit_price,
-          };
-        }
-        return item;
-      });
-      return { ...prev, items: updatedItems };
-    });
-  };
-
-  const handleRemoveItem = (itemId: number) => {
-    if (window.confirm("Remove this item?")) {
-      setGroupData((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          items: prev.items.filter((item) => item.id !== itemId),
-        };
-      });
-    }
-  };
-
-  const handleFinalizeOrder = () => {
+  const handleUpdateQuantity = async (itemId: number, change: number) => {
     if (!groupData) return;
-    if (window.confirm(`Finalize this group order?`)) {
-      console.log("Finalizing:", groupData);
-      navigate("/checkout");
+
+    const item = groupData.items.find((i) => i.id === itemId);
+    if (!item) return;
+
+    const newQty = item.quantity + change;
+    if (newQty < 1) return;
+
+    try {
+      await updateGroupOrderItem(groupData.id, itemId, { quantity: newQty });
+      // Reload to get updated data
+      await loadGroupOrder(groupData.id, true);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update quantity");
     }
   };
 
-  useEffect(() => {
-    if (viewMode === "active" && groupData) {
-      const interval = setInterval(() => {
-        if (Math.random() > 0.9) {
-          setGroupData((prev) => {
-            if (!prev) return null;
-            const memberExists = prev.members.find((m) => m.id === 2);
-            const updatedMembers = memberExists
-              ? prev.members
-              : [
-                  ...prev.members,
-                  {
-                    id: 2,
-                    name: "Tran Van B",
-                    joined_at: new Date().toISOString(),
-                    is_creator: false,
-                  },
-                ];
-            const items = prev.items.slice();
-            const existedIdx = items.findIndex(
-              (item) =>
-                item.user_id === 2 && item.product_name === "Spaghetti Medium"
-            );
-            if (existedIdx !== -1 && items[existedIdx]) {
-              const existed = items[existedIdx];
-              items[existedIdx] = {
-                id: existed.id,
-                user_id: existed.user_id,
-                user_name: existed.user_name,
-                product_name: existed.product_name,
-                unit_price: existed.unit_price,
-                quantity: existed.quantity + 1,
-                line_total: (existed.quantity + 1) * existed.unit_price,
-              };
-            } else {
-              items.push({
-                id: Math.floor(Math.random() * 100000),
-                user_id: 2,
-                user_name: "Tran Van B",
-                product_name: "Spaghetti Medium",
-                quantity: 1,
-                unit_price: 35000,
-                line_total: 35000,
-              });
-            }
-            return {
-              ...prev,
-              members: updatedMembers,
-              items,
-            };
-          });
-        }
-      }, 5000);
-      return () => clearInterval(interval);
+  const handleRemoveItem = async (itemId: number) => {
+    if (!groupData) return;
+    if (!window.confirm("Remove this item?")) return;
+
+    try {
+      await removeGroupOrderItem(groupData.id, itemId);
+      await loadGroupOrder(groupData.id, true);
+      toast.success("Item removed");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove item");
     }
-  }, [groupData, viewMode]);
+  };
+
+  const handleFinalizeOrder = async () => {
+    if (!groupData) return;
+
+    if (!selectedAddressId) {
+      toast.error("Please select a delivery address");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const orderData = {
+        address_id: selectedAddressId,
+        payment_method: paymentMethod,
+        type: "DELIVERY" as const,
+        delivery_fee: 20000,
+        discount: 0,
+      };
+
+      const response = await placeGroupOrder(groupData.id, orderData);
+
+      // Clear localStorage before any redirect/navigation
+      localStorage.removeItem("activeGroupOrderId");
+
+      // If CARD payment, redirect to VNPAY
+      if (paymentMethod === "CARD" && response.payment?.payment_url) {
+        window.location.href = response.payment.payment_url;
+      } else {
+        toast.success(response.message || "Group order placed successfully!");
+        setTimeout(() => {
+          navigate("/orders");
+        }, 1500);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to place order");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!groupData) return;
+
+    const isCreator = groupData.creator_id === user?.id;
+    const message = isCreator
+      ? "As creator, leaving will cancel the group order for everyone. Continue?"
+      : "Are you sure you want to leave this group?";
+
+    if (window.confirm(message)) {
+      try {
+        setLoading(true);
+        const response = await leaveGroupOrder(groupData.id);
+
+        localStorage.removeItem("activeGroupOrderId");
+        setGroupData(null);
+        setViewMode("selection");
+
+        if (response.cancelled) {
+          toast.success("Group order cancelled");
+        } else {
+          toast.success(response.message || "Left group order");
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Failed to leave group order");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   const totalAmount =
-    groupData?.items.reduce((acc, item) => acc + item.line_total, 0) || 0;
-  const isCreator = groupData?.creator_id === currentUser.id;
+    groupData?.items
+      ?.filter((item) => item.is_active)
+      .reduce((acc, item) => acc + (Number(item.line_total) || 0), 0) || 0;
+  const isCreator = groupData?.creator_id === user?.id;
 
   const renderSelection = () => (
     <div className={styles.selectionContainer}>
-      <div className={styles.selectionCard} onClick={handleCreateGroup}>
+      <div
+        className={styles.selectionCard}
+        onClick={!loading ? handleCreateGroup : undefined}
+      >
         <div className={styles.iconWrapper}>
           <FaUserPlus />
         </div>
@@ -286,7 +317,9 @@ const GroupOrder: React.FC = () => {
         <p className={styles.cardDesc}>
           Host a party! Get a code and share it with your friends.
         </p>
-        <button className={styles.btnPrimary}>Create Now</button>
+        <button className={styles.btnPrimary} disabled={loading}>
+          {loading ? "Creating..." : "Create Now"}
+        </button>
       </div>
       <div className={styles.selectionCard}>
         <div className={styles.iconWrapper}>
@@ -302,10 +335,15 @@ const GroupOrder: React.FC = () => {
             placeholder="ENTER CODE"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
+            disabled={loading}
           />
-          <button type="submit" className={styles.btnPrimary}>
+          <button
+            type="submit"
+            className={styles.btnPrimary}
+            disabled={loading}
+          >
             <div className={styles.buttonContent}>
-              Join <FaArrowRight />
+              {loading ? "Joining..." : "Join"} <FaArrowRight />
             </div>
           </button>
         </form>
@@ -313,23 +351,28 @@ const GroupOrder: React.FC = () => {
     </div>
   );
 
-  const handleLeaveGroup = () => {
-    const message = isCreator
-      ? "Leaving will disband the group for everyone locally. Continue?"
-      : "Are you sure you want to leave this group?";
-
-    if (window.confirm(message)) {
-      localStorage.removeItem("groupOrder");
-      window.location.reload();
-    }
-  };
-
   const renderDashboard = () => {
     if (!groupData) return null;
-    const userItemsMap: Record<number, GroupOrderItem[]> = {};
-    groupData.items.forEach((item) => {
+
+    const activeItems = groupData.items?.filter((item) => item.is_active) || [];
+    const userItemsMap: Record<number, typeof activeItems> = {};
+
+    // Map items by user_id (not member.id)
+    activeItems.forEach((item) => {
       if (!userItemsMap[item.user_id]) userItemsMap[item.user_id] = [];
       userItemsMap[item.user_id]?.push(item);
+    });
+
+    // Create user lookup map from members for easy access
+    const userLookup: Record<number, any> = {};
+    groupData.members.forEach((member) => {
+      // Find the corresponding user_id by matching email
+      const matchingItem = activeItems.find(
+        (item) => item.user_email === member.user_email
+      );
+      if (matchingItem) {
+        userLookup[matchingItem.user_id] = member;
+      }
     });
 
     return (
@@ -350,20 +393,21 @@ const GroupOrder: React.FC = () => {
             <h4>Members ({groupData.members.length})</h4>
             {groupData.members.map((m) => (
               <div key={m.id} className={styles.memberItem}>
-                <div className={styles.avatar}>{m.name.charAt(0)}</div>
+                <div className={styles.avatar}>{m.user_name.charAt(0)}</div>
                 <div className={styles.memberInfo}>
                   <span className={styles.memberName}>
-                    {m.name} {m.id === currentUser.id && "(You)"}
+                    {m.user_name} {m.user_email === user?.email && "(You)"}
                   </span>
                   {m.is_creator && (
                     <span className={styles.hostBadge}>HOST</span>
                   )}
                 </div>
-                {isCreator && m.id !== currentUser.id && (
+                {isCreator && !m.is_creator && m.user_email !== user?.email && (
                   <button
                     className={styles.iconBtnDelete}
-                    onClick={() => handleRemoveMember(m.id)}
+                    onClick={() => handleRemoveMember(m.id, m.user_name)}
                     title="Remove Member"
+                    disabled={loading}
                   >
                     <FaTrash />
                   </button>
@@ -375,7 +419,7 @@ const GroupOrder: React.FC = () => {
 
         <div className={styles.itemsContainer}>
           <div className={styles.sectionTitle}>
-            <span>Group Items ({groupData.items.length})</span>
+            <span>Group Items ({activeItems.length})</span>
             <button
               className={styles.addItemBtn}
               onClick={() => navigate("/category/pizza")}
@@ -383,22 +427,32 @@ const GroupOrder: React.FC = () => {
               + Add Item
             </button>
           </div>
-          {groupData.members.map((user) => {
-            const userItems = userItemsMap[user.id] || [];
-            const userTotal = userItems.reduce(
-              (sum, i) => sum + i.line_total,
+          {Object.entries(userItemsMap).map(([userId, items]) => {
+            const userIdNum = parseInt(userId);
+            const firstItem = items[0];
+            if (!firstItem) return null;
+
+            const userName = firstItem.user_name;
+            const userEmail = firstItem.user_email;
+            const userTotal = items.reduce(
+              (sum, i) => sum + (Number(i.line_total) || 0),
               0
             );
-            const isExpanded = expandedItems[`user_${user.id}`];
+            const isExpanded = expandedItems[`user_${userId}`];
+
             return (
-              <div key={user.id} className={styles.userGroupCard}>
+              <div key={userId} className={styles.userGroupCard}>
                 <div
                   className={styles.userGroupHeader}
-                  onClick={() => toggleExpand(`user_${user.id}`)}
+                  onClick={() => toggleExpand(`user_${userId}`)}
                 >
                   <div className={styles.userGroupMainInfo}>
-                    <div className={styles.avatar}>{user.name.charAt(0)}</div>
-                    <span className={styles.userGroupName}>{user.name}</span>
+                    <div className={styles.avatar}>
+                      {userName?.charAt(0) || "?"}
+                    </div>
+                    <span className={styles.userGroupName}>
+                      {userName} {userEmail === user?.email && "(You)"}
+                    </span>
                   </div>
                   <div className={styles.userGroupMeta}>
                     <span className={styles.groupPrice}>
@@ -411,22 +465,23 @@ const GroupOrder: React.FC = () => {
                 </div>
                 {isExpanded && (
                   <div className={styles.userGroupDetails}>
-                    {userItems.length === 0 ? (
+                    {items.length === 0 ? (
                       <p className={styles.emptyStateText}>No items.</p>
                     ) : (
-                      userItems.map((item) => (
+                      items.map((item) => (
                         <div key={item.id} className={styles.detailRow}>
                           <div className={styles.detailProduct}>
                             <span>{item.product_name}</span>
                           </div>
                           <div className={styles.detailControls}>
                             <div className={styles.qtyControl}>
-                              {item.user_id === currentUser.id ? (
+                              {item.user_email === user?.email || isCreator ? (
                                 <>
                                   <button
                                     onClick={() =>
                                       handleUpdateQuantity(item.id, -1)
                                     }
+                                    disabled={loading}
                                   >
                                     <FaMinus />
                                   </button>
@@ -435,6 +490,7 @@ const GroupOrder: React.FC = () => {
                                     onClick={() =>
                                       handleUpdateQuantity(item.id, 1)
                                     }
+                                    disabled={loading}
                                   >
                                     <FaPlus />
                                   </button>
@@ -446,10 +502,11 @@ const GroupOrder: React.FC = () => {
                             <div className={styles.priceTag}>
                               {formatCurrency(item.line_total)}
                             </div>
-                            {item.user_id === currentUser.id && (
+                            {(item.user_email === user?.email || isCreator) && (
                               <button
                                 className={styles.itemDeleteBtn}
                                 onClick={() => handleRemoveItem(item.id)}
+                                disabled={loading}
                               >
                                 <FaTrash />
                               </button>
@@ -473,9 +530,7 @@ const GroupOrder: React.FC = () => {
           </div>
           <div className={styles.summaryRow}>
             <span>Total Items</span>
-            <span>
-              {groupData.items.reduce((sum, i) => sum + i.quantity, 0)}
-            </span>
+            <span>{activeItems.reduce((sum, i) => sum + i.quantity, 0)}</span>
           </div>
           <div className={styles.summaryTotal}>
             <span>Total</span>
@@ -485,12 +540,91 @@ const GroupOrder: React.FC = () => {
           </div>
           {isCreator ? (
             <>
+              {/* Delivery Address Selection */}
+              <div className={styles.checkoutSection}>
+                <div className={styles.sectionHeader}>
+                  <FaMapMarkerAlt />
+                  <span>Delivery Address</span>
+                </div>
+                {addresses.length > 0 ? (
+                  <select
+                    className={styles.selectInput}
+                    value={selectedAddressId || ""}
+                    onChange={(e) =>
+                      setSelectedAddressId(Number(e.target.value))
+                    }
+                  >
+                    {addresses.map((addr) => (
+                      <option key={addr.id} value={addr.id}>
+                        {addr.street}, {addr.ward}, {addr.province}
+                        {addr.is_default && " (Default)"}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <button
+                    className={styles.addAddressBtn}
+                    onClick={() => navigate("/userprofile")}
+                  >
+                    + Add Address
+                  </button>
+                )}
+              </div>
+
+              {/* Payment Method Selection */}
+              <div className={styles.checkoutSection}>
+                <div className={styles.sectionHeader}>
+                  <FaMoneyBill />
+                  <span>Payment Method</span>
+                </div>
+                <div className={styles.paymentOptions}>
+                  <label className={styles.paymentOption}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="CASH"
+                      checked={paymentMethod === "CASH"}
+                      onChange={() => setPaymentMethod("CASH")}
+                    />
+                    <span>
+                      <FaMoneyBill /> Cash on Delivery
+                    </span>
+                  </label>
+                  <label className={styles.paymentOption}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="CARD"
+                      checked={paymentMethod === "CARD"}
+                      onChange={() => setPaymentMethod("CARD")}
+                    />
+                    <span>
+                      <FaCreditCard /> Card (VNPAY)
+                    </span>
+                  </label>
+                  <label className={styles.paymentOption}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="WALLET"
+                      checked={paymentMethod === "WALLET"}
+                      onChange={() => setPaymentMethod("WALLET")}
+                    />
+                    <span>
+                      <FaWallet /> E-Wallet
+                    </span>
+                  </label>
+                </div>
+              </div>
+
               <button
                 className={styles.finalizeBtn}
                 onClick={handleFinalizeOrder}
+                disabled={loading || activeItems.length === 0}
               >
                 <div className={styles.buttonContent}>
-                  <FaShoppingBag /> Finalize Order
+                  <FaShoppingBag />{" "}
+                  {loading ? "Processing..." : "Finalize Order"}
                 </div>
               </button>
             </>
@@ -514,6 +648,24 @@ const GroupOrder: React.FC = () => {
         <p className={styles.subtitle}>
           Eat together, pay together (or split later!)
         </p>
+        {viewMode === "active" && (
+          <button
+            className={styles.newGroupBtn}
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Start a new group order? You will leave the current group."
+                )
+              ) {
+                localStorage.removeItem("activeGroupOrderId");
+                setGroupData(null);
+                setViewMode("selection");
+              }
+            }}
+          >
+            + Start New Group Order
+          </button>
+        )}
       </header>
       {viewMode === "selection" ? renderSelection() : renderDashboard()}
     </div>
