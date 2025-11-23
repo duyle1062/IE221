@@ -16,6 +16,7 @@ import {
   Typography,
   InputNumber,
   Pagination,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -25,78 +26,36 @@ import {
 } from "@ant-design/icons";
 import type { UploadFile } from "antd/es/upload/interface";
 import styles from "./ProductManagement.module.css";
+import productService from "../../../services/product.service";
+import categoryService, { Category } from "../../../services/category.service";
 
 const { Title } = Typography;
 const { TextArea } = Input;
 const { Search } = Input;
 
-// Mock data
-const mockCategories = [
-  { id: 1, name: "Pizza", slug_name: "pizza", is_active: true },
-  { id: 2, name: "Burger", slug_name: "burger", is_active: true },
-  { id: 3, name: "Pasta", slug_name: "pasta", is_active: true },
-  { id: 4, name: "Drinks", slug_name: "drinks", is_active: true },
-  { id: 5, name: "Dessert", slug_name: "dessert", is_active: true },
-];
-
-const mockProducts = [
-  {
-    id: 1,
-    name: "Margherita Pizza",
-    description: "Phô mai mozzarella, cà chua, húng quế tươi", // Giữ nguyên - Mock Data
-    price: 189000,
-    category: 1,
-    is_active: true,
-    available: true,
-    images: [
-      "https://images.unsplash.com/photo-1593504049359-74330189a345?w=400",
-      "https://images.unsplash.com/photo-1571069043870-35d3c0c3e7a9?w=400",
-    ],
-  },
-  {
-    id: 2,
-    name: "Pepperoni Pizza",
-    description: "Pepperoni cay, phô mai tan chảy", // Giữ nguyên - Mock Data
-    price: 219000,
-    category: 1,
-    is_active: true,
-    available: true,
-    images: [
-      "https://images.unsplash.com/photo-1628840047417-5d2c1f2c3d38?w=400",
-    ],
-  },
-  {
-    id: 3,
-    name: "Chocolate Lava Cake",
-    description: "Bánh nóng chảy socola bên trong", // Giữ nguyên - Mock Data
-    price: 89000,
-    category: 5,
-    is_active: true,
-    available: false,
-    images: [
-      "https://images.unsplash.com/photo-1571115764595-704f44c598d6?w=400",
-    ],
-  },
-  // Thêm vài món nữa để test phân trang -> Added a few more items for pagination test
-  ...Array.from({ length: 25 }, (_, i) => ({
-    id: 4 + i,
-    name: `Món ăn mẫu ${i + 1}`, // Giữ nguyên - Mock Data
-    description: "Mô tả món ăn ngon", // Giữ nguyên - Mock Data
-    price: Math.floor(Math.random() * 300000) + 50000,
-    category: (i % 5) + 1,
-    is_active: Math.random() > 0.2,
-    available: Math.random() > 0.3,
-    images: [
-      `https://images.unsplash.com/photo-1546069901-ba9599a7e63${i}c?w=400`,
-    ],
-  })),
-];
+interface AdminProduct {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  category: Category;
+  restaurant: string;
+  is_active: boolean;
+  available: boolean;
+  average_rating: number | null;
+  total_ratings: number;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
 
 const ProductManagement: React.FC = () => {
-  const [products, setProducts] = useState(mockProducts);
-  const [categories, setCategories] = useState(mockCategories);
-  const [filteredProducts, setFilteredProducts] = useState(mockProducts);
-
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<AdminProduct[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<number | undefined>(
     undefined
@@ -118,66 +77,119 @@ const ProductManagement: React.FC = () => {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  const [totalCount, setTotalCount] = useState(0);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
-  // Filter
+  // Fetch data from backend
   useEffect(() => {
-    let filtered = products;
-    if (searchText) {
-      filtered = filtered.filter((p) =>
-        p.name.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-    if (categoryFilter) {
-      filtered = filtered.filter((p) => p.category === categoryFilter);
-    }
-    setFilteredProducts(filtered);
-    setCurrentPage(1);
-  }, [searchText, categoryFilter, products]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productsData, categoriesData] = await Promise.all([
+          productService.getAdminProducts({
+            page: currentPage,
+            page_size: pageSize,
+            search: searchText || undefined,
+            category: categoryFilter || undefined,
+            include_deleted: false,
+          }),
+          categoryService.getCategories(),
+        ]);
 
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+        setProducts(productsData.results);
+        setFilteredProducts(productsData.results);
+        setTotalCount(productsData.count);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        message.error("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentPage, searchText, categoryFilter, refetchTrigger]);
+
+  const refetch = () => setRefetchTrigger((prev) => prev + 1);
 
   // === PRODUCT CRUD ===
-  const handleAddEditProduct = (values: any) => {
-    const images = fileList
-      .map((file) => (file as any).thumbUrl || file.url)
-      .filter(Boolean);
-
-    if (editingProduct) {
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id ? { ...p, ...values, images } : p
-        )
-      );
-      message.success("Product updated successfully!");
-    } else {
-      const newProduct = {
-        id: Date.now(),
-        ...values,
-        images,
-        is_active: true,
-        available: true,
-      };
-      setProducts((prev) => [...prev, newProduct]);
-      message.success("Product added successfully!");
+  const handleAddEditProduct = async (values: any) => {
+    try {
+      if (editingProduct) {
+        // Update existing product
+        await productService.updateProduct(
+          editingProduct.category.slug_name,
+          editingProduct.id,
+          {
+            name: values.name,
+            description: values.description,
+            price: values.price,
+            category: values.category,
+            restaurant: values.restaurant,
+            is_active: values.is_active,
+            available: values.available,
+          }
+        );
+        message.success("Product updated successfully!");
+      } else {
+        // Create new product
+        await productService.createProduct({
+          name: values.name,
+          description: values.description,
+          price: values.price,
+          category: values.category,
+          restaurant: values.restaurant,
+          is_active: true,
+          available: true,
+        });
+        message.success("Product added successfully!");
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+      setFileList([]);
+      setEditingProduct(null);
+      refetch(); // Refresh data
+    } catch (error: any) {
+      console.error("Error saving product:", error);
+      message.error(error.response?.data?.detail || "Failed to save product");
     }
-    setIsModalOpen(false);
-    form.resetFields();
-    setFileList([]);
-    setEditingProduct(null);
   };
 
-  const handleDeleteProduct = (id: number) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    message.success("Product deleted successfully");
+  const handleDeleteProduct = async (product: AdminProduct) => {
+    try {
+      await productService.deleteProduct(
+        product.category.slug_name,
+        product.id
+      );
+      message.success("Product deleted successfully");
+      refetch(); // Refresh data
+    } catch (error: any) {
+      console.error("Error deleting product:", error);
+      message.error(error.response?.data?.detail || "Failed to delete product");
+    }
   };
 
-  const handleToggleStatus = (id: number, field: "is_active" | "available") => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: !p[field] } : p))
-    );
+  const handleToggleStatus = async (
+    product: AdminProduct,
+    field: "is_active" | "available"
+  ) => {
+    try {
+      await productService.updateProduct(
+        product.category.slug_name,
+        product.id,
+        {
+          [field]: !product[field],
+        }
+      );
+      message.success(`Product ${field} updated successfully`);
+      refetch(); // Refresh data
+    } catch (error: any) {
+      console.error(`Error updating ${field}:`, error);
+      message.error(
+        error.response?.data?.detail || `Failed to update ${field}`
+      );
+    }
   };
 
   const handleAddEditCategory = (values: any) => {
@@ -246,25 +258,17 @@ const ProductManagement: React.FC = () => {
 
   const columns = [
     {
-      title: "Image",
-      dataIndex: "images",
-      key: "images",
-      render: (images: string[]) =>
-        images[0] ? (
-          <img src={images[0]} alt="product" className={styles.productImage} />
-        ) : (
-          <div style={{ width: 60, height: 60, background: "#f0f0f0" }} />
-        ),
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      width: 80,
     },
     { title: "Product Name", dataIndex: "name", key: "name" },
     {
       title: "Category",
       dataIndex: "category",
       key: "category",
-      render: (catId: number) => {
-        const cat = categories.find((c) => c.id === catId);
-        return cat ? cat.name : "-";
-      },
+      render: (category: Category) => category?.name || "-",
     },
     {
       title: "Price",
@@ -277,14 +281,24 @@ const ProductManagement: React.FC = () => {
         }).format(price),
     },
     {
+      title: "Rating",
+      key: "rating",
+      render: (_: any, record: AdminProduct) => (
+        <span>
+          {record.average_rating ? record.average_rating.toFixed(1) : "N/A"} ⭐
+          {record.total_ratings > 0 && ` (${record.total_ratings})`}
+        </span>
+      ),
+    },
+    {
       title: "Status",
       key: "status",
       width: 200,
-      render: (_: any, record: any) => (
+      render: (_: any, record: AdminProduct) => (
         <Space>
           <Switch
             checked={record.is_active}
-            onChange={() => handleToggleStatus(record.id, "is_active")}
+            onChange={() => handleToggleStatus(record, "is_active")}
             size="small"
           />
           <span style={{ width: 70, display: "inline-block" }}>
@@ -293,7 +307,7 @@ const ProductManagement: React.FC = () => {
 
           <Switch
             checked={record.available}
-            onChange={() => handleToggleStatus(record.id, "available")}
+            onChange={() => handleToggleStatus(record, "available")}
             size="small"
           />
           <Tag
@@ -308,28 +322,27 @@ const ProductManagement: React.FC = () => {
     {
       title: "Action",
       key: "action",
-      render: (_: any, record: any) => (
+      render: (_: any, record: AdminProduct) => (
         <Space size="middle">
           <Button
             icon={<EditOutlined />}
             onClick={() => {
               setEditingProduct(record);
-              setFileList(
-                record.images.map((url: string, i: number) => ({
-                  uid: i.toString(),
-                  name: `image-${i}.jpg`,
-                  status: "done",
-                  url,
-                  thumbUrl: url,
-                }))
-              );
-              form.setFieldsValue(record);
+              form.setFieldsValue({
+                name: record.name,
+                description: record.description,
+                price: record.price,
+                category: record.category.id,
+                restaurant: record.restaurant,
+                is_active: record.is_active,
+                available: record.available,
+              });
               setIsModalOpen(true);
             }}
           />
           <Popconfirm
             title="Delete this product?"
-            onConfirm={() => handleDeleteProduct(record.id)}
+            onConfirm={() => handleDeleteProduct(record)}
           >
             <Button danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -440,15 +453,17 @@ const ProductManagement: React.FC = () => {
 
       {/* Products Table */}
       <div className={styles.tableWrapper}>
-        <Table
-          columns={columns}
-          dataSource={paginatedProducts}
-          rowKey="id"
-          pagination={false}
-        />
+        <Spin spinning={loading}>
+          <Table
+            columns={columns}
+            dataSource={filteredProducts}
+            rowKey="id"
+            pagination={false}
+          />
+        </Spin>
         <Pagination
           current={currentPage}
-          total={filteredProducts.length}
+          total={totalCount}
           pageSize={pageSize}
           onChange={setCurrentPage}
           className={styles.pagination}
