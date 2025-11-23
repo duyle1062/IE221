@@ -1,6 +1,8 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: (globalThis as any).process?.env?.REACT_APP_API_URL || "http://localhost:8000",
+  BASE_URL:
+    (globalThis as any).process?.env?.REACT_APP_API_URL ||
+    "http://localhost:8000",
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
@@ -52,5 +54,13 @@ export const API_ENDPOINTS = {
   RATINGS: {
     LIST: (productId: number) => `/api/products/${productId}/ratings/`,
     CREATE: (productId: number) => `/api/products/${productId}/ratings/`,
+  },
+  RECOMMENDATIONS: {
+    GET_RECOMMENDATIONS: "/api/recommendations/",
+    GET_POPULAR: "/api/products/popular/",
+    GET_SIMILAR: (productId: number) =>
+      `/api/recommendations/similar/${productId}/`,
+    TRACK_INTERACTION: "/api/recommendations/track_interaction/",
+    MY_INTERACTIONS: "/api/interactions/my/",
   },
 };
