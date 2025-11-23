@@ -5,6 +5,7 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import authService, { Gender } from "../../services/auth.service";
+import logoImage from "../../assets/images/Logo_FastFood.png";
 
 interface Errors {
   firstName?: string;
@@ -28,7 +29,8 @@ const RegisterForm: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
   const [errors, setErrors] = useState<Errors>({});
   const [loading, setLoading] = useState<boolean>(false);
@@ -162,10 +164,6 @@ const RegisterForm: React.FC = () => {
               <br />
               FAST DELIVERY
             </h1>
-            <div className={styles.brandLogo}>
-              {/* Replace with your actual logo */}
-              <div className={styles.logoPlaceholder}>YOUR LOGO</div>
-            </div>
           </div>
         </div>
 

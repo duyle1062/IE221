@@ -4,6 +4,8 @@ import { Order } from "../../types/order.types";
 import styles from "./Orders.module.css";
 import { FaArrowLeft, FaCheck } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
+import Header from "../../components/Header/Header";
+import Footer from "../../components/Footer/Footer";
 
 type OrderStatus =
   | "PENDING"
@@ -349,39 +351,43 @@ const Orders: React.FC = () => {
   }
 
   return (
-    <div className={styles.container}>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-      />
+    <>
+      <Header />
+      <div className={styles.container}>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+        />
 
-      <header className={styles.header}>
-        {selectedOrder ? (
-          <button
-            className={styles.backButton}
-            onClick={() => setSelectedOrder(null)}
-          >
-            <FaArrowLeft /> Back to Orders
-          </button>
+        <header className={styles.header}>
+          {selectedOrder ? (
+            <button
+              className={styles.backButton}
+              onClick={() => setSelectedOrder(null)}
+            >
+              <FaArrowLeft /> Back to Orders
+            </button>
+          ) : (
+            <h1 className={styles.title}>Order History</h1>
+          )}
+        </header>
+
+        {!selectedOrder && orders.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p>No orders yet</p>
+            <a href="/" className={styles.shopButton}>
+              Start Shopping
+            </a>
+          </div>
+        ) : selectedOrder ? (
+          renderOrderDetail()
         ) : (
-          <h1 className={styles.title}>Order History</h1>
+          renderOrderList()
         )}
-      </header>
-
-      {!selectedOrder && orders.length === 0 ? (
-        <div className={styles.emptyState}>
-          <p>No orders yet</p>
-          <a href="/" className={styles.shopButton}>
-            Start Shopping
-          </a>
-        </div>
-      ) : selectedOrder ? (
-        renderOrderDetail()
-      ) : (
-        renderOrderList()
-      )}
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

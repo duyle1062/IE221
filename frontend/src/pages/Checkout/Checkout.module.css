@@ -2,11 +2,36 @@
   max-width: 1200px;
   margin: 2rem auto;
   padding: 0 1rem;
+  min-height: calc(100vh - 180px);
 }
 
 .header {
   text-align: center;
   margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.backButton {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.backButton:hover {
+  color: var(--primary-color-dark, #c62828);
 }
 
 .title {

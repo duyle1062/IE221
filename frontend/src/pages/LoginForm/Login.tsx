@@ -7,6 +7,7 @@ import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import { useAuth } from "../../context/AuthContext";
 import { UserRole } from "../../services/auth.service";
+import logoImage from "../../assets/images/Logo_FastFood.png";
 
 interface Errors {
   email?: string;
@@ -64,13 +65,15 @@ const LoginForm: React.FC = () => {
             setErrors({
               server: Array.isArray(serverErrors.non_field_errors)
                 ? serverErrors.non_field_errors[0]
-                : serverErrors.non_field_errors
+                : serverErrors.non_field_errors,
             });
           } else {
             setErrors({ server: "Invalid email or password" });
           }
         } else {
-          setErrors({ server: "Your account does not exist. Please try again later." });
+          setErrors({
+            server: "Your account does not exist. Please try again later.",
+          });
         }
       } finally {
         setLoading(false);
@@ -95,9 +98,6 @@ const LoginForm: React.FC = () => {
               <br />
               FAST DELIVERY
             </h1>
-            <div className={styles.brandLogo}>
-              <div className={styles.logoPlaceholder}>LOGO</div>
-            </div>
           </div>
         </div>
 

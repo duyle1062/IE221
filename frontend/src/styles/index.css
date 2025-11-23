@@ -67,20 +67,20 @@
   --brand-red-darker: #c8102e;
   --brand-red-hover: #ff1a3f;
   --brand-gradient: linear-gradient(135deg, #e4002b 0%, #c4001f 100%);
-  
+
   --button-green: #22c55e;
   --button-green-hover: #16a34a;
   --button-disabled: #ccc;
-  
+
   --social-apple: #000;
   --social-apple-hover: #333;
   --social-google: #db4437;
   --social-google-hover: #c23321;
-  
+
   --error-bg: #fee;
   --error-border: #e4002b;
   --error-text: #e4002b;
-  
+
   --input-border: #ddd;
   --input-focus: #e4002b;
   --group-bg-light: #f8f9fa;

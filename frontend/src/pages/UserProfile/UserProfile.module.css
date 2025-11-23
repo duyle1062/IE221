@@ -5,6 +5,7 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--shadow-light);
   overflow: hidden;
+  min-height: calc(100vh - 180px);
 }
 
 .nav {
