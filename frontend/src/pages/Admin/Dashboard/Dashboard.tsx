@@ -1,94 +1,69 @@
 import React from "react";
 import { Grid, Paper, Typography, Box, Avatar } from "@mui/material";
 import {
-  AttachMoney,
-  ShoppingCart,
-  AccessTime,
-  TrendingUp,
+  AttachMoneyOutlined,
+  TrendingUpOutlined,
+  ShoppingCartOutlined,
+  AccessTimeOutlined,
 } from "@mui/icons-material";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import styles from "./Dashboard.module.css";
+
+// Mock data chuẩn backend
+const todayRevenue = 68750000; // RevenueReportView (hôm nay)
+const monthRevenue = 1892400000; // RevenueReportView (tháng này)
+const totalOrders = 1247; // OrderRatioReportView
+const pendingOrders = 42; // AdminOrderListView (đếm đơn chưa xong)
 
 const topSellingProducts = [
   {
-    id: 1,
+    id: 12,
     name: "Margherita Pizza",
-    qty: 500,
-    revenue: 129000,
+    qty: 892,
+    revenue: 321120000,
     image:
-      "https://images.unsplash.com/photo-1593253784644-2e108b3e6f9f?w=400&h=300&fit=crop&crop=center",
+      "https://images.unsplash.com/photo-1593253784644-2e108b3e6f9f?w=400&h=300&fit=crop",
   },
   {
-    id: 2,
+    id: 15,
     name: "Pepperoni Pizza",
-    qty: 400,
-    revenue: 149000,
+    qty: 745,
+    revenue: 283100000,
     image:
-      "https://images.unsplash.com/photo-1625398112201-58d5a5f8c6f7?w=400&h=300&fit=crop&crop=center",
+      "https://images.unsplash.com/photo-1625398112201-58d5a5f8c6f7?w=400&h=300&fit=crop",
   },
   {
-    id: 3,
+    id: 18,
     name: "BBQ Chicken Pizza",
-    qty: 300,
-    revenue: 159000,
+    qty: 612,
+    revenue: 257040000,
     image:
-      "https://images.unsplash.com/photo-1626646736310-8e1e3e3d8f8e?w=400&h=300&fit=crop&crop=center",
+      "https://images.unsplash.com/photo-1626646736310-8e1e3e3d8f8e?w=400&h=300&fit=crop",
   },
   {
-    id: 4,
+    id: 21,
     name: "Four Cheese Pizza",
-    qty: 200,
-    revenue: 169000,
+    qty: 489,
+    revenue: 224940000,
     image:
-      "https://images.unsplash.com/photo-1559058775-530e32471d8a?w=400&h=300&fit=crop&crop=center",
+      "https://images.unsplash.com/photo-1559058775-530e32471d8a?w=400&h=300&fit=crop",
   },
   {
-    id: 5,
+    id: 25,
     name: "Spicy Seafood Pizza",
-    qty: 100,
-    revenue: 179000,
+    qty: 378,
+    revenue: 189000000,
     image:
-      "https://images.unsplash.com/photo-1571068969003-0a88d6d574d8?w=400&h=300&fit=crop&crop=center",
+      "https://images.unsplash.com/photo-1571068969003-0a88d6d574d8?w=400&h=300&fit=crop",
   },
-];
-
-const todayRevenue = 6875000;
-const monthRevenue = 189240000;
-const totalOrders = 1247;
-const pendingOrders = 42;
-
-const revenueChartData = [
-  { day: "01/11", revenue: 48500000 },
-  { day: "02/11", revenue: 52100000 },
-  { day: "03/11", revenue: 59800000 },
-  { day: "04/11", revenue: 61200000 },
-  { day: "05/11", revenue: 67800000 },
-  { day: "06/11", revenue: 74300000 },
-  { day: "07/11", revenue: 82100000 },
-  { day: "08/11", revenue: 79500000 },
-  { day: "09/11", revenue: 88200000 },
-  { day: "10/11", revenue: 91600000 },
-  { day: "11/11", revenue: 97300000 },
-  { day: "12/11", revenue: 104200000 },
-  { day: "13/11", revenue: 98700000 },
-  { day: "14/11", revenue: 112300000 },
-  { day: "15/11", revenue: 108900000 },
-  { day: "16/11", revenue: 119800000 },
-  { day: "17/11", revenue: 115400000 },
-  { day: "18/11", revenue: 123700000 },
-  { day: "19/11", revenue: 118200000 },
-  { day: "20/11", revenue: 68750000 },
 ];
 
 const formatCurrency = (value: number): string => {
+  if (value >= 1_000_000_000) {
+    return (value / 1_000_000_000).toFixed(2).replace(".00", "") + " B";
+  }
+  if (value >= 1_000_000) {
+    return (value / 1_000_000).toFixed(1) + " M";
+  }
   return value.toLocaleString("vi-VN") + "đ";
 };
 
@@ -97,120 +72,104 @@ const StatCard = ({
   value,
   icon: Icon,
   color,
+  bgGradient,
 }: {
   title: string;
   value: string | number;
   icon: React.ElementType;
   color: string;
+  bgGradient?: string;
 }) => (
   <Paper className={styles.statCard}>
-    <div
+    <Box
       className={styles.iconWrapper}
-      style={{ backgroundColor: color + "22" }}
+      style={{ background: bgGradient || color + "22" }}
     >
       <Icon className={styles.statIcon} style={{ color }} />
-    </div>
-    <div>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        className={styles.statTitle}
-      >
-        {title}
-      </Typography>
-      <Typography variant="h4" className={styles.statValue} style={{ color }}>
-        {value}
-      </Typography>
-    </div>
+    </Box>
+    <Box>
+      <Typography className={styles.statTitle}>{title}</Typography>
+      <Typography className={styles.statValue}>{value}</Typography>
+    </Box>
   </Paper>
 );
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   return (
     <Box className={styles.container}>
       <Typography variant="h4" className={styles.pageTitle}>
-        Dashboard Quản Trị
+        DASHBOARD
       </Typography>
 
+      {/* 4 thẻ thống kê */}
       <Grid container spacing={4} className={styles.statsGrid}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
-            title="Doanh thu hôm nay"
+            title="TODAY'S REVENUE"
             value={formatCurrency(todayRevenue)}
-            icon={AttachMoney}
-            color="#2e7d32"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <StatCard
-            title="Doanh thu tháng này"
-            value={formatCurrency(monthRevenue)}
-            icon={TrendingUp}
-            color="#ed6c02"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <StatCard
-            title="Tổng đơn hàng"
-            value={totalOrders.toLocaleString()}
-            icon={ShoppingCart}
+            icon={AttachMoneyOutlined}
             color="#1976d2"
+            bgGradient="linear-gradient(135deg, #1976d222, #42a5f522)"
           />
         </Grid>
+
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
-            title="Đơn hàng đang chờ"
+            title="MONTHLY REVENUE"
+            value={formatCurrency(monthRevenue)}
+            icon={TrendingUpOutlined}
+            color="#4caf50"
+            bgGradient="linear-gradient(135deg, #4caf5022, #81c78422)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            title="TOTAL ORDERS"
+            value={totalOrders.toLocaleString()}
+            icon={ShoppingCartOutlined}
+            color="#ff9800"
+            bgGradient="linear-gradient(135deg, #ff980022, #ffb74d22)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            title="PENDING ORDERS"
             value={pendingOrders}
-            icon={AccessTime}
+            icon={AccessTimeOutlined}
             color="#d32f2f"
+            bgGradient="linear-gradient(135deg, #d32f2f22, #ef535022)"
           />
         </Grid>
       </Grid>
 
+      {/* Top 5 món bán chạy - chiếm full chiều rộng còn lại */}
       <Grid container spacing={4}>
-        <Grid size={{ xs: 12, xl: 8 }}>
-          <Paper className={styles.chartCard}>
-            <Typography variant="h6" className={styles.sectionTitle}>
-              Doanh thu 20 ngày gần nhất
-            </Typography>
-            <ResponsiveContainer width="100%" height={380}>
-              <LineChart data={revenueChartData}>
-                <CartesianGrid strokeDasharray="4 4" stroke="#e0e0e0" />
-                <XAxis dataKey="day" />
-                <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(0)}tr`} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "none",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                  }}
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#1976d2"
-                  strokeWidth={4}
-                  dot={{ fill: "#1976d2", r: 6 }}
-                  activeDot={{ r: 9 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, xl: 4 }}>
+        <Grid size={12}>
           <Paper className={styles.topProductsCard}>
-            <Typography variant="h6" className={styles.sectionTitle}>
-              Top 5 món bán chạy
-            </Typography>
+            <Box display="flex" alignItems="center" gap={2} mb={3}>
+              <TrendingUpOutlined style={{ fontSize: 28, color: "#4caf50" }} />
+              <Typography variant="h6" className={styles.sectionTitle}>
+                TOP 5 BESTSELLING PRODUCTS
+              </Typography>
+            </Box>
+
             <Box className={styles.topList}>
               {topSellingProducts.map((item, index) => (
-                <Box key={item.id} className={styles.topItemWithImage}>
+                <Box key={item.id} className={styles.topItem}>
                   <Box
                     className={styles.rankBadge}
                     style={{
-                      color: index < 3 ? "var(--primary-color)" : "#666",
+                      background:
+                        index === 0
+                          ? "linear-gradient(135deg, #ffd700, #ffb800)"
+                          : index === 1
+                          ? "linear-gradient(135deg, #c0c0c0, #a0a0a0)"
+                          : index === 2
+                          ? "linear-gradient(135deg, #cd7f32, #a0522d)"
+                          : "rgba(0,0,0,0.08)",
+                      color: index < 3 ? "white" : "#333",
                     }}
                   >
                     #{index + 1}
@@ -232,7 +191,8 @@ const Dashboard = () => {
                       {item.name}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {item.qty} món • {formatCurrency(item.revenue)}
+                      {item.qty.toLocaleString()} items •{" "}
+                      {formatCurrency(item.revenue)}
                     </Typography>
                   </Box>
                 </Box>

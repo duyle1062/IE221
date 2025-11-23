@@ -41,6 +41,18 @@
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
   color: var(--text-color-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.groupOrderBadge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background-color: #52c41a;
+  color: white;
 }
 
 .orderMeta {
@@ -104,11 +116,16 @@
 }
 
 .status_ready {
-  background-color: var(--success-background-light);
-  color: var(--success-text-dark);
+  background-color: #e8f5e9;
+  color: #2e7d32;
 }
 
 .status_delivered {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.status_completed {
   background-color: var(--success-background-light);
   color: var(--success-text-dark);
   border: 1px solid var(--success-border-color);
@@ -154,11 +171,33 @@
 .detailHeaderInfo h2 {
   margin: 0 0 0.5rem 0;
   color: var(--text-color-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .detailHeaderInfo p {
   margin: 0;
   color: var(--text-color-medium);
+}
+
+.addressSection {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f0f7ff;
+  border-left: 3px solid #1890ff;
+  border-radius: 4px;
+}
+
+.addressSection strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #1890ff;
+}
+
+.addressSection p {
+  margin: 0.25rem 0;
+  color: #333;
 }
 
 .trackingContainer {
@@ -168,30 +207,20 @@
 
 .progressBar {
   display: flex;
-  justify-content: space-between;
-  position: relative;
+  align-items: flex-start;
   margin-bottom: 2rem;
 }
 
-.progressBar::before {
-  content: "";
-  position: absolute;
-  top: 15px;
-  left: 0;
-  width: 100%;
+.progressLine {
+  flex: 1;
   height: 4px;
   background-color: var(--timeline-bg-grey);
-  z-index: 1;
+  margin: 15px 0 0 0;
+  transition: background-color 0.3s ease;
 }
 
-.progressLineFill {
-  position: absolute;
-  top: 15px;
-  left: 0;
-  height: 4px;
+.progressLine.activeProgressLine {
   background-color: var(--success-color);
-  z-index: 1;
-  transition: width 0.3s ease;
 }
 
 .stepItem {
@@ -201,7 +230,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  width: 100%;
+  flex-shrink: 0;
 }
 
 .stepCircle {
@@ -223,11 +252,17 @@
   font-size: 0.85rem;
   color: var(--text-color-medium);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .stepItem.active .stepCircle {
   background-color: var(--success-color);
   color: var(--text-color-white);
+}
+
+.stepItem.active .stepLabel {
+  color: var(--text-color-dark);
+  font-weight: 700;
 }
 
 .stepItem.active .stepLabel {
@@ -312,5 +347,71 @@
 }
 
 .cancelButton:hover {
+  filter: brightness(90%);
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loadingContainer,
+.errorContainer,
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--blue-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.emptyState p {
+  color: var(--text-color-medium);
+  margin-bottom: 1.5rem;
+}
+
+.shopButton {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--blue-color);
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: filter 0.2s;
+}
+
+.shopButton:hover {
+  filter: brightness(90%);
+}
+
+.errorContainer button {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--blue-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.errorContainer button:hover {
   filter: brightness(90%);
 }

@@ -8,6 +8,8 @@ from .group_order_views import (
     GroupOrderItemDetailView,
     PlaceGroupOrderView,
 )
+from .group_order_leave_view import LeaveGroupOrderView
+from .group_order_remove_member_view import RemoveMemberView
 
 app_name = "group_orders"
 
@@ -22,11 +24,23 @@ urlpatterns = [
         GroupOrderDetailView.as_view(),
         name="group_order_detail",
     ),
+    # Leave group order
+    path(
+        "<int:group_order_id>/leave/",
+        LeaveGroupOrderView.as_view(),
+        name="leave_group_order",
+    ),
     # Group order members
     path(
         "<int:group_order_id>/members/",
         GroupOrderMembersView.as_view(),
         name="group_order_members",
+    ),
+    # Remove member (creator only)
+    path(
+        "<int:group_order_id>/members/<int:member_id>/",
+        RemoveMemberView.as_view(),
+        name="remove_group_member",
     ),
     # Group order items - combined GET and POST
     path(

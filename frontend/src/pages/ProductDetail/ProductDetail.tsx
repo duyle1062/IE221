@@ -1,71 +1,54 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import StarRating from "../../components/StarRating/StarRating";
+import Card from "../../components/Card/Card";
 import cartService from "../../services/cart.service";
 import productService from "../../services/product.service";
 import ratingService from "../../services/rating.service";
+import recommendationService from "../../services/recommendation.service";
+import { addGroupOrderItem } from "../../services/groupOrder.service";
 import { useAuth } from "../../context/AuthContext";
 import {
   ProductDetailResponse,
   RatingListResponse,
+  Product,
 } from "../../types/product.types";
 import styles from "./ProductDetail.module.css";
 import { FaUsers } from "react-icons/fa";
 
 const ProductDetailPage: React.FC = () => {
-  // Thêm logic kiểm tra group hiện tại khi nhấn Add To Group Order
-  const handleAddToGroupOrder = () => {
-    const groupOrderRaw = localStorage.getItem("groupOrder");
-    let groupOrder = null;
-    try {
-      groupOrder = groupOrderRaw ? JSON.parse(groupOrderRaw) : null;
-    } catch {
-      groupOrder = null;
-    }
+  // Add to group order using real API
+  const handleAddToGroupOrder = async () => {
+    const activeGroupOrderId = localStorage.getItem("activeGroupOrderId");
 
-    if (!groupOrder) {
-      // Chưa có group, chuyển sang trang group order để tạo/join
+    if (!activeGroupOrderId) {
+      // No active group, navigate to group order page
+      toast.info("Please create or join a group order first");
       navigate("/group-order");
       return;
     }
 
-    // Đã có group, thêm món vào group item của user hiện tại
-    // Giả lập thêm vào localStorage, thực tế nên gọi API
-    const currentUserId = groupOrder.currentUser?.id || groupOrder.creator_id;
-    const currentUserName = groupOrder.currentUser?.name || "Bạn";
-    const productName = product?.name || "";
-    const unitPrice = Number(product?.price) || 0;
-    if (!productName || !currentUserId) {
-      alert("Không thể thêm sản phẩm vào group order!");
+    if (!product?.id) {
+      toast.error("Product information not available");
       return;
     }
-    // Tìm item của user hiện tại và sản phẩm này
-    const existedIdx = groupOrder.items.findIndex(
-      (item: any) =>
-        item.user_id === currentUserId && item.product_name === productName
-    );
-    if (existedIdx !== -1) {
-      // Tăng số lượng
-      groupOrder.items[existedIdx].quantity += quantity;
-      groupOrder.items[existedIdx].line_total =
-        Number(groupOrder.items[existedIdx].quantity) * unitPrice;
-    } else {
-      // Thêm mới
-      groupOrder.items.push({
-        id: Math.floor(Math.random() * 100000),
-        user_id: currentUserId,
-        user_name: currentUserName,
-        product_name: productName,
-        quantity,
-        unit_price: unitPrice,
-        line_total: Number(quantity) * unitPrice,
+
+    try {
+      setIsAddingToCart(true);
+      await addGroupOrderItem(parseInt(activeGroupOrderId), {
+        product_id: product.id,
+        quantity: quantity,
       });
+      toast.success(`Added ${quantity} ${product.name} to group order!`);
+      setQuantity(1);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add item to group order");
+    } finally {
+      setIsAddingToCart(false);
     }
-    localStorage.setItem("groupOrder", JSON.stringify(groupOrder));
-    alert(`Đã thêm ${quantity} ${productName} vào Group Order!`);
-    setQuantity(1);
   };
   const { categorySlug, productSlug } = useParams<{
     categorySlug: string;
@@ -93,7 +76,11 @@ const ProductDetailPage: React.FC = () => {
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const pageSize = 10;
+  const pageSize = 5;
+
+  // Similar products state
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
 
   // Fetch product details
   useEffect(() => {
@@ -147,6 +134,29 @@ const ProductDetailPage: React.FC = () => {
     };
   }, [categorySlug, productSlug]);
 
+  // Fetch similar products when product is loaded
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      if (!product?.id) return;
+
+      setSimilarLoading(true);
+      try {
+        const similar = await recommendationService.getSimilarProducts(
+          product.id,
+          { limit: 6 }
+        );
+        setSimilarProducts(similar);
+      } catch (err) {
+        console.error("Failed to fetch similar products:", err);
+        // Fail silently - similar products are optional
+      } finally {
+        setSimilarLoading(false);
+      }
+    };
+
+    fetchSimilarProducts();
+  }, [product?.id]);
+
   // Fetch ratings when product is loaded or page changes
   useEffect(() => {
     const abortController = new AbortController();
@@ -189,7 +199,7 @@ const ProductDetailPage: React.FC = () => {
     return () => {
       abortController.abort();
     };
-  }, [product?.id, currentPage]);
+  }, [product?.id, currentPage, pageSize]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -311,6 +321,12 @@ const ProductDetailPage: React.FC = () => {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+
+    // Scroll to top of reviews section when changing page
+    const reviewsSection = document.querySelector(`.${styles.reviewsList}`);
+    if (reviewsSection) {
+      reviewsSection.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleIncreaseQuantity = () => {
@@ -328,7 +344,7 @@ const ProductDetailPage: React.FC = () => {
       <Header />
       {loading ? (
         <div className={styles.loadingContainer}>
-          <p>Đang tải thông tin sản phẩm...</p>
+          <p>Loading product information...</p>
         </div>
       ) : error ? (
         <div className={styles.errorContainer}>
@@ -440,7 +456,7 @@ const ProductDetailPage: React.FC = () => {
                   <div>
                     <div className={styles.reviewsList}>
                       {ratingsLoading ? (
-                        <p>Đang tải đánh giá...</p>
+                        <p>Loading reviews...</p>
                       ) : ratingsError ? (
                         <p className={styles.errorText}>{ratingsError}</p>
                       ) : ratings && ratings.results.length > 0 ? (
@@ -479,11 +495,26 @@ const ProductDetailPage: React.FC = () => {
                                 disabled={!ratings.previous || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
-                                Trang trước
+                                ← Trang trước
                               </button>
                               <span className={styles.pageInfo}>
                                 Trang {currentPage} /{" "}
                                 {Math.ceil(ratings.count / pageSize)}
+                                <span
+                                  style={{
+                                    fontSize: "12px",
+                                    color: "#999",
+                                    display: "block",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  ({(currentPage - 1) * pageSize + 1}-
+                                  {Math.min(
+                                    currentPage * pageSize,
+                                    ratings.count
+                                  )}{" "}
+                                  / {ratings.count} đánh giá)
+                                </span>
                               </span>
                               <button
                                 onClick={() =>
@@ -492,7 +523,7 @@ const ProductDetailPage: React.FC = () => {
                                 disabled={!ratings.next || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
-                                Trang sau
+                                Trang sau →
                               </button>
                             </div>
                           )}
@@ -560,6 +591,14 @@ const ProductDetailPage: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      {/* Similar Products Section */}
+      {!loading && product && similarProducts.length > 0 && (
+        <div style={{ padding: "20px 0", backgroundColor: "#f8f9fa" }}>
+          <Card products={similarProducts} title="Similar Dishes" />
+        </div>
+      )}
+
       <Footer />
     </>
   );
