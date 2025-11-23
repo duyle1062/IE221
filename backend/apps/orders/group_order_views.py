@@ -256,16 +256,25 @@ class GroupOrderItemDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            group_item = GroupOrderItem.objects.get(
+            group_item = GroupOrderItem.objects.select_related("group_order").get(
                 id=item_id,
                 group_order_id=group_order_id,
-                user=request.user,
                 is_active=True,
             )
         except GroupOrderItem.DoesNotExist:
             return Response(
-                {"error": "Item not found or you don't have permission to update it"},
+                {"error": "Item not found"},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check if user is the item owner OR the group creator (host)
+        is_item_owner = group_item.user == request.user
+        is_host = group_item.group_order.creator == request.user
+
+        if not (is_item_owner or is_host):
+            return Response(
+                {"error": "Only the item owner or group host can update this item"},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         # Check if group order is still pending
@@ -285,19 +294,33 @@ class GroupOrderItemDetailView(APIView):
 
     def delete(self, request, group_order_id, item_id):
         try:
-            group_item = GroupOrderItem.objects.get(
+            group_item = GroupOrderItem.objects.select_related("group_order").get(
                 id=item_id,
                 group_order_id=group_order_id,
-                user=request.user,
                 is_active=True,
             )
         except GroupOrderItem.DoesNotExist:
             return Response(
-                {"error": "Item not found or you don't have permission to delete it"},
+                {"error": "Item not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # Check if user is the item owner OR the group creator (host)
+        is_item_owner = group_item.user == request.user
+        is_host = group_item.group_order.creator == request.user
+
+        if not (is_item_owner or is_host):
+            return Response(
+                {"error": "Only the item owner or group host can delete this item"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         # Check if group order is still pending
+        if group_item.group_order.status != "PENDING":
+            return Response(
+                {"error": "Cannot delete items. Group order has already been placed"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if group_item.group_order.status != "PENDING":
             return Response(
                 {"error": "Cannot delete items. Group order has already been placed"},

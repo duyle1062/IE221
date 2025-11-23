@@ -1,77 +1,36 @@
-import React, { useState, useMemo, FormEvent, ChangeEvent } from "react";
+import React, {
+  useState,
+  useMemo,
+  FormEvent,
+  ChangeEvent,
+  useEffect,
+} from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./Checkout.module.css";
 import {
   FaTruck,
   FaStore,
   FaMoneyBill,
   FaCreditCard,
+  FaWallet,
   FaPencilAlt,
   FaTrash,
 } from "react-icons/fa";
 
 import { ToastContainer, toast } from "react-toastify";
+import cartService from "../../services/cart.service";
+import addressService, {
+  Address as APIAddress,
+} from "../../services/address.service";
+import { placeOrder } from "../../services/order.service";
+import { Cart } from "../../types/cart.types";
 
-interface CartItem {
-  id: string;
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  imageUrl: string;
+interface Address extends Omit<APIAddress, "id"> {
+  id: number;
 }
 
-interface Address {
-  id: string;
-  street: string;
-  ward: string;
-  province: string;
-  phone: string;
-  isDefault: boolean;
-}
-
-type OrderType = "delivery" | "pickup";
-type PaymentMethod = "cash" | "card" | "wallet";
-
-const mockCartItems: CartItem[] = [
-  {
-    id: "ci1",
-    productId: "p1",
-    name: "Shake Potato Cheese",
-    price: 35000,
-    quantity: 6,
-    imageUrl: "",
-  },
-  {
-    id: "ci2",
-    productId: "p2",
-    name: "Cheese Stick",
-    price: 36000,
-    quantity: 1,
-    imageUrl: "",
-  },
-];
-
-const mockUserAddresses: Address[] = [
-  {
-    id: "addr1",
-    street: "123 Đường ABC",
-    ward: "Phường Cống Vị",
-    province: "Quận Ba Đình, Hà Nội",
-    phone: "0901234567",
-    isDefault: true,
-  },
-  {
-    id: "addr2",
-    street: "456 Đường XYZ",
-    ward: "Phường Bến Nghé",
-    province: "Quận 1, TP. Hồ Chí Minh",
-    phone: "0987654321",
-    isDefault: false,
-  },
-];
-
-const MOCK_RESTAURANT_ID = "rest1";
-const MOCK_USER_ID = "user123";
+type OrderType = "DELIVERY" | "PICKUP";
+type PaymentMethod = "CASH" | "CARD" | "WALLET" | "THIRD_PARTY";
 
 const formatCurrency = (amount: number) => {
   return (
@@ -212,14 +171,16 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
 };
 
 const Checkout: React.FC = () => {
-  const [cartItems] = useState<CartItem[]>(mockCartItems);
-  const [userAddresses, setUserAddresses] =
-    useState<Address[]>(mockUserAddresses);
+  const navigate = useNavigate();
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [userAddresses, setUserAddresses] = useState<Address[]>([]);
   const [shippingFee] = useState<number>(15000);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  const [orderType, setOrderType] = useState<OrderType>("delivery");
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    () => mockUserAddresses.find((addr) => addr.isDefault)?.id || null
+  const [orderType, setOrderType] = useState<OrderType>("DELIVERY");
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null
   );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(
     null
@@ -229,23 +190,59 @@ const Checkout: React.FC = () => {
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [addressToDelete, setAddressToDelete] = useState<string | null>(null);
+  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
 
-  const subtotal = useMemo(
-    () => cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0),
-    [cartItems]
-  );
+  // Fetch cart and addresses on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [cartData, addressesData] = await Promise.all([
+          cartService.getCart(),
+          addressService.getAddresses(),
+        ]);
+
+        setCart(cartData);
+        setUserAddresses(addressesData as Address[]);
+
+        // Set default address if exists
+        const defaultAddress = addressesData.find((addr) => addr.is_default);
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+        }
+
+        // Check if cart is empty
+        if (!cartData.items || cartData.items.length === 0) {
+          toast.error("Your cart is empty!");
+          navigate("/cart");
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load checkout data");
+        console.error("Checkout data fetch error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
+  const cartItems = cart?.items || [];
+
+  const subtotal = useMemo(() => parseFloat(cart?.total_price || "0"), [cart]);
+
   const finalShippingFee = useMemo(
-    () => (orderType === "pickup" ? 0 : shippingFee),
+    () => (orderType === "PICKUP" ? 0 : shippingFee),
     [orderType, shippingFee]
   );
+
   const total = useMemo(
     () => subtotal + finalShippingFee,
     [subtotal, finalShippingFee]
   );
 
-  const handlePlaceOrder = () => {
-    if (orderType === "delivery" && !selectedAddressId) {
+  const handlePlaceOrder = async () => {
+    if (orderType === "DELIVERY" && !selectedAddressId) {
       toast.error("Please select a delivery address.");
       return;
     }
@@ -254,26 +251,40 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    const orderPayload = {
-      user_id: MOCK_USER_ID,
-      restaurant_id: MOCK_RESTAURANT_ID,
-      address_id: orderType === "delivery" ? selectedAddressId : null,
-      type: orderType,
-      subtotal: subtotal,
-      delivery_fee: finalShippingFee,
-      discount: 0,
-      total: total,
-      payment_method: paymentMethod,
-      items: cartItems.map((item) => ({
-        product_id: item.productId,
-        unit_price: item.price,
-        quantity: item.quantity,
-        line_total: item.price * item.quantity,
-      })),
-    };
+    try {
+      setIsPlacingOrder(true);
 
-    console.log("Placing Order:", orderPayload);
-    toast.success("Order placed successfully!");
+      const orderData = {
+        address_id:
+          orderType === "DELIVERY"
+            ? selectedAddressId!
+            : userAddresses[0]?.id || 1,
+        payment_method: paymentMethod,
+        type: orderType,
+        delivery_fee: finalShippingFee,
+        discount: 0,
+      };
+
+      console.log("Sending order data:", orderData);
+      const response = await placeOrder(orderData);
+      console.log("Order response:", response);
+
+      // If CARD payment, redirect to VNPAY
+      if (paymentMethod === "CARD" && response.payment?.payment_url) {
+        window.location.href = response.payment.payment_url;
+      } else {
+        // For CASH, WALLET, THIRD_PARTY - order is completed
+        toast.success(response.message || "Order placed successfully!");
+        setTimeout(() => {
+          navigate("/orders");
+        }, 1500);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to place order");
+      console.error("Place order error:", error);
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -287,7 +298,7 @@ const Checkout: React.FC = () => {
   };
 
   const handleOpenDeleteModal = (address: Address) => {
-    if (address.isDefault) {
+    if (address.is_default) {
       toast.error("Cannot remove the default address.");
       return;
     }
@@ -316,9 +327,11 @@ const Checkout: React.FC = () => {
       toast.success("The address has been updated successfully.");
     } else {
       const newAddress: Address = {
-        ...(addressData as Omit<Address, "id" | "isDefault">),
-        id: crypto.randomUUID(),
-        isDefault: false,
+        ...(addressData as Omit<Address, "id" | "is_default">),
+        id: Date.now(), // Temporary ID
+        is_default: false,
+        is_active: true,
+        created_at: new Date().toISOString(),
       };
       setUserAddresses((prev) => [...prev, newAddress]);
       setSelectedAddressId(newAddress.id);
@@ -328,8 +341,19 @@ const Checkout: React.FC = () => {
   };
 
   const canPlaceOrder =
+    !isPlacingOrder &&
     paymentMethod &&
-    (orderType === "pickup" || (orderType === "delivery" && selectedAddressId));
+    (orderType === "PICKUP" || (orderType === "DELIVERY" && selectedAddressId));
+
+  if (isLoading) {
+    return (
+      <div className={styles.checkoutContainer}>
+        <div className={styles.loadingContainer}>
+          <p>Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.checkoutContainer}>
@@ -353,9 +377,9 @@ const Checkout: React.FC = () => {
                   type="radio"
                   id="delivery"
                   name="orderType"
-                  value="delivery"
-                  checked={orderType === "delivery"}
-                  onChange={() => setOrderType("delivery")}
+                  value="DELIVERY"
+                  checked={orderType === "DELIVERY"}
+                  onChange={() => setOrderType("DELIVERY")}
                 />
                 <label htmlFor="delivery">
                   <span className={styles.optionLabel}>
@@ -368,9 +392,9 @@ const Checkout: React.FC = () => {
                   type="radio"
                   id="pickup"
                   name="orderType"
-                  value="pickup"
-                  checked={orderType === "pickup"}
-                  onChange={() => setOrderType("pickup")}
+                  value="PICKUP"
+                  checked={orderType === "PICKUP"}
+                  onChange={() => setOrderType("PICKUP")}
                 />
                 <label htmlFor="pickup">
                   <span className={styles.optionLabel}>
@@ -381,7 +405,7 @@ const Checkout: React.FC = () => {
             </div>
           </div>
 
-          {orderType === "delivery" && (
+          {orderType === "DELIVERY" && (
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>Delivery Address</h2>
               <div className={styles.optionList}>
@@ -402,7 +426,7 @@ const Checkout: React.FC = () => {
                       <div className={styles.addressCard}>
                         <strong>
                           {addr.province}
-                          {addr.isDefault && (
+                          {addr.is_default && (
                             <span className={styles.defaultBadge}>Default</span>
                           )}
                         </strong>
@@ -457,9 +481,9 @@ const Checkout: React.FC = () => {
                   type="radio"
                   id="cash"
                   name="paymentMethod"
-                  value="cash"
-                  checked={paymentMethod === "cash"}
-                  onChange={() => setPaymentMethod("cash")}
+                  value="CASH"
+                  checked={paymentMethod === "CASH"}
+                  onChange={() => setPaymentMethod("CASH")}
                 />
                 <label htmlFor="cash">
                   <span className={styles.optionLabel}>
@@ -472,13 +496,28 @@ const Checkout: React.FC = () => {
                   type="radio"
                   id="card"
                   name="paymentMethod"
-                  value="card"
-                  checked={paymentMethod === "card"}
-                  onChange={() => setPaymentMethod("card")}
+                  value="CARD"
+                  checked={paymentMethod === "CARD"}
+                  onChange={() => setPaymentMethod("CARD")}
                 />
                 <label htmlFor="card">
                   <span className={styles.optionLabel}>
-                    <FaCreditCard /> Credit/Debit Card
+                    <FaCreditCard /> Credit/Debit Card (VNPAY)
+                  </span>
+                </label>
+              </div>
+              <div className={styles.option}>
+                <input
+                  type="radio"
+                  id="wallet"
+                  name="paymentMethod"
+                  value="WALLET"
+                  checked={paymentMethod === "WALLET"}
+                  onChange={() => setPaymentMethod("WALLET")}
+                />
+                <label htmlFor="wallet">
+                  <span className={styles.optionLabel}>
+                    <FaWallet /> E-Wallet
                   </span>
                 </label>
               </div>
@@ -493,14 +532,15 @@ const Checkout: React.FC = () => {
               {cartItems.map((item) => (
                 <div key={item.id} className={styles.reviewItem}>
                   <img
-                    src={item.imageUrl}
-                    alt={item.name}
+                    src={item.product.image_url || "/placeholder.png"}
+                    alt={item.product.name}
                     className={styles.reviewItemImage}
                   />
                   <div className={styles.reviewItemDetails}>
-                    <p className={styles.reviewItemName}>{item.name}</p>
+                    <p className={styles.reviewItemName}>{item.product.name}</p>
                     <p className={styles.reviewItemInfo}>
-                      Qty: {item.quantity} | {formatCurrency(item.price)}
+                      Qty: {item.quantity} |{" "}
+                      {formatCurrency(parseFloat(item.product.price))}
                     </p>
                   </div>
                 </div>
@@ -525,7 +565,7 @@ const Checkout: React.FC = () => {
               onClick={handlePlaceOrder}
               disabled={!canPlaceOrder}
             >
-              Place Order
+              {isPlacingOrder ? "Processing..." : "Place Order"}
             </button>
           </div>
         </aside>
