@@ -4,7 +4,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from django.db import transaction
 
+from IE221.logger import get_logger
 from .models import Payment
+
+logger = get_logger(__name__)
 from .serializers import (
     PaymentSerializer,
     CreatePaymentSerializer,
@@ -24,13 +27,25 @@ class CreatePaymentView(APIView):
     def post(self, request):
         serializer = CreatePaymentSerializer(data=request.data)
         if not serializer.is_valid():
+            logger.warning("Payment creation failed - invalid data", extra={
+                "user_id": request.user.id,
+                "errors": serializer.errors
+            })
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         order_id = serializer.validated_data["order_id"]
+        logger.info("Payment creation started", extra={
+            "user_id": request.user.id,
+            "order_id": order_id
+        })
 
         try:
             order = Order.objects.get(id=order_id, user=request.user)
         except Order.DoesNotExist:
+            logger.warning("Payment creation failed - order not found", extra={
+                "user_id": request.user.id,
+                "order_id": order_id
+            })
             return Response(
                 {"error": "Order not found or you don't have permission"},
                 status=status.HTTP_404_NOT_FOUND,
@@ -38,6 +53,10 @@ class CreatePaymentView(APIView):
 
         # Check if order already has payment
         if Payment.objects.filter(order=order).exists():
+            logger.warning("Payment creation failed - payment already exists", extra={
+                "user_id": request.user.id,
+                "order_id": order_id
+            })
             return Response(
                 {"error": "Payment already exists for this order"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -61,6 +80,12 @@ class CreatePaymentView(APIView):
                 order.payment_status = "SUCCEEDED"
                 order.save()
 
+            logger.info("Cash payment successful", extra={
+                "user_id": request.user.id,
+                "order_id": order.id,
+                "payment_id": payment.id,
+                "amount": float(order.total)
+            })
             return Response(
                 {
                     "message": "Cash payment successful",
@@ -92,6 +117,13 @@ class CreatePaymentView(APIView):
                 payment.gateway_transaction_id = result["txn_ref"]
                 payment.save()
 
+                logger.info("VNPAY payment initiated", extra={
+                    "user_id": request.user.id,
+                    "order_id": order.id,
+                    "payment_id": payment.id,
+                    "amount": amount,
+                    "txn_ref": result["txn_ref"]
+                })
                 return Response(
                     {
                         "message": "Payment initiated",
@@ -103,6 +135,12 @@ class CreatePaymentView(APIView):
             else:
                 # Delete payment if VNPAY request failed
                 payment.delete()
+                logger.error("VNPAY payment initiation failed", extra={
+                    "user_id": request.user.id,
+                    "order_id": order.id,
+                    "amount": amount,
+                    "error": result.get("message")
+                })
                 return Response(
                     {
                         "error": "Failed to initiate payment",
@@ -137,11 +175,20 @@ class VNPayReturnView(APIView):
         # Convert lists to single values (QueryDict returns lists)
         params = {k: v[0] if isinstance(v, list) else v for k, v in params.items()}
 
+        logger.info("VNPAY return callback received", extra={
+            "txn_ref": params.get("vnp_TxnRef"),
+            "response_code": params.get("vnp_ResponseCode")
+        })
+
         # Verify and process payment
         vnpay_service = VNPayService()
         result = vnpay_service.verify_return_url(params)
 
         if not result.get("valid"):
+            logger.warning("VNPAY verification failed", extra={
+                "txn_ref": params.get("vnp_TxnRef"),
+                "error": result.get("message")
+            })
             return Response(
                 {"error": result.get("message", "Invalid payment verification")},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -188,6 +235,12 @@ class VNPayReturnView(APIView):
                     except GroupOrder.DoesNotExist:
                         pass  # Group order not found, ignore
 
+                logger.info("VNPAY payment successful", extra={
+                    "order_id": order.id,
+                    "payment_id": payment.id,
+                    "amount": result.get("amount"),
+                    "transaction_no": result.get("transaction_no")
+                })
                 return Response(
                     {
                         "message": "Payment successful",
@@ -205,6 +258,12 @@ class VNPayReturnView(APIView):
                 order.payment_status = "FAILED"
                 order.save()
 
+                logger.warning("VNPAY payment failed", extra={
+                    "order_id": order.id,
+                    "payment_id": payment.id,
+                    "response_code": result.get("response_code"),
+                    "error": result.get("message")
+                })
                 return Response(
                     {
                         "error": "Payment failed",

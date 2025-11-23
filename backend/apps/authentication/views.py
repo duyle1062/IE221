@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from djoser.views import UserViewSet
+from IE221.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @api_view(['POST'])
@@ -25,13 +28,18 @@ def logout_view(request):
         # Blacklist the refresh token
         token = RefreshToken(refresh_token)
         token.blacklist()
-        
+
+        logger.info("User logged out", extra={"user_id": request.user.id})
         return Response({
             'success': True,
             'message': 'Logged out successfully'
         }, status=status.HTTP_200_OK)
-        
+
     except Exception as e:
+        logger.warning("Logout failed", extra={
+            "user_id": request.user.id,
+            "error": str(e)
+        })
         return Response({
             'success': False,
             'message': 'Logout failed',
