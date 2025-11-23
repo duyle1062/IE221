@@ -4,14 +4,17 @@ import { toast } from "react-toastify";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import StarRating from "../../components/StarRating/StarRating";
+import Card from "../../components/Card/Card";
 import cartService from "../../services/cart.service";
 import productService from "../../services/product.service";
 import ratingService from "../../services/rating.service";
+import recommendationService from "../../services/recommendation.service";
 import { addGroupOrderItem } from "../../services/groupOrder.service";
 import { useAuth } from "../../context/AuthContext";
 import {
   ProductDetailResponse,
   RatingListResponse,
+  Product,
 } from "../../types/product.types";
 import styles from "./ProductDetail.module.css";
 import { FaUsers } from "react-icons/fa";
@@ -73,7 +76,11 @@ const ProductDetailPage: React.FC = () => {
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const pageSize = 10;
+  const pageSize = 5;
+
+  // Similar products state
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
 
   // Fetch product details
   useEffect(() => {
@@ -127,6 +134,29 @@ const ProductDetailPage: React.FC = () => {
     };
   }, [categorySlug, productSlug]);
 
+  // Fetch similar products when product is loaded
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      if (!product?.id) return;
+
+      setSimilarLoading(true);
+      try {
+        const similar = await recommendationService.getSimilarProducts(
+          product.id,
+          { limit: 6 }
+        );
+        setSimilarProducts(similar);
+      } catch (err) {
+        console.error("Failed to fetch similar products:", err);
+        // Fail silently - similar products are optional
+      } finally {
+        setSimilarLoading(false);
+      }
+    };
+
+    fetchSimilarProducts();
+  }, [product?.id]);
+
   // Fetch ratings when product is loaded or page changes
   useEffect(() => {
     const abortController = new AbortController();
@@ -169,7 +199,7 @@ const ProductDetailPage: React.FC = () => {
     return () => {
       abortController.abort();
     };
-  }, [product?.id, currentPage]);
+  }, [product?.id, currentPage, pageSize]);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -291,6 +321,12 @@ const ProductDetailPage: React.FC = () => {
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+
+    // Scroll to top of reviews section when changing page
+    const reviewsSection = document.querySelector(`.${styles.reviewsList}`);
+    if (reviewsSection) {
+      reviewsSection.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleIncreaseQuantity = () => {
@@ -308,7 +344,7 @@ const ProductDetailPage: React.FC = () => {
       <Header />
       {loading ? (
         <div className={styles.loadingContainer}>
-          <p>Đang tải thông tin sản phẩm...</p>
+          <p>Loading product information...</p>
         </div>
       ) : error ? (
         <div className={styles.errorContainer}>
@@ -420,7 +456,7 @@ const ProductDetailPage: React.FC = () => {
                   <div>
                     <div className={styles.reviewsList}>
                       {ratingsLoading ? (
-                        <p>Đang tải đánh giá...</p>
+                        <p>Loading reviews...</p>
                       ) : ratingsError ? (
                         <p className={styles.errorText}>{ratingsError}</p>
                       ) : ratings && ratings.results.length > 0 ? (
@@ -459,11 +495,26 @@ const ProductDetailPage: React.FC = () => {
                                 disabled={!ratings.previous || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
-                                Trang trước
+                                ← Trang trước
                               </button>
                               <span className={styles.pageInfo}>
                                 Trang {currentPage} /{" "}
                                 {Math.ceil(ratings.count / pageSize)}
+                                <span
+                                  style={{
+                                    fontSize: "12px",
+                                    color: "#999",
+                                    display: "block",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  ({(currentPage - 1) * pageSize + 1}-
+                                  {Math.min(
+                                    currentPage * pageSize,
+                                    ratings.count
+                                  )}{" "}
+                                  / {ratings.count} đánh giá)
+                                </span>
                               </span>
                               <button
                                 onClick={() =>
@@ -472,7 +523,7 @@ const ProductDetailPage: React.FC = () => {
                                 disabled={!ratings.next || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
-                                Trang sau
+                                Trang sau →
                               </button>
                             </div>
                           )}
@@ -540,6 +591,14 @@ const ProductDetailPage: React.FC = () => {
           </div>
         </div>
       ) : null}
+
+      {/* Similar Products Section */}
+      {!loading && product && similarProducts.length > 0 && (
+        <div style={{ padding: "20px 0", backgroundColor: "#f8f9fa" }}>
+          <Card products={similarProducts} title="Similar Dishes" />
+        </div>
+      )}
+
       <Footer />
     </>
   );

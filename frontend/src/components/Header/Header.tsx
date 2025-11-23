@@ -61,13 +61,23 @@ export default function Header() {
         <ul>
           {navItems.map((item) => (
             <li key={item}>
-              <a
-                href="#"
-                className={activeLink === item ? styles.active : ""}
-                onClick={() => setActiveLink(item)}
-              >
-                {item}
-              </a>
+              {item === "Home" ? (
+                <Link
+                  to="/"
+                  className={activeLink === item ? styles.active : ""}
+                  onClick={() => setActiveLink(item)}
+                >
+                  {item}
+                </Link>
+              ) : (
+                <a
+                  href="#"
+                  className={activeLink === item ? styles.active : ""}
+                  onClick={() => setActiveLink(item)}
+                >
+                  {item}
+                </a>
+              )}
             </li>
           ))}
         </ul>

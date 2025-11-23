@@ -4,6 +4,8 @@ Combines collaborative filtering based on user interactions and ratings
 with content-based filtering using product categories
 """
 
+import logging
+import time
 from django.db.models import Count, Avg, Q, F
 from django.core.cache import cache
 from django.utils import timezone
@@ -13,6 +15,12 @@ import random
 import threading
 from typing import List, Dict, Set
 from .models import Product, Interact, Recommendation, Ratings, Category
+
+# Configure logger
+logger = logging.getLogger(__name__)
+
+# Lock to prevent concurrent Step 3 calculations for same user
+_step3_locks = {}
 
 
 class RecommendationService:
@@ -38,7 +46,7 @@ class RecommendationService:
                 cache.delete(cache_key)
             except Exception as e:
                 # Log error but don't crash (fire-and-forget pattern)
-                print(f"❌ Async track_interaction failed for user {user.id}: {e}")
+                logger.error(f"Async track_interaction failed for user {user.id}: {e}")
 
         # Fire-and-forget: Start thread and return immediately (~1ms)
         thread = threading.Thread(target=_async_track, daemon=True)
@@ -108,20 +116,71 @@ class RecommendationService:
             # Slowest path: Calculate recommendations from scratch
             pass
 
-        # Real-time calculation (heavy computation)
-        print(
-            f"⚠️ User {user.id} has no stored recommendations, calculating real-time (slow)..."
-        )
+        # Use lock to prevent concurrent calculations for same user
+        lock_key = f"step3_lock_{user.id}"
+        if lock_key not in _step3_locks:
+            _step3_locks[lock_key] = threading.Lock()
 
-        fresh_recommendations = cls._calculate_recommendations_realtime(user, limit)
+        with _step3_locks[lock_key]:
+            # Double-check cache after acquiring lock (another thread might have computed it)
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                return cached_data
 
-        # Save to DB for future Step 2 hits
-        cls.update_user_recommendations(user)
+            # Check DB again
+            try:
+                rec_obj = Recommendation.objects.get(user=user)
+                product_ids = rec_obj.product_ids[:limit]
+                if product_ids:
+                    products = (
+                        Product.objects.filter(
+                            id__in=product_ids, is_active=True, available=True
+                        )
+                        .select_related("category")
+                        .prefetch_related("images")
+                    )
+                    product_dict = {p.id: p for p in products}
+                    ordered_products = [
+                        product_dict[pid] for pid in product_ids if pid in product_dict
+                    ]
+                    cache.set(cache_key, ordered_products, cls.CACHE_TIMEOUT)
+                    return ordered_products
+            except Recommendation.DoesNotExist:
+                pass
 
-        # Cache for future Step 1 hits
-        cache.set(cache_key, fresh_recommendations, cls.CACHE_TIMEOUT)
+            # Real-time calculation (heavy computation) - log with timing
+            logger.warning(
+                f"User {user.id} has no stored recommendations, calculating real-time (this is slow)"
+            )
+            start_time = time.time()
 
-        return fresh_recommendations
+            fresh_recommendations = cls._calculate_recommendations_realtime(user, limit)
+
+            # Save full list to DB for future Step 2 hits (not just limited)
+            full_recommendations = cls._calculate_recommendations_realtime(
+                user, cls.TOP_K_RECOMMENDATIONS
+            )
+            product_ids = [p.id for p in full_recommendations]
+            Recommendation.objects.update_or_create(
+                user=user, defaults={"product_ids": product_ids}
+            )
+
+            # Log execution time for Step 3 (critical for performance monitoring)
+            execution_time = time.time() - start_time
+            logger.info(
+                f"Step 3 real-time calculation completed for user {user.id} "
+                f"in {execution_time:.2f}s (returned {len(fresh_recommendations)} products)"
+            )
+            if execution_time > 5.0:
+                logger.warning(
+                    f"Step 3 took {execution_time:.2f}s for user {user.id} - "
+                    "consider optimizing database indexes or pre-computing recommendations"
+                )
+
+            # Cache the limited results for future Step 1 hits
+            cache.set(cache_key, fresh_recommendations, cls.CACHE_TIMEOUT)
+
+            return fresh_recommendations
 
     @classmethod
     def _trigger_async_update(cls, user):
@@ -138,16 +197,16 @@ class RecommendationService:
 
             def run_update():
                 try:
-                    print(f"🔄 Background update started for user {user.id}...")
+                    logger.info(f"Background update started for user {user.id}")
                     cls.update_user_recommendations(user)
-                    print(f"✅ Background update completed for user {user.id}")
+                    logger.info(f"Background update completed for user {user.id}")
                 except Exception as e:
-                    print(f"❌ Background update failed for user {user.id}: {e}")
+                    logger.error(f"Background update failed for user {user.id}: {e}")
 
             thread = threading.Thread(target=run_update, daemon=True)
             thread.start()
         except Exception as e:
-            print(f"⚠️ Failed to trigger async update: {e}")
+            logger.warning(f"Failed to trigger async update: {e}")
 
     @classmethod
     def _calculate_recommendations_realtime(cls, user, limit=10) -> List[Product]:
@@ -447,13 +506,23 @@ class RecommendationService:
         """
         Pre-compute and store recommendations for a user
         Can be called periodically or triggered after significant interactions
+
+        NOTE: This calls _calculate_recommendations_realtime directly to avoid
+        infinite loop with get_user_recommendations
         """
-        recommendations = cls.get_user_recommendations(user, cls.TOP_K_RECOMMENDATIONS)
+        # Calculate fresh recommendations directly (bypass cache/DB)
+        recommendations = cls._calculate_recommendations_realtime(
+            user, cls.TOP_K_RECOMMENDATIONS
+        )
         product_ids = [p.id for p in recommendations]
 
         Recommendation.objects.update_or_create(
             user=user, defaults={"product_ids": product_ids}
         )
+
+        # Invalidate cache to force fresh read from DB
+        cache_key = f"recommendations_user_{user.id}"
+        cache.delete(cache_key)
 
     @classmethod
     def batch_update_recommendations(cls, user_ids=None):
