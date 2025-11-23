@@ -53,7 +53,14 @@ class RecommendationViewSet(viewsets.ReadOnlyModelViewSet):
 
         serializer = self.get_serializer(recommendations, many=True)
 
-        return Response({"count": len(recommendations), "results": serializer.data})
+        return Response(
+            {
+                "count": len(serializer.data),
+                "next": None,
+                "previous": None,
+                "results": serializer.data,
+            }
+        )
 
     @action(
         detail=False,
@@ -80,9 +87,10 @@ class RecommendationViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(
             {
-                "product_id": product.id,
-                "product_name": product.name,
-                "similar_products": serializer.data,
+                "count": len(serializer.data),
+                "next": None,
+                "previous": None,
+                "results": serializer.data,
             }
         )
 
@@ -207,4 +215,11 @@ def get_popular_products(request):
 
     serializer = ProductSerializer(popular, many=True)
 
-    return Response({"count": len(serializer.data), "products": serializer.data})
+    return Response(
+        {
+            "count": len(serializer.data),
+            "next": None,
+            "previous": None,
+            "results": serializer.data,
+        }
+    )
