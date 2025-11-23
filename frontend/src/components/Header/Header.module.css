@@ -11,6 +11,23 @@
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
 }
 
+.logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.logo a {
+  display: flex;
+  align-items: center;
+}
+
+.logoImage {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+}
+
 .search-bar {
   position: relative;
   display: flex;

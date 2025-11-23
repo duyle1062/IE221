@@ -1,10 +1,18 @@
 import React, { useState, useMemo, useEffect } from "react";
 import styles from "./Cart.module.css";
-import { FaPlus, FaMinus, FaTrash, FaShoppingCart } from "react-icons/fa";
+import {
+  FaPlus,
+  FaMinus,
+  FaTrash,
+  FaShoppingCart,
+  FaArrowLeft,
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import cartService from "../../services/cart.service";
 import { Cart as CartType, CartItem } from "../../types/cart.types";
 import { useAuth } from "../../context/AuthContext";
+import Header from "../../components/Header/Header";
+import Footer from "../../components/Footer/Footer";
 
 const formatCurrency = (amount: number) => {
   return (
@@ -114,6 +122,10 @@ const CartScreen: React.FC = () => {
     navigate("/checkout");
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   const renderEmptyCart = () => (
     <div className={styles.emptyCart}>
       <FaShoppingCart className={styles.emptyCartIcon} />
@@ -126,113 +138,124 @@ const CartScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={styles.cartContainer}>
-        <header className={styles.header}>
-          <h1 className={styles.title}>Giỏ hàng của tôi</h1>
-        </header>
-        <div className={styles.loadingContainer}>
-          <p>Đang tải giỏ hàng...</p>
+      <>
+        <Header />
+        <div className={styles.cartContainer}>
+          <header className={styles.header}>
+            <h1 className={styles.title}>Giỏ hàng của tôi</h1>
+          </header>
+          <div className={styles.loadingContainer}>
+            <p>Đang tải giỏ hàng...</p>
+          </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className={styles.cartContainer}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Giỏ hàng của tôi</h1>
-      </header>
+    <>
+      <Header />
+      <div className={styles.cartContainer}>
+        <header className={styles.header}>
+          <button onClick={handleBack} className={styles.backButton}>
+            <FaArrowLeft /> Back
+          </button>
+          <h1 className={styles.title}>Giỏ hàng của tôi</h1>
+        </header>
 
-      {!cart || cart.items.length === 0 ? (
-        renderEmptyCart()
-      ) : (
-        <div className={styles.cartLayout}>
-          <div className={styles.cartItemsList}>
-            {cart.items.map((item) => (
-              <div key={item.id} className={styles.cartItem}>
-                <img
-                  src="https://via.placeholder.com/100x100?text=Product"
-                  alt={item.product.name}
-                  className={styles.itemImage}
-                />
-                <div className={styles.itemDetails}>
-                  <div>
-                    <p className={styles.itemName}>{item.product.name}</p>
-                    <p className={styles.itemPrice}>
-                      {formatCurrency(item.total_item_price)}
-                    </p>
-                  </div>
-                  <div className={styles.itemActions}>
-                    <div className={styles.itemQuantityControls}>
+        {!cart || cart.items.length === 0 ? (
+          renderEmptyCart()
+        ) : (
+          <div className={styles.cartLayout}>
+            <div className={styles.cartItemsList}>
+              {cart.items.map((item) => (
+                <div key={item.id} className={styles.cartItem}>
+                  <img
+                    src="https://via.placeholder.com/100x100?text=Product"
+                    alt={item.product.name}
+                    className={styles.itemImage}
+                  />
+                  <div className={styles.itemDetails}>
+                    <div>
+                      <p className={styles.itemName}>{item.product.name}</p>
+                      <p className={styles.itemPrice}>
+                        {formatCurrency(item.total_item_price)}
+                      </p>
+                    </div>
+                    <div className={styles.itemActions}>
+                      <div className={styles.itemQuantityControls}>
+                        <button
+                          className={styles.quantityButton}
+                          onClick={() => handleDecreaseQuantity(item)}
+                          disabled={item.quantity <= 1 || updating === item.id}
+                          style={{
+                            cursor:
+                              item.quantity <= 1 || updating === item.id
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity:
+                              item.quantity <= 1 || updating === item.id
+                                ? 0.5
+                                : 1,
+                          }}
+                        >
+                          <FaMinus />
+                        </button>
+                        <span className={styles.itemQuantity}>
+                          {item.quantity}
+                        </span>
+                        <button
+                          className={styles.quantityButton}
+                          onClick={() => handleIncreaseQuantity(item)}
+                          disabled={updating === item.id}
+                        >
+                          <FaPlus />
+                        </button>
+                      </div>
                       <button
-                        className={styles.quantityButton}
-                        onClick={() => handleDecreaseQuantity(item)}
-                        disabled={item.quantity <= 1 || updating === item.id}
-                        style={{
-                          cursor:
-                            item.quantity <= 1 || updating === item.id
-                              ? "not-allowed"
-                              : "pointer",
-                          opacity:
-                            item.quantity <= 1 || updating === item.id
-                              ? 0.5
-                              : 1,
-                        }}
-                      >
-                        <FaMinus />
-                      </button>
-                      <span className={styles.itemQuantity}>
-                        {item.quantity}
-                      </span>
-                      <button
-                        className={styles.quantityButton}
-                        onClick={() => handleIncreaseQuantity(item)}
+                        className={styles.itemRemoveButton}
+                        onClick={() => handleRemoveItem(item.id)}
+                        title="Xóa sản phẩm"
                         disabled={updating === item.id}
                       >
-                        <FaPlus />
+                        <FaTrash />
                       </button>
                     </div>
-                    <button
-                      className={styles.itemRemoveButton}
-                      onClick={() => handleRemoveItem(item.id)}
-                      title="Xóa sản phẩm"
-                      disabled={updating === item.id}
-                    >
-                      <FaTrash />
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          <aside className={styles.summary}>
-            <div className={styles.summaryBox}>
-              <div className={styles.summaryLine}>
-                <span>Tạm tính</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              <div className={styles.summaryLine}>
-                <span>Phí vận chuyển</span>
-                <span>{formatCurrency(shippingFee)}</span>
-              </div>
-              <hr />
-              <div className={styles.summaryTotal}>
-                <span>Tổng cộng</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
-              <button
-                className={styles.checkoutButton}
-                onClick={handleCheckout}
-                disabled={!cart || cart.items.length === 0}
-              >
-                Thanh toán
-              </button>
+              ))}
             </div>
-          </aside>
-        </div>
-      )}
-    </div>
+
+            <aside className={styles.summary}>
+              <div className={styles.summaryBox}>
+                <div className={styles.summaryLine}>
+                  <span>Tạm tính</span>
+                  <span>{formatCurrency(subtotal)}</span>
+                </div>
+                <div className={styles.summaryLine}>
+                  <span>Phí vận chuyển</span>
+                  <span>{formatCurrency(shippingFee)}</span>
+                </div>
+                <hr />
+                <div className={styles.summaryTotal}>
+                  <span>Tổng cộng</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+                <button
+                  className={styles.checkoutButton}
+                  onClick={handleCheckout}
+                  disabled={!cart || cart.items.length === 0}
+                >
+                  Thanh toán
+                </button>
+              </div>
+            </aside>
+          </div>
+        )}
+      </div>
+      <Footer />
+    </>
   );
 };
 

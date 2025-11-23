@@ -350,7 +350,7 @@ const ProductDetailPage: React.FC = () => {
         <div className={styles.errorContainer}>
           <p>{error}</p>
           <button onClick={() => navigate(-1)} className={styles.backButton}>
-            Quay lại
+            Back
           </button>
         </div>
       ) : product ? (

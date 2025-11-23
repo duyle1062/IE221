@@ -32,7 +32,13 @@
 }
 
 .brandLogo {
-  margin-top: 3rem;
+  margin-top: 2rem;
+}
+
+.logoImage {
+  width: 200px;
+  height: auto;
+  object-fit: contain;
 }
 
 .logoPlaceholder {

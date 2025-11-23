@@ -15,6 +15,7 @@ import {
   FaWallet,
   FaPencilAlt,
   FaTrash,
+  FaArrowLeft,
 } from "react-icons/fa";
 
 import { ToastContainer, toast } from "react-toastify";
@@ -24,6 +25,8 @@ import addressService, {
 } from "../../services/address.service";
 import { placeOrder } from "../../services/order.service";
 import { Cart } from "../../types/cart.types";
+import Header from "../../components/Header/Header";
+import Footer from "../../components/Footer/Footer";
 
 interface Address extends Omit<APIAddress, "id"> {
   id: number;
@@ -189,6 +192,10 @@ const Checkout: React.FC = () => {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
 
@@ -347,248 +354,263 @@ const Checkout: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className={styles.checkoutContainer}>
-        <div className={styles.loadingContainer}>
-          <p>Loading checkout...</p>
+      <>
+        <Header />
+        <div className={styles.checkoutContainer}>
+          <div className={styles.loadingContainer}>
+            <p>Loading checkout...</p>
+          </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className={styles.checkoutContainer}>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-      />
+    <>
+      <Header />
+      <div className={styles.checkoutContainer}>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+        />
 
-      <header className={styles.header}>
-        <h1 className={styles.title}>Checkout</h1>
-      </header>
+        <header className={styles.header}>
+          <button onClick={handleBack} className={styles.backButton}>
+            <FaArrowLeft /> Back
+          </button>
+          <h1 className={styles.title}>Checkout</h1>
+        </header>
 
-      <div className={styles.checkoutLayout}>
-        <div className={styles.leftColumn}>
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Order Type</h2>
-            <div className={styles.orderTypeToggle}>
-              <div className={styles.option}>
-                <input
-                  type="radio"
-                  id="delivery"
-                  name="orderType"
-                  value="DELIVERY"
-                  checked={orderType === "DELIVERY"}
-                  onChange={() => setOrderType("DELIVERY")}
-                />
-                <label htmlFor="delivery">
-                  <span className={styles.optionLabel}>
-                    <FaTruck /> Delivery
-                  </span>
-                </label>
+        <div className={styles.checkoutLayout}>
+          <div className={styles.leftColumn}>
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Order Type</h2>
+              <div className={styles.orderTypeToggle}>
+                <div className={styles.option}>
+                  <input
+                    type="radio"
+                    id="delivery"
+                    name="orderType"
+                    value="DELIVERY"
+                    checked={orderType === "DELIVERY"}
+                    onChange={() => setOrderType("DELIVERY")}
+                  />
+                  <label htmlFor="delivery">
+                    <span className={styles.optionLabel}>
+                      <FaTruck /> Delivery
+                    </span>
+                  </label>
+                </div>
+                <div className={styles.option}>
+                  <input
+                    type="radio"
+                    id="pickup"
+                    name="orderType"
+                    value="PICKUP"
+                    checked={orderType === "PICKUP"}
+                    onChange={() => setOrderType("PICKUP")}
+                  />
+                  <label htmlFor="pickup">
+                    <span className={styles.optionLabel}>
+                      <FaStore /> Pickup
+                    </span>
+                  </label>
+                </div>
               </div>
-              <div className={styles.option}>
-                <input
-                  type="radio"
-                  id="pickup"
-                  name="orderType"
-                  value="PICKUP"
-                  checked={orderType === "PICKUP"}
-                  onChange={() => setOrderType("PICKUP")}
-                />
-                <label htmlFor="pickup">
-                  <span className={styles.optionLabel}>
-                    <FaStore /> Pickup
-                  </span>
-                </label>
+            </div>
+
+            {orderType === "DELIVERY" && (
+              <div className={styles.section}>
+                <h2 className={styles.sectionTitle}>Delivery Address</h2>
+                <div className={styles.optionList}>
+                  {userAddresses.map((addr) => (
+                    <div key={addr.id} className={styles.option}>
+                      <input
+                        type="radio"
+                        id={addr.id}
+                        name="address"
+                        value={addr.id}
+                        checked={selectedAddressId === addr.id}
+                        onChange={() => setSelectedAddressId(addr.id)}
+                      />
+                      <label
+                        htmlFor={addr.id}
+                        className={styles.addressCardWrapper}
+                      >
+                        <div className={styles.addressCard}>
+                          <strong>
+                            {addr.province}
+                            {addr.is_default && (
+                              <span className={styles.defaultBadge}>
+                                Default
+                              </span>
+                            )}
+                          </strong>
+                          <p>
+                            {addr.street}, {addr.ward}
+                          </p>
+                          <p>{addr.phone}</p>
+                        </div>
+
+                        <div className={styles.addressActions}>
+                          <button
+                            type="button"
+                            className={styles.addressActionButton}
+                            title="Edit Address"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleOpenEditModal(addr);
+                            }}
+                          >
+                            <FaPencilAlt size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.addressActionButton} ${styles.delete}`}
+                            title="Remove Address"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleOpenDeleteModal(addr);
+                            }}
+                          >
+                            <FaTrash size={12} />
+                          </button>
+                        </div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  className={styles.addAddressButton}
+                  onClick={handleOpenAddModal}
+                >
+                  + Add New Address
+                </button>
+              </div>
+            )}
+
+            <div className={styles.section}>
+              <h2 className={styles.sectionTitle}>Payment Method</h2>
+              <div className={styles.optionList}>
+                <div className={styles.option}>
+                  <input
+                    type="radio"
+                    id="cash"
+                    name="paymentMethod"
+                    value="CASH"
+                    checked={paymentMethod === "CASH"}
+                    onChange={() => setPaymentMethod("CASH")}
+                  />
+                  <label htmlFor="cash">
+                    <span className={styles.optionLabel}>
+                      <FaMoneyBill /> Cash on Delivery (COD)
+                    </span>
+                  </label>
+                </div>
+                <div className={styles.option}>
+                  <input
+                    type="radio"
+                    id="card"
+                    name="paymentMethod"
+                    value="CARD"
+                    checked={paymentMethod === "CARD"}
+                    onChange={() => setPaymentMethod("CARD")}
+                  />
+                  <label htmlFor="card">
+                    <span className={styles.optionLabel}>
+                      <FaCreditCard /> Credit/Debit Card (VNPAY)
+                    </span>
+                  </label>
+                </div>
+                <div className={styles.option}>
+                  <input
+                    type="radio"
+                    id="wallet"
+                    name="paymentMethod"
+                    value="WALLET"
+                    checked={paymentMethod === "WALLET"}
+                    onChange={() => setPaymentMethod("WALLET")}
+                  />
+                  <label htmlFor="wallet">
+                    <span className={styles.optionLabel}>
+                      <FaWallet /> E-Wallet
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
 
-          {orderType === "DELIVERY" && (
-            <div className={styles.section}>
-              <h2 className={styles.sectionTitle}>Delivery Address</h2>
-              <div className={styles.optionList}>
-                {userAddresses.map((addr) => (
-                  <div key={addr.id} className={styles.option}>
-                    <input
-                      type="radio"
-                      id={addr.id}
-                      name="address"
-                      value={addr.id}
-                      checked={selectedAddressId === addr.id}
-                      onChange={() => setSelectedAddressId(addr.id)}
+          <aside className={styles.summary}>
+            <div className={styles.summaryBox}>
+              <h2 className={styles.sectionTitle}>Order Summary</h2>
+              <div className={styles.reviewItemsList}>
+                {cartItems.map((item) => (
+                  <div key={item.id} className={styles.reviewItem}>
+                    <img
+                      src={item.product.image_url || "/placeholder.png"}
+                      alt={item.product.name}
+                      className={styles.reviewItemImage}
                     />
-                    <label
-                      htmlFor={addr.id}
-                      className={styles.addressCardWrapper}
-                    >
-                      <div className={styles.addressCard}>
-                        <strong>
-                          {addr.province}
-                          {addr.is_default && (
-                            <span className={styles.defaultBadge}>Default</span>
-                          )}
-                        </strong>
-                        <p>
-                          {addr.street}, {addr.ward}
-                        </p>
-                        <p>{addr.phone}</p>
-                      </div>
-
-                      <div className={styles.addressActions}>
-                        <button
-                          type="button"
-                          className={styles.addressActionButton}
-                          title="Edit Address"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleOpenEditModal(addr);
-                          }}
-                        >
-                          <FaPencilAlt size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.addressActionButton} ${styles.delete}`}
-                          title="Remove Address"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleOpenDeleteModal(addr);
-                          }}
-                        >
-                          <FaTrash size={12} />
-                        </button>
-                      </div>
-                    </label>
+                    <div className={styles.reviewItemDetails}>
+                      <p className={styles.reviewItemName}>
+                        {item.product.name}
+                      </p>
+                      <p className={styles.reviewItemInfo}>
+                        Qty: {item.quantity} |{" "}
+                        {formatCurrency(parseFloat(item.product.price))}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
+              <hr />
+              <div className={styles.summaryLine}>
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              <div className={styles.summaryLine}>
+                <span>Shipping Fee</span>
+                <span>{formatCurrency(finalShippingFee)}</span>
+              </div>
+              <hr />
+              <div className={styles.summaryTotal}>
+                <span>Total</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
               <button
-                className={styles.addAddressButton}
-                onClick={handleOpenAddModal}
+                className={styles.placeOrderButton}
+                onClick={handlePlaceOrder}
+                disabled={!canPlaceOrder}
               >
-                + Add New Address
+                {isPlacingOrder ? "Processing..." : "Place Order"}
               </button>
             </div>
-          )}
-
-          <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>Payment Method</h2>
-            <div className={styles.optionList}>
-              <div className={styles.option}>
-                <input
-                  type="radio"
-                  id="cash"
-                  name="paymentMethod"
-                  value="CASH"
-                  checked={paymentMethod === "CASH"}
-                  onChange={() => setPaymentMethod("CASH")}
-                />
-                <label htmlFor="cash">
-                  <span className={styles.optionLabel}>
-                    <FaMoneyBill /> Cash on Delivery (COD)
-                  </span>
-                </label>
-              </div>
-              <div className={styles.option}>
-                <input
-                  type="radio"
-                  id="card"
-                  name="paymentMethod"
-                  value="CARD"
-                  checked={paymentMethod === "CARD"}
-                  onChange={() => setPaymentMethod("CARD")}
-                />
-                <label htmlFor="card">
-                  <span className={styles.optionLabel}>
-                    <FaCreditCard /> Credit/Debit Card (VNPAY)
-                  </span>
-                </label>
-              </div>
-              <div className={styles.option}>
-                <input
-                  type="radio"
-                  id="wallet"
-                  name="paymentMethod"
-                  value="WALLET"
-                  checked={paymentMethod === "WALLET"}
-                  onChange={() => setPaymentMethod("WALLET")}
-                />
-                <label htmlFor="wallet">
-                  <span className={styles.optionLabel}>
-                    <FaWallet /> E-Wallet
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
+          </aside>
         </div>
 
-        <aside className={styles.summary}>
-          <div className={styles.summaryBox}>
-            <h2 className={styles.sectionTitle}>Order Summary</h2>
-            <div className={styles.reviewItemsList}>
-              {cartItems.map((item) => (
-                <div key={item.id} className={styles.reviewItem}>
-                  <img
-                    src={item.product.image_url || "/placeholder.png"}
-                    alt={item.product.name}
-                    className={styles.reviewItemImage}
-                  />
-                  <div className={styles.reviewItemDetails}>
-                    <p className={styles.reviewItemName}>{item.product.name}</p>
-                    <p className={styles.reviewItemInfo}>
-                      Qty: {item.quantity} |{" "}
-                      {formatCurrency(parseFloat(item.product.price))}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <hr />
-            <div className={styles.summaryLine}>
-              <span>Subtotal</span>
-              <span>{formatCurrency(subtotal)}</span>
-            </div>
-            <div className={styles.summaryLine}>
-              <span>Shipping Fee</span>
-              <span>{formatCurrency(finalShippingFee)}</span>
-            </div>
-            <hr />
-            <div className={styles.summaryTotal}>
-              <span>Total</span>
-              <span>{formatCurrency(total)}</span>
-            </div>
-            <button
-              className={styles.placeOrderButton}
-              onClick={handlePlaceOrder}
-              disabled={!canPlaceOrder}
-            >
-              {isPlacingOrder ? "Processing..." : "Place Order"}
-            </button>
-          </div>
-        </aside>
+        {isAddressModalOpen && (
+          <AddressModal
+            addressToEdit={addressToEdit}
+            onClose={() => {
+              setIsAddressModalOpen(false);
+              setAddressToEdit(null);
+            }}
+            onSave={handleSaveAddress}
+          />
+        )}
+
+        {isConfirmModalOpen && (
+          <ConfirmDeleteModal
+            onClose={() => setIsConfirmModalOpen(false)}
+            onConfirm={handleConfirmDelete}
+          />
+        )}
       </div>
-
-      {isAddressModalOpen && (
-        <AddressModal
-          addressToEdit={addressToEdit}
-          onClose={() => {
-            setIsAddressModalOpen(false);
-            setAddressToEdit(null);
-          }}
-          onSave={handleSaveAddress}
-        />
-      )}
-
-      {isConfirmModalOpen && (
-        <ConfirmDeleteModal
-          onClose={() => setIsConfirmModalOpen(false)}
-          onConfirm={handleConfirmDelete}
-        />
-      )}
-    </div>
+      <Footer />
+    </>
   );
 };
 

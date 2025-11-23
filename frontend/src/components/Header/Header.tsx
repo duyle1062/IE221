@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Product } from "../../types/product.types";
 import productService from "../../services/product.service";
+import logoImage from "../../assets/images/Logo_FastFood.png";
 
 export default function Header() {
   const [activeLink, setActiveLink] = useState("Home");
@@ -20,7 +21,7 @@ export default function Header() {
   const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
 
-  const navItems = ["Home", "Menu", "Offers", "Service", "About us"];
+  const navItems = ["Home", "Menu", "Group Order", "Service", "About us"];
 
   const handleLogout = async () => {
     try {
@@ -106,7 +107,13 @@ export default function Header() {
     <div className={styles.container}>
       {/* Logo */}
       <div className={styles.logo}>
-        <p>Logo</p>
+        <Link to="/">
+          <img
+            src={logoImage}
+            alt="FastFood Logo"
+            className={styles.logoImage}
+          />
+        </Link>
       </div>
 
       {/* Search Bar */}
@@ -192,6 +199,22 @@ export default function Header() {
                 >
                   {item}
                 </Link>
+              ) : item === "Group Order" ? (
+                <Link
+                  to="/group-order"
+                  className={activeLink === item ? styles.active : ""}
+                  onClick={() => setActiveLink(item)}
+                >
+                  {item}
+                </Link>
+              ) : item === "Menu" ? (
+                <Link
+                  to="/category/pizza"
+                  className={activeLink === item ? styles.active : ""}
+                  onClick={() => setActiveLink(item)}
+                >
+                  {item}
+                </Link>
               ) : (
                 <a
                   href="#"
@@ -248,15 +271,6 @@ export default function Header() {
                   </Link>
                   <Link to="/orders" onClick={() => setOpenMenu(false)}>
                     <p>Order Tracking</p>
-                  </Link>
-                  <Link to="/group-order" onClick={() => setOpenMenu(false)}>
-                    <p>View Group Order</p>
-                  </Link>
-                  <Link
-                    to="/forget-password"
-                    onClick={() => setOpenMenu(false)}
-                  >
-                    <p>Forgot Password</p>
                   </Link>
                   <p onClick={handleLogout} style={{ cursor: "pointer" }}>
                     Log out
