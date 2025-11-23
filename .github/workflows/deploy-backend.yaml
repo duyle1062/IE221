@@ -4,7 +4,7 @@ name: Deploy Backend to ECR
 on:
   push:
     branches:
-      - cloud-setup
+      - 'dev'
     paths:
       - 'backend/**'
 
@@ -27,7 +27,7 @@ jobs:
         - name: Configure AWS credentials
           uses: aws-actions/configure-aws-credentials@v4
           with:
-            role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/IE221-GitHubActionsRole
+            role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/IE221-GitHubActionsRole
             role-session-name: IE221-GitHubActionsRole
             aws-region: ${{ env.AWS_REGION }}
 
