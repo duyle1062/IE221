@@ -12,6 +12,7 @@
 }
 
 .search-bar {
+  position: relative;
   display: flex;
   align-items: center;
   width: 250px;
@@ -167,4 +168,90 @@
   background: #f5f5f5;
   color: var(--primary-color);
   font-weight: bold;
+}
+
+/* Search Results Dropdown */
+.search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 2000;
+}
+
+.search-loading,
+.search-no-results {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background-color: #f9f9f9;
+}
+
+.result-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-name {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-price {
+  margin: 0;
+  font-size: 13px;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.search-view-all {
+  padding: 12px 16px;
+  text-align: center;
+  color: var(--primary-color);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-top: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.search-view-all:hover {
+  background-color: #f9f9f9;
 }
