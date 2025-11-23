@@ -16,9 +16,11 @@ import {
   InputLabel,
   Pagination,
   SelectChangeEvent,
+  CircularProgress,
 } from "@mui/material";
 import { message } from "antd";
 import styles from "./OrderManagement.module.css";
+import adminService, { AdminOrder } from "../../../services/admin.service";
 
 export enum OrderStatus {
   PENDING = "PENDING",
@@ -51,6 +53,62 @@ const statusColors: Record<
   [OrderStatus.READY]: "success",
   [OrderStatus.DELIVERED]: "success",
   [OrderStatus.CANCELLED]: "error",
+};
+
+// Valid status transitions - Admins can change to any status except PENDING
+// PENDING is only for unpaid orders and should not be manually set
+// DELIVERED and CANCELLED are typically final, but admins can still modify if needed
+const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  [OrderStatus.PENDING]: [
+    OrderStatus.PAID,
+    OrderStatus.CONFIRMED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+  ],
+  [OrderStatus.PAID]: [
+    OrderStatus.CONFIRMED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+  ],
+  [OrderStatus.CONFIRMED]: [
+    OrderStatus.PAID,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+  ],
+  [OrderStatus.PREPARING]: [
+    OrderStatus.PAID,
+    OrderStatus.CONFIRMED,
+    OrderStatus.READY,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+  ],
+  [OrderStatus.READY]: [
+    OrderStatus.PAID,
+    OrderStatus.CONFIRMED,
+    OrderStatus.PREPARING,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELLED,
+  ],
+  [OrderStatus.DELIVERED]: [
+    OrderStatus.PAID,
+    OrderStatus.CONFIRMED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+    OrderStatus.CANCELLED,
+  ],
+  [OrderStatus.CANCELLED]: [
+    OrderStatus.PAID,
+    OrderStatus.CONFIRMED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+    OrderStatus.DELIVERED,
+  ],
 };
 
 const generateMockOrders = () => {
@@ -163,47 +221,84 @@ const generateMockOrders = () => {
 };
 
 const OrderManagement: React.FC = () => {
-  const [orders, setOrders] = useState(generateMockOrders());
-  const [filteredOrders, setFilteredOrders] = useState(orders);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
-
+  const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 15;
 
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const params: any = {
+        page,
+        page_size: itemsPerPage,
+        ordering: "-id",
+      };
+
+      if (statusFilter !== "all") {
+        params.status = statusFilter;
+      }
+
+      const response = await adminService.getOrders(params);
+      setOrders(response.results);
+      setTotalCount(response.count);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      message.error("Failed to load orders");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const filtered =
-      statusFilter === "all"
-        ? orders
-        : orders.filter((o) => o.status === statusFilter);
+    fetchOrders();
+  }, [page, statusFilter]);
 
-    setFilteredOrders(filtered);
-    setPage(1);
-  }, [statusFilter, orders]);
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  const paginatedOrders = filteredOrders.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
-  );
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const handleStatusChange = async (
+    orderId: number,
+    newStatus: OrderStatus
+  ) => {
+    try {
+      await adminService.updateOrderStatus(orderId, newStatus);
+      message.success(`Order #${orderId} → ${statusLabels[newStatus]}`);
+      // Refresh orders
+      fetchOrders();
+    } catch (error: any) {
+      console.error("Error updating order status:", error);
 
-  const handleStatusChange = (orderId: number, newStatus: OrderStatus) => {
-    setOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-    message.success(`Đơn #${orderId} → ${statusLabels[newStatus]}`);
+      // Show detailed error message from backend
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to update order status";
+
+      // If backend provides allowed transitions, show them
+      if (error.response?.data?.allowed_transitions) {
+        const allowed = error.response.data.allowed_transitions.join(", ");
+        message.error(`${errorMessage}. Allowed: ${allowed}`, 5);
+      } else {
+        message.error(errorMessage, 5);
+      }
+    }
   };
 
   const handleFilterChange = (e: SelectChangeEvent) => {
     setStatusFilter(e.target.value);
+    setPage(1); // Reset to first page when filter changes
   };
 
   const handlePageChange = (_: any, value: number) => {
     setPage(value);
   };
 
-  const formatCurrency = (value: number) => value.toLocaleString("vi-VN") + "đ";
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-US").format(Math.round(value)) + " VND";
+  };
 
   const formatDate = (isoString: string) =>
     new Date(isoString).toLocaleString("vi-VN", {
@@ -213,6 +308,20 @@ const OrderManagement: React.FC = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+  if (loading) {
+    return (
+      <Box
+        className={styles.container}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box className={styles.container}>
@@ -240,7 +349,7 @@ const OrderManagement: React.FC = () => {
         </Box>
 
         <Typography variant="body2" color="text.secondary" fontWeight="medium">
-          Total: {filteredOrders.length} orders
+          Total: {totalCount} orders
         </Typography>
       </Paper>
 
@@ -262,13 +371,13 @@ const OrderManagement: React.FC = () => {
           </TableHead>
 
           <TableBody>
-            {paginatedOrders.map((order) => (
+            {orders.map((order) => (
               <TableRow key={order.id} hover className={styles.tableRow}>
                 <TableCell>
                   <Typography fontWeight="bold">#{order.id}</Typography>
                   {order.group_order_id && (
                     <Chip
-                      label="Nhóm"
+                      label="Group"
                       size="small"
                       color="primary"
                       className={styles.groupBadge}
@@ -276,7 +385,9 @@ const OrderManagement: React.FC = () => {
                   )}
                 </TableCell>
 
-                <TableCell>{order.user_email}</TableCell>
+                <TableCell>
+                  {order.user?.email || order.user?.full_name || "N/A"}
+                </TableCell>
 
                 <TableCell>
                   <Chip
@@ -327,12 +438,24 @@ const OrderManagement: React.FC = () => {
                         )
                       }
                       className={styles.statusSelect}
+                      disabled={
+                        VALID_TRANSITIONS[order.status as OrderStatus]
+                          ?.length === 0
+                      }
                     >
-                      {Object.values(OrderStatus).map((s) => (
-                        <MenuItem key={s} value={s}>
-                          {statusLabels[s]}
-                        </MenuItem>
-                      ))}
+                      {/* Show current status */}
+                      <MenuItem value={order.status}>
+                        {statusLabels[order.status as OrderStatus]}
+                      </MenuItem>
+
+                      {/* Show only valid transitions */}
+                      {VALID_TRANSITIONS[order.status as OrderStatus]?.map(
+                        (validStatus) => (
+                          <MenuItem key={validStatus} value={validStatus}>
+                            {statusLabels[validStatus]}
+                          </MenuItem>
+                        )
+                      )}
                     </Select>
                   </FormControl>
                 </TableCell>
