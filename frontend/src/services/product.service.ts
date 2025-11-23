@@ -221,6 +221,40 @@ class ProductService {
       throw error;
     }
   }
+
+  /**
+   * Search products by name
+   * GET /api/products/search/
+   * @param query - Search query string
+   * @param params - Additional filter parameters
+   */
+  async searchProducts(
+    query: string,
+    params?: {
+      is_active?: boolean;
+      category?: number;
+    }
+  ): Promise<Product[]> {
+    try {
+      const response = await axiosInstance.get("/api/products/search/", {
+        params: {
+          name: query,
+          ...params,
+        },
+      });
+      console.log("Search API response:", response.data);
+      // Check if response is paginated (has results property) or flat array
+      if (response.data && Array.isArray(response.data.results)) {
+        return response.data.results;
+      } else if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      return [];
+    } catch (error: any) {
+      console.error("Search products error:", error);
+      throw error;
+    }
+  }
 }
 
 export default new ProductService();
