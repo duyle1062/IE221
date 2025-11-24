@@ -1,2 +1,0 @@
-- Always give me the best practice
-- Tell me what you're planning to do before actually do anything
