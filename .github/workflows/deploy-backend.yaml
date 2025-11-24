@@ -12,10 +12,6 @@ permissions:
   contents: read
   id-token: write
 
-env:
-    AWS_REGION: ap-southeast-1
-    ECR_REPOSITORY: ie221-backend
-
 jobs:
     build-and-push:
       name: Build and Push Docker Image
@@ -33,7 +29,7 @@ jobs:
           with:
             role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/IE221-GitHubActionsRole
             role-session-name: IE221-GitHubActionsRole
-            aws-region: ${{ env.AWS_REGION }}
+            aws-region: ${{ vars.AWS_REGION }}
 
         - name: Login to Amazon ECR
           id: login-ecr
@@ -53,13 +49,13 @@ jobs:
             push: true
             provenance: false
             tags: |
-              ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
-              ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.meta.outputs.IMAGE_TAG }}
+              ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:latest
+              ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ steps.meta.outputs.IMAGE_TAG }}
             cache-from: type=gha
             cache-to: type=gha,mode=max
 
         - name: Build summary
           run: |
             echo "### Build Complete :rocket:" >> $GITHUB_STEP_SUMMARY
-            echo "- **Repository:** ${{ env.ECR_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Repository:** ${{ vars.ECR_REPOSITORY }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Tag:** ${{ steps.meta.outputs.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
