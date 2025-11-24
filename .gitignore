@@ -19,6 +19,7 @@ Thumbs.db
 *.env
 *__pycache__/
 Lab/*
+CLAUDE.md
 
 # ===============================
 # FRONTEND (React/Node.js)
