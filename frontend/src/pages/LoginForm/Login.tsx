@@ -6,7 +6,7 @@ import { FaApple, FaGoogle } from "react-icons/fa";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import { useAuth } from "../../context/AuthContext";
-import { UserRole } from "../../services/auth.service";
+import authService, { UserRole } from "../../services/auth.service";
 import logoImage from "../../assets/images/Logo_FastFood.png";
 
 interface Errors {
@@ -17,7 +17,7 @@ interface Errors {
 
 const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -42,14 +42,12 @@ const LoginForm: React.FC = () => {
       try {
         await login(email, password);
 
-        const userStr = localStorage.getItem("user");
-        if (userStr) {
-          const user = JSON.parse(userStr);
-          if (user.role === UserRole.ADMIN) {
-            navigate("/admin/dashboard");
-          } else {
-            navigate("/");
-          }
+        // Get user data from auth service after login
+        const userData = await authService.getCurrentUser();
+        
+        // Redirect based on user role
+        if (userData.role === UserRole.ADMIN) {
+          navigate("/dashboard");
         } else {
           navigate("/");
         }

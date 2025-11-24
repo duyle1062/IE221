@@ -9,7 +9,7 @@ import {
   MenuItem,
   Typography,
 } from "@mui/material";
-import { Menu, Button } from "antd";
+import { Menu, Button, message } from "antd";
 import {
   DashboardOutlined,
   ShoppingCartOutlined,
@@ -19,6 +19,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
+import { useAuth } from "../../context/AuthContext";
 
 import styles from "./LayoutAdmin.module.css";
 
@@ -28,11 +29,9 @@ const collapsedWidth = 85;
 const LayoutAdmin: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
-  const userName = "Admin User";
-  const logout = () => {
-    alert("Log out successful!");
-  };
+  const userName = user ? `${user.firstname} ${user.lastname}` : "Admin User";
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -42,8 +41,15 @@ const LayoutAdmin: React.FC = () => {
   };
 
   const handleClose = () => setAnchorEl(null);
-  const handleLogout = () => {
-    logout();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      message.success("Logged out successfully!");
+      navigate("/login");
+    } catch (error) {
+      message.error("Failed to logout. Please try again.");
+    }
     handleClose();
   };
 

@@ -62,6 +62,44 @@ class ProductSerializer(serializers.ModelSerializer):
         if hasattr(obj, "average_rating"):
             return round(obj.average_rating, 2) if obj.average_rating else None
         return obj.get_average_rating()
+    
+    def validate_name(self, value):
+        """
+        Validate that product name is unique (including soft-deleted products)
+        """
+        # Check if updating existing product
+        if self.instance:
+            # Exclude current instance from check
+            if Product.objects.filter(name=value).exclude(id=self.instance.id).exists():
+                raise serializers.ValidationError(
+                    "A product with this name already exists."
+                )
+        else:
+            # Creating new product - check all products including soft-deleted
+            if Product.objects.filter(name=value).exists():
+                raise serializers.ValidationError(
+                    "A product with this name already exists."
+                )
+        return value
+    
+    def validate_slug(self, value):
+        """
+        Validate that product slug is unique (including soft-deleted products)
+        """
+        # Check if updating existing product
+        if self.instance:
+            # Exclude current instance from check
+            if Product.objects.filter(slug=value).exclude(id=self.instance.id).exists():
+                raise serializers.ValidationError(
+                    "A product with this slug already exists."
+                )
+        else:
+            # Creating new product - check all products including soft-deleted
+            if Product.objects.filter(slug=value).exists():
+                raise serializers.ValidationError(
+                    "A product with this slug already exists."
+                )
+        return value
 
 
 class RatingUserSerializer(serializers.ModelSerializer):
@@ -88,10 +126,12 @@ class AdminProductListSerializer(serializers.ModelSerializer):
     """Admin serializer showing all products with category details"""
 
     category = CategorySerializer(read_only=True)
-    average_rating = serializers.SerializerMethodField()
-    total_ratings = serializers.SerializerMethodField()
-    is_deleted = serializers.SerializerMethodField()
-
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source="category", write_only=True, required=False
+    )
+    # Accept both 'category' and 'category_id' for backwards compatibility
+    # This allows frontend to send either field name
+    
     class Meta:
         model = Product
         fields = [
@@ -101,6 +141,7 @@ class AdminProductListSerializer(serializers.ModelSerializer):
             "description",
             "price",
             "category",
+            "category_id",
             "restaurant",
             "is_active",
             "available",
@@ -111,6 +152,25 @@ class AdminProductListSerializer(serializers.ModelSerializer):
             "updated_at",
             "deleted_at",
         ]
+        read_only_fields = ["created_at", "updated_at", "deleted_at"]
+        extra_kwargs = {
+            'category': {'write_only': False, 'required': False}
+        }
+    
+    def to_internal_value(self, data):
+        """
+        Override to handle both 'category' and 'category_id' field names
+        """
+        # If 'category' is provided but 'category_id' is not, copy the value
+        if 'category' in data and 'category_id' not in data:
+            data = data.copy()
+            data['category_id'] = data['category']
+        
+        return super().to_internal_value(data)
+    
+    average_rating = serializers.SerializerMethodField()
+    total_ratings = serializers.SerializerMethodField()
+    is_deleted = serializers.SerializerMethodField()
 
     def get_average_rating(self, obj):
         if hasattr(obj, "average_rating"):
@@ -124,6 +184,44 @@ class AdminProductListSerializer(serializers.ModelSerializer):
 
     def get_is_deleted(self, obj):
         return obj.deleted_at is not None
+    
+    def validate_name(self, value):
+        """
+        Validate that product name is unique (including soft-deleted products)
+        """
+        # Check if updating existing product
+        if self.instance:
+            # Exclude current instance from check
+            if Product.objects.filter(name=value).exclude(id=self.instance.id).exists():
+                raise serializers.ValidationError(
+                    "A product with this name already exists."
+                )
+        else:
+            # Creating new product - check all products including soft-deleted
+            if Product.objects.filter(name=value).exists():
+                raise serializers.ValidationError(
+                    "A product with this name already exists."
+                )
+        return value
+    
+    def validate_slug(self, value):
+        """
+        Validate that product slug is unique (including soft-deleted products)
+        """
+        # Check if updating existing product
+        if self.instance:
+            # Exclude current instance from check
+            if Product.objects.filter(slug=value).exclude(id=self.instance.id).exists():
+                raise serializers.ValidationError(
+                    "A product with this slug already exists."
+                )
+        else:
+            # Creating new product - check all products including soft-deleted
+            if Product.objects.filter(slug=value).exists():
+                raise serializers.ValidationError(
+                    "A product with this slug already exists."
+                )
+        return value
 
 
 # ============== S3 Upload Serializers ==============

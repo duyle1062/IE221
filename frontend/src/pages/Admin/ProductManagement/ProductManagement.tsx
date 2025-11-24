@@ -123,23 +123,24 @@ const ProductManagement: React.FC = () => {
           editingProduct.id,
           {
             name: values.name,
+            slug: values.slug,
             description: values.description,
             price: values.price,
             category: values.category,
-            restaurant: values.restaurant,
             is_active: values.is_active,
             available: values.available,
           }
         );
         message.success("Product updated successfully!");
       } else {
-        // Create new product
+        // Create new product - slug is now required
         await productService.createProduct({
           name: values.name,
+          slug: values.slug,
           description: values.description,
           price: values.price,
           category: values.category,
-          restaurant: values.restaurant,
+          restaurant: 1, // Default restaurant ID (integer)
           is_active: true,
           available: true,
         });
@@ -151,8 +152,38 @@ const ProductManagement: React.FC = () => {
       setEditingProduct(null);
       refetch(); // Refresh data
     } catch (error: any) {
-      console.error("Error saving product:", error);
-      message.error(error.response?.data?.detail || "Failed to save product");
+      // Handle multiple error messages
+      const errors = error.response?.data;
+      if (errors) {
+        // Collect all error messages
+        const errorMessages: string[] = [];
+        
+        if (errors.name) {
+          errorMessages.push(`Name: ${errors.name[0]}`);
+        }
+        if (errors.slug) {
+          errorMessages.push(`Slug: ${errors.slug[0]}`);
+        }
+        if (errors.category || errors.category_id) {
+          errorMessages.push(`Category: ${errors.category?.[0] || errors.category_id?.[0]}`);
+        }
+        if (errors.description) {
+          errorMessages.push(`Description: ${errors.description[0]}`);
+        }
+        if (errors.detail) {
+          errorMessages.push(errors.detail);
+        }
+        
+        // Show all errors
+        if (errorMessages.length > 0) {
+          const errorMsg = errorMessages.join('\n');
+          alert(errorMsg);
+        } else {
+          alert("Failed to save product");
+        }
+      } else {
+        alert("Failed to save product");
+      }
     }
   };
 
@@ -330,9 +361,12 @@ const ProductManagement: React.FC = () => {
               setEditingProduct(record);
               form.setFieldsValue({
                 name: record.name,
+                slug: record.slug,
                 description: record.description,
                 price: record.price,
-                category: record.category.id,
+                category: record.category && typeof record.category === 'object' 
+                  ? record.category.id 
+                  : record.category,
                 restaurant: record.restaurant,
                 is_active: record.is_active,
                 available: record.available,
@@ -507,24 +541,63 @@ const ProductManagement: React.FC = () => {
           <Form.Item
             name="name"
             label="Product Name"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Please enter product name" }]}
           >
-            <Input />
+            <Input placeholder="Enter product name" />
           </Form.Item>
-          <Form.Item name="description" label="Description">
-            <TextArea rows={3} />
+          
+          {/* Slug field for both create and edit */}
+          <Form.Item
+            name="slug"
+            label="Product Slug"
+            rules={[
+              { required: true, message: "Please enter product slug" },
+              {
+                pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+                message: "Slug must be lowercase letters, numbers, and hyphens only (no spaces, no consecutive hyphens, no leading/trailing hyphens)"
+              },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  
+                  // Check for consecutive hyphens
+                  if (value.includes('--')) {
+                    return Promise.reject('Slug cannot contain consecutive hyphens');
+                  }
+                  
+                  // Check if starts or ends with hyphen
+                  if (value.startsWith('-') || value.endsWith('-')) {
+                    return Promise.reject('Slug cannot start or end with a hyphen');
+                  }
+                  
+                  return Promise.resolve();
+                }
+              }
+            ]}
+            extra="Use lowercase letters, numbers, and hyphens only (e.g., combo-ga-ran-gion)"
+            normalize={(value) => value?.toLowerCase().trim()}
+          >
+            <Input placeholder="e.g., combo-ga-ran-gion" />
+          </Form.Item>
+          
+          <Form.Item 
+            name="description" 
+            label="Description"
+            rules={[{ required: true, message: "Please enter product description" }]}
+          >
+            <TextArea rows={3} placeholder="Enter product description" />
           </Form.Item>
           <Form.Item
             name="price"
             label="Price (VND)"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Please enter product price" }]}
           >
-            <InputNumber min={0} style={{ width: "100%" }} />
+            <InputNumber min={0} style={{ width: "100%" }} placeholder="0" />
           </Form.Item>
           <Form.Item
             name="category"
             label="Category"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Please select a category" }]}
           >
             <Select placeholder="Select category">
               {categories
@@ -555,12 +628,17 @@ const ProductManagement: React.FC = () => {
             </Upload>
           </Form.Item>
 
-          <div className={styles.toggleWrapper}>
-            <Space>
-              <Switch defaultChecked /> <span>Active</span>
-              <Switch defaultChecked /> <span>In Stock</span>
-            </Space>
-          </div>
+          {/* Only show toggles when editing, not when creating */}
+          {editingProduct && (
+            <div className={styles.toggleWrapper}>
+              <Form.Item name="is_active" valuePropName="checked" label="Active">
+                <Switch />
+              </Form.Item>
+              <Form.Item name="available" valuePropName="checked" label="In Stock">
+                <Switch />
+              </Form.Item>
+            </div>
+          )}
 
           <Space style={{ justifyContent: "flex-end", width: "100%" }}>
             <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>

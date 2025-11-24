@@ -7,8 +7,5 @@ const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
 
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Disable StrictMode in development to prevent double API calls
+root.render(<App />);
