@@ -13,7 +13,7 @@
 
 .imageSection {
   flex: 1;
-  max-height: 280px;
+  max-height: 500px;
   height: auto;
   margin-bottom: 3px;
   border-radius: 6px;
@@ -21,7 +21,8 @@
 
 .mainImage {
   width: 100%;
-  height: 80%;
+  max-width: 500px;
+  height: 100%;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px var(--shadow-light);
@@ -49,7 +50,7 @@
 }
 
 .infoSection {
-  flex: 1;
+  flex: 2;
   display: flex;
   flex-direction: column;
 }
@@ -67,19 +68,26 @@
   color: var(--primary-color);
   margin-bottom: 20px;
 }
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
 
 .addToCartBtn {
+  flex: 1;
   background: var(--primary-color);
   color: var(--text-color-white);
   border: none;
-  padding: 14px 32px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
-  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 0.75rem;
+  padding: 14px 24px;
   transition: background 0.3s;
-  margin-bottom: 24px;
-  width: 100%;
 }
 
 .addToCartBtn:hover {
@@ -395,20 +403,19 @@
 
 .groupOrderBtn {
   flex: 1;
-  padding: 14px 24px;
   background-color: var(--blue-color);
   color: var(--text-color-white);
-  border: 2px solid var(--blue-color);
+  border: none;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
+  margin-bottom: 0.75rem;
+  padding: 14px 24px;
   transition: all 0.2s;
-  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 0.75rem;
 }
 
 .groupOrderBtn:hover {
