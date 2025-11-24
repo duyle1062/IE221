@@ -414,31 +414,33 @@ const ProductDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                className={styles.addToCartBtn}
-                onClick={handleAddToCart}
-                disabled={isAddingToCart || !product.available}
-              >
-                {!product.available
-                  ? "Sản phẩm tạm hết hàng"
-                  : isAddingToCart
-                  ? "Đang thêm..."
-                  : "Thêm vào giỏ hàng"}
-              </button>
+              <div className={styles.actionButtons}>
+                <button
+                  className={styles.addToCartBtn}
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart || !product.available}
+                >
+                  {!product.available
+                    ? "Sản phẩm tạm hết hàng"
+                    : isAddingToCart
+                    ? "Đang thêm..."
+                    : "Thêm vào giỏ hàng"}
+                </button>
 
-              <button
-                className={styles.groupOrderBtn}
-                onClick={handleAddToGroupOrder}
-                disabled={isAddingToGroupOrder || !product.available}
-              >
-                {isAddingToGroupOrder ? (
-                  "Adding..."
-                ) : (
-                  <>
-                    <FaUsers /> Add To Group Order
-                  </>
-                )}
-              </button>
+                <button
+                  className={styles.groupOrderBtn}
+                  onClick={handleAddToGroupOrder}
+                  disabled={isAddingToGroupOrder || !product.available}
+                >
+                  {isAddingToGroupOrder ? (
+                    "Adding..."
+                  ) : (
+                    <>
+                      <FaUsers /> Add To Group Order
+                    </>
+                  )}
+                </button>
+              </div>
 
               <div className={styles.tabs}>
                 <button
