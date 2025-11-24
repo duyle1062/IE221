@@ -215,6 +215,8 @@ class ProductDetailView(RetrieveUpdateDestroyAPIView):
             )
 
         instance.deleted_at = timezone.now()
+        instance.is_active = False
+        instance.available = False
         instance.save()
 
         # Return 200 with the deleted product data
