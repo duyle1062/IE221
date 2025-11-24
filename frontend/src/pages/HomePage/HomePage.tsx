@@ -12,6 +12,7 @@ export default function HomePage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,42 +21,30 @@ export default function HomePage() {
     if (authLoading) return;
 
     const fetchProducts = async () => {
-      setLoading(true);
-      setError(null);
-
       try {
+        setLoading(true);
+        setError(null);
+
         if (isAuthenticated) {
-          // Fetch both personalized recommendations AND popular products for authenticated users
-          try {
-            const [recommendations, popular] = await Promise.all([
-              recommendationService.getRecommendations(10),
-              recommendationService.getPopularProducts({ limit: 8 }),
-            ]);
-            setRecommendedProducts(recommendations);
-            setPopularProducts(popular);
-          } catch (err) {
-            console.warn(
-              "Failed to fetch recommendations, falling back to popular products only:",
-              err
-            );
-            // Fallback: only show popular products if recommendations fail
-            const popular = await recommendationService.getPopularProducts({
-              limit: 10,
-            });
-            setRecommendedProducts([]);
-            setPopularProducts(popular);
-          }
+          // Authenticated user: Fetch Recommendations + Best Sellers
+          const [recommended, bestSelling] = await Promise.all([
+            recommendationService.getRecommendations(10),
+            recommendationService.getBestSellers({ limit: 10 }),
+          ]);
+          setRecommendedProducts(recommended);
+          setBestSellers(bestSelling);
         } else {
-          // Fetch only popular products for non-authenticated users
-          const popular = await recommendationService.getPopularProducts({
-            limit: 8,
-          });
-          setRecommendedProducts([]);
+          // Non-authenticated user: Fetch Popular + Best Sellers
+          const [popular, bestSelling] = await Promise.all([
+            recommendationService.getPopularProducts({ limit: 10 }),
+            recommendationService.getBestSellers({ limit: 10 }),
+          ]);
           setPopularProducts(popular);
+          setBestSellers(bestSelling);
         }
-      } catch (err: any) {
-        console.error("Failed to fetch products:", err);
-        setError("Không thể tải sản phẩm. Vui lòng thử lại sau.");
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Failed to load products. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -79,7 +68,7 @@ export default function HomePage() {
             color: "#666",
           }}
         >
-          Đang tải sản phẩm...
+          Loading products...
         </div>
       )}
 
@@ -96,30 +85,42 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Recommendations Section (Only for authenticated users) */}
+      {/* Recommended for authenticated users */}
       {!loading &&
         !error &&
         isAuthenticated &&
         recommendedProducts.length > 0 && (
           <Card
             products={recommendedProducts}
-            title="Recommendations for you"
+            title="Recommended for You"
           />
         )}
 
-      {/* Popular Dishes Section (For all users, or authenticated users see it below recommendations) */}
-      {!loading && !error && popularProducts.length > 0 && (
+      {/* Popular products for non-authenticated users */}
+      {!loading &&
+        !error &&
+        !isAuthenticated &&
+        popularProducts.length > 0 && (
+          <Card
+            products={popularProducts}
+            title="Popular Dishes"
+          />
+        )}
+
+      {/* Best Sellers for all users */}
+      {!loading && !error && bestSellers.length > 0 && (
         <Card
-          products={popularProducts}
-          title={isAuthenticated ? "Popular Dishes" : "Popular Dishes"}
+          products={bestSellers}
+          title="Best Sellers"
         />
       )}
 
-      {/* No products message */}
+      {/* Empty state */}
       {!loading &&
         !error &&
-        popularProducts.length === 0 &&
-        recommendedProducts.length === 0 && (
+        bestSellers.length === 0 &&
+        recommendedProducts.length === 0 &&
+        popularProducts.length === 0 && (
           <div
             style={{
               textAlign: "center",

@@ -76,6 +76,33 @@ class RecommendationService {
   }
 
   /**
+   * Get best selling products based on order data
+   * GET /api/products/best-sellers/?limit=8
+   * Public endpoint
+   * @param params - Optional parameters (limit, days)
+   */
+  async getBestSellers(params?: { limit?: number; days?: number }): Promise<Product[]> {
+    try {
+      const response = await axiosInstance.get<RecommendationResponse>(
+        `/api/products/best-sellers/`,
+        {
+          params: {
+            limit: params?.limit || 8,
+            ...(params?.days && { days: params.days }),
+          },
+        }
+      );
+      return response.data.results;
+    } catch (error: any) {
+      console.error(
+        "[Recommendation] Failed to fetch best sellers:",
+        error
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Get similar products based on a specific product
    * GET /api/recommendations/similar/{product_id}/?limit=6
    * Public endpoint
