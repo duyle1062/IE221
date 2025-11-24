@@ -20,6 +20,9 @@ export default function HomePage() {
     // Don't fetch until auth state is determined
     if (authLoading) return;
 
+    let isMounted = true;
+    const controller = new AbortController();
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
@@ -31,26 +34,39 @@ export default function HomePage() {
             recommendationService.getRecommendations(10),
             recommendationService.getBestSellers({ limit: 10 }),
           ]);
-          setRecommendedProducts(recommended);
-          setBestSellers(bestSelling);
+          if (isMounted) {
+            setRecommendedProducts(recommended);
+            setBestSellers(bestSelling);
+          }
         } else {
           // Non-authenticated user: Fetch Popular + Best Sellers
           const [popular, bestSelling] = await Promise.all([
             recommendationService.getPopularProducts({ limit: 10 }),
             recommendationService.getBestSellers({ limit: 10 }),
           ]);
-          setPopularProducts(popular);
-          setBestSellers(bestSelling);
+          if (isMounted) {
+            setPopularProducts(popular);
+            setBestSellers(bestSelling);
+          }
         }
       } catch (err) {
-        console.error("Error fetching products:", err);
-        setError("Failed to load products. Please try again later.");
+        if (isMounted) {
+          console.error("Error fetching products:", err);
+          setError("Failed to load products. Please try again later.");
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProducts();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [isAuthenticated, authLoading]);
 
   return (

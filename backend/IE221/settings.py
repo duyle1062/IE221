@@ -241,7 +241,8 @@ DJOSER = {
     "SERIALIZERS": {
         "user_create": "apps.authentication.serializers.UserCreateSerializer",
         "user_create_password_retype": "apps.authentication.serializers.UserCreateSerializer",
-        "user": "apps.authentication.serializers.UserCreateSerializer",
+        "user": "apps.authentication.serializers.UserSerializer",
+        "current_user": "apps.authentication.serializers.UserSerializer",
         "user_delete": "djoser.serializers.UserDeleteSerializer",
     },
 }

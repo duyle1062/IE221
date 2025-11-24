@@ -4,7 +4,7 @@ import VerifyEmail from "./pages/VerifyEmail/VerifyEmail";
 import ForgetPassword from "./pages/ForgetPassword/ForgetPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import LoginForm from "./pages/LoginForm/Login";
-import HomePage from "./pages/HomePage/HomePage";
+import LandingPage from "./components/LandingPage/LandingPage";
 
 import Category from "./pages/Category/Category";
 import ProductDetailPage from "./pages/ProductDetail/ProductDetail";
@@ -38,7 +38,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/search" element={<SearchResults />} />
           <Route
             path="/product/:categorySlug/:productSlug"
