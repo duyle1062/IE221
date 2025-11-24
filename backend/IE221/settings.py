@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 from pathlib import Path
 from decouple import config
+from .logger import LOGGING 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -16,7 +17,7 @@ SECRET_KEY = config(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=True, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=str).split(
     ","
@@ -43,9 +44,15 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.addresses",
     "apps.payment",
+    "health_check",
+    "health_check.db",
+    # "health_check.cache",  # Enable if using Redis/Memcached
+    # "health_check.storage",  # Enable if using django-storages
+    # "health_check.contrib.migrations",  # Enable if you want to check for pending migrations
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware", 
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -53,21 +60,35 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
-    "django.middleware.common.CommonMiddleware",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS configuration
+CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL", default=False, cast=bool)
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS",
+    default="http://localhost:3000",
+    cast=lambda v: [s.strip() for s in v.split(",")]
+)
+
+# CSRF trusted origins (required for cross-origin POST requests in Django 4.0+)
+CSRF_TRUSTED_ORIGINS = config(
+    "CSRF_TRUSTED_ORIGINS",
+    default="http://localhost:3000",
+    cast=lambda v: [s.strip() for s in v.split(",")]
+)
 
 ROOT_URLCONF = "IE221.urls"
 
 # Site ID for django.contrib.sites
 SITE_ID = 1
 
+# Template directories - only include 'build' if it exists (for serving React from Django)
+_template_dirs = [d for d in [os.path.join(BASE_DIR, "build")] if os.path.exists(d)]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "build")],
+        "DIRS": _template_dirs,
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -93,6 +114,8 @@ DATABASES = {
         "PASSWORD": config("DB_PASSWORD"),
         "HOST": config("DB_HOST", default="localhost"),
         "PORT": config("DB_PORT", default="5432"),
+        "CONN_MAX_AGE": 60,  # Connection pooling: keep connections open for 60 seconds
+        "CONN_HEALTH_CHECKS": True,  # Verify connections before use (Django 4.1+)
     }
 }
 
@@ -133,9 +156,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Only include directories that exist (avoids collectstatic errors)
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
-    os.path.join(BASE_DIR, "build/static"),
+    d for d in [
+        BASE_DIR / "static",
+        BASE_DIR / "build" / "static",
+    ] if d.exists()
 ]
 
 
@@ -236,3 +263,28 @@ VNPAY_RETURN_URL = os.environ.get(
 VNPAY_API_URL = os.environ.get(
     "VNPAY_API_URL", "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"
 )
+
+# PRODUCTION SECURITY SETTINGS
+
+if not DEBUG:
+    # HTTPS/SSL settings
+    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+    # Cookie security
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    # Additional security headers
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = "DENY"
+
+    # Djoser production settings (override localhost defaults)
+    DJOSER["DOMAIN"] = config("FRONTEND_DOMAIN", default="localhost:3000")
+    DJOSER["PROTOCOL"] = config("FRONTEND_PROTOCOL", default="http")

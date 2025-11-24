@@ -40,6 +40,9 @@ urlpatterns = [
     path("api/admin/", include("apps.orders.admin_urls")),
     path("api/admin/reports/", include("apps.orders.reports_urls")),
     path("api/admin/", include("apps.product.admin_recommendation_urls")),
+    
+    # Health check endpoint
+    path("health/", include("health_check.urls")),
 ]
 
 # Catch-all for frontend - comment out if only using API

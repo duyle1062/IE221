@@ -8,6 +8,9 @@ from decimal import Decimal
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from apps.users.permissions import IsOwner, IsAdminUser, IsRegularUser
+from IE221.logger import get_logger
+
+logger = get_logger(__name__)
 
 from .models import Order, OrderItem, Address, OrderStatus
 from apps.carts.models import Cart, CartItem
@@ -34,6 +37,10 @@ class PlaceOrderView(APIView):
         serializer = PlaceOrderSerializer(data=request.data)
 
         if not serializer.is_valid():
+            logger.warning("Order placement failed - invalid data", extra={
+                "user_id": request.user.id,
+                "errors": serializer.errors
+            })
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
@@ -137,6 +144,13 @@ class PlaceOrderView(APIView):
                     order.payment_status = "SUCCEEDED"
                     order.save()
 
+                    logger.info("Order placed successfully", extra={
+                        "user_id": user.id,
+                        "order_id": order.id,
+                        "payment_method": payment_method,
+                        "total": float(total),
+                        "items_count": len(order_items)
+                    })
                     order_serializer = OrderSerializer(order)
                     return Response(
                         {
@@ -171,6 +185,13 @@ class PlaceOrderView(APIView):
                         payment.gateway_transaction_id = result["txn_ref"]
                         payment.save()
 
+                        logger.info("Order created - pending VNPAY payment", extra={
+                            "user_id": user.id,
+                            "order_id": order.id,
+                            "payment_method": payment_method,
+                            "total": float(total),
+                            "txn_ref": result["txn_ref"]
+                        })
                         order_serializer = OrderSerializer(order)
                         return Response(
                             {
@@ -191,6 +212,10 @@ class PlaceOrderView(APIView):
                         )
 
         except Exception as e:
+            logger.error("Order creation failed", extra={
+                "user_id": request.user.id,
+                "error": str(e)
+            })
             return Response(
                 {"error": f"Failed to create order: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -267,6 +292,11 @@ class CancelOrderView(APIView):
         order.payment_status = "REFUNDED"
         order.save()
 
+        logger.info("Order cancelled by user", extra={
+            "user_id": request.user.id,
+            "order_id": order.id,
+            "previous_status": "PAID"
+        })
         serializer = OrderSerializer(order)
         return Response(
             {"message": "Order cancelled successfully", "order": serializer.data},
@@ -351,6 +381,7 @@ class AdminChangeStatusView(APIView):
             )
 
         # Update order status
+        old_status = order.status
         order.status = new_status
 
         # If cancelled, update payment status to REFUNDED
@@ -359,6 +390,12 @@ class AdminChangeStatusView(APIView):
 
         order.save()
 
+        logger.info("Order status updated by admin", extra={
+            "admin_id": request.user.id,
+            "order_id": order.id,
+            "old_status": old_status,
+            "new_status": new_status
+        })
         # Return updated order
         serializer = OrderSerializer(order)
         return Response(
