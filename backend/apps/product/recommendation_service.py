@@ -68,7 +68,21 @@ class RecommendationService:
         # Fastest path: Return cached results immediately
         cached_data = cache.get(cache_key)
         if cached_data:
-            return cached_data
+            # ✅ CRITICAL: Validate cached products aren't deleted
+            valid_products = [
+                p for p in cached_data 
+                if hasattr(p, 'deleted_at') and p.deleted_at is None
+            ]
+            
+            # If some products were deleted, invalidate cache and fall through
+            if len(valid_products) < len(cached_data):
+                cache.delete(cache_key)
+                logger.info(
+                    f"Cache invalidated for user {user.id}: "
+                    f"{len(cached_data) - len(valid_products)} deleted products removed"
+                )
+            elif valid_products:
+                return valid_products
 
         # --- STEP 2: Check Stored DB (recommendation table) ---
         # Fast path: Use pre-computed recommendations from database
@@ -94,7 +108,10 @@ class RecommendationService:
             # Query actual Product objects with optimized queries
             products = (
                 Product.objects.filter(
-                    id__in=product_ids, is_active=True, available=True
+                    id__in=product_ids,
+                    is_active=True,
+                    available=True,
+                    deleted_at__isnull=True  # ✅ CRITICAL: Exclude soft-deleted products
                 )
                 .select_related("category")
                 .prefetch_related("images")
@@ -105,6 +122,16 @@ class RecommendationService:
             ordered_products = [
                 product_dict[pid] for pid in product_ids if pid in product_dict
             ]
+
+            # ✅ CRITICAL: Check if some products were filtered (deleted)
+            if len(ordered_products) < len(product_ids):
+                deleted_count = len(product_ids) - len(ordered_products)
+                logger.warning(
+                    f"User {user.id} stored recommendations contain {deleted_count} deleted products. "
+                    "Triggering async update."
+                )
+                # Trigger async update to refresh stored recommendations
+                cls._trigger_async_update(user)
 
             # Cache the results for next time (Step 1 hit)
             cache.set(cache_key, ordered_products, cls.CACHE_TIMEOUT)
@@ -134,7 +161,10 @@ class RecommendationService:
                 if product_ids:
                     products = (
                         Product.objects.filter(
-                            id__in=product_ids, is_active=True, available=True
+                            id__in=product_ids,
+                            is_active=True,
+                            available=True,
+                            deleted_at__isnull=True  # ✅ CRITICAL: Exclude soft-deleted products
                         )
                         .select_related("category")
                         .prefetch_related("images")
@@ -243,9 +273,12 @@ class RecommendationService:
 
     @classmethod
     def _get_user_interaction_history(cls, user) -> Set[int]:
-        """Get set of product IDs user has interacted with"""
+        """Get set of product IDs user has interacted with (excluding deleted products)"""
         return set(
-            Interact.objects.filter(user=user).values_list("product_id", flat=True)
+            Interact.objects.filter(
+                user=user,
+                product__deleted_at__isnull=True  # Only include interactions with active products
+            ).values_list("product_id", flat=True)
         )
 
     @classmethod
@@ -273,7 +306,7 @@ class RecommendationService:
         if cached_similar:
             similar_user_ids = cached_similar
         else:
-            # ✅ OPTIMIZATION: Only consider recent interactions (last 90 days)
+            # OPTIMIZATION: Only consider recent interactions (last 90 days)
             # This dramatically reduces query scope for large datasets
             recent_cutoff = timezone.now() - timedelta(days=90)
 
@@ -300,7 +333,7 @@ class RecommendationService:
             cache.set(cache_key, similar_user_ids, 21600)
 
         # Get products these similar users interacted with (that current user hasn't)
-        # ✅ OPTIMIZED: Time window + product IDs only (no joins until needed)
+        # OPTIMIZED: Time window + product IDs only (no joins until needed)
         recent_cutoff = timezone.now() - timedelta(days=90)
 
         candidate_product_data = (
@@ -314,7 +347,11 @@ class RecommendationService:
                 interaction_count=Count("id"),
                 avg_rating=Avg("product__ratings__rating"),
             )
-            .filter(product__is_active=True, product__available=True)
+            .filter(
+                product__is_active=True,
+                product__available=True,
+                product__deleted_at__isnull=True  # Exclude soft-deleted products
+            )
             .order_by("-interaction_count", "-avg_rating")[:limit]
         )
 
@@ -373,10 +410,13 @@ class RecommendationService:
         top_category_ids = [cat_id for cat_id, _ in top_categories]
 
         # Find highly-rated products from these categories
-        # ✅ OPTIMIZED: Added select_related and prefetch_related
+        # OPTIMIZED: Added select_related and prefetch_related
         candidate_products = (
             Product.objects.filter(
-                category_id__in=top_category_ids, is_active=True, available=True
+                category_id__in=top_category_ids,
+                is_active=True,
+                available=True,
+                deleted_at__isnull=True  # Exclude soft-deleted products
             )
             .exclude(id__in=user_interactions)
             .select_related("category")  # Join category table
@@ -398,9 +438,13 @@ class RecommendationService:
     @classmethod
     def _get_popular_products(cls, limit: int) -> List[Dict]:
         """Get popular products based on interactions and ratings - OPTIMIZED"""
-        # ✅ OPTIMIZED: Added select_related and prefetch_related
+        # OPTIMIZED: Added select_related and prefetch_related
         popular = (
-            Product.objects.filter(is_active=True, available=True)
+            Product.objects.filter(
+                is_active=True,
+                available=True,
+                deleted_at__isnull=True  # Exclude soft-deleted products
+            )
             .select_related("category")  # Join category table
             .prefetch_related("images")  # Prefetch images
             .annotate(
@@ -467,7 +511,10 @@ class RecommendationService:
 
         # Fetch actual product objects maintaining order
         products = Product.objects.filter(
-            id__in=top_product_ids, is_active=True, available=True
+            id__in=top_product_ids,
+            is_active=True,
+            available=True,
+            deleted_at__isnull=True  # Exclude soft-deleted products
         )
 
         # Maintain score-based order
@@ -488,11 +535,14 @@ class RecommendationService:
 
         similar = (
             Product.objects.filter(
-                category=product.category, is_active=True, available=True
+                category=product.category,
+                is_active=True,
+                available=True,
+                deleted_at__isnull=True  # Exclude soft-deleted products
             )
             .exclude(id=product.id)
-            .select_related("category")  # ✅ ADD THIS
-            .prefetch_related("images")  # ✅ ADD THIS
+            .select_related("category")  # ADD THIS
+            .prefetch_related("images")  # ADD THIS
             .annotate(avg_rating=Avg("ratings__rating"), rating_count=Count("ratings"))
             .order_by("-avg_rating", "-rating_count")[:limit]
         )

@@ -147,7 +147,10 @@ def get_user_interactions(request):
     user = request.user
     limit = int(request.query_params.get("limit", 20))
 
-    interactions = Interact.objects.filter(user=user).select_related("product")[:limit]
+    interactions = Interact.objects.filter(
+        user=user,
+        product__deleted_at__isnull=True  # Only show interactions with active products
+    ).select_related("product")[:limit]
 
     serializer = InteractSerializer(interactions, many=True)
 
@@ -202,7 +205,11 @@ def get_popular_products(request):
     limit = int(request.query_params.get("limit", 10))
 
     popular = (
-        Product.objects.filter(is_active=True, available=True)
+        Product.objects.filter(
+            is_active=True,
+            available=True,
+            deleted_at__isnull=True  # Exclude soft-deleted products
+        )
         .select_related("category")  # ✅ ADD: Optimize query
         .prefetch_related("images")  # ✅ ADD: Optimize query
         .annotate(
@@ -221,5 +228,114 @@ def get_popular_products(request):
             "next": None,
             "previous": None,
             "results": serializer.data,
-        }
+        },
+        status=status.HTTP_200_OK,
     )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_best_sellers(request):
+    """
+    Get best selling products based on actual order data
+    Public endpoint - No authentication required
+    Returns products sorted by quantity sold (no revenue data)
+    
+    Query params:
+    - limit: number of products to return (default: 10, max: 20)
+    - days: filter orders from last N days (optional)
+    """
+    from apps.orders.models import OrderItem
+    from apps.payment.models import Payment, PaymentStatus
+    from django.db.models import Sum, F
+    
+    limit = int(request.query_params.get("limit", 10))
+    days = request.query_params.get("days")
+    
+    # Validate limit
+    if limit < 1 or limit > 20:
+        return Response(
+            {"error": "limit must be between 1 and 20"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    
+    # Get order items from succeeded payments only
+    succeeded_payments = Payment.objects.filter(
+        status=PaymentStatus.SUCCEEDED
+    ).values_list("order_id", flat=True)
+    
+    order_items = OrderItem.objects.filter(order_id__in=succeeded_payments)
+    
+    # Apply date filter if provided
+    if days:
+        try:
+            days_int = int(days)
+            cutoff_date = timezone.now() - timedelta(days=days_int)
+            order_items = order_items.filter(order__created_at__gte=cutoff_date)
+        except ValueError:
+            return Response(
+                {"error": "days must be a valid integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    
+    # Aggregate by product and get quantity sold
+    product_stats = (
+        order_items
+        .values("product_id")
+        .annotate(quantity_sold=Sum("quantity"))
+        .order_by("-quantity_sold")[:limit]
+    )
+    
+    # Get product IDs
+    product_ids = [item["product_id"] for item in product_stats]
+    
+    if not product_ids:
+        return Response(
+            {
+                "count": 0,
+                "next": None,
+                "previous": None,
+                "results": [],
+            },
+            status=status.HTTP_200_OK,
+        )
+    
+    # Query actual Product objects with quantity_sold annotation
+    products = (
+        Product.objects.filter(
+            id__in=product_ids,
+            is_active=True,
+            available=True,
+            deleted_at__isnull=True
+        )
+        .select_related("category")
+        .prefetch_related("images")
+    )
+    
+    # Create product dict with quantity_sold
+    product_dict = {p.id: p for p in products}
+    quantity_dict = {item["product_id"]: item["quantity_sold"] for item in product_stats}
+    
+    # Maintain order by quantity_sold
+    ordered_products = [
+        product_dict[pid] for pid in product_ids if pid in product_dict
+    ]
+    
+    # Serialize products
+    serializer = ProductSerializer(ordered_products, many=True)
+    
+    # Add quantity_sold to each product in response
+    results = serializer.data
+    for product_data in results:
+        product_data["quantity_sold"] = quantity_dict.get(product_data["id"], 0)
+    
+    return Response(
+        {
+            "count": len(results),
+            "next": None,
+            "previous": None,
+            "results": results,
+        },
+        status=status.HTTP_200_OK,
+    )
+
