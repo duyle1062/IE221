@@ -107,7 +107,7 @@
 :global(.ant-menu-dark),
 :global(.ant-menu-dark .ant-menu-sub),
 :global(.ant-menu-dark .ant-menu-submenu) {
-  background-color: var(--orange-button-bg) !important;
+  background-color: var(--primary-color) !important;
   height: 100%;
 }
 
@@ -120,17 +120,16 @@
 :global(.ant-menu-dark .ant-menu-item-selected),
 :global(.ant-menu-dark .ant-menu-submenu-selected > .ant-menu-submenu-title) {
   background-color: var(--text-color-white) !important;
-  color: var(--orange-button-bg) !important;
-  border-left: 4px solid var(--orange-button-bg) !important;
+  color: var(--brand-red-primary) !important;
 }
 
 :global(.ant-menu-dark .ant-menu-item-selected:hover) {
-  background-color: var(--orange-medium-bg) !important;
-  color: var(--text-color-white) !important;
+  background-color: var(--text-color-white) !important;
+  color: var(--primary-color-hover) !important;
 }
 
 :global(.LayoutAdmin_toggleButton__znIfO) {
-  background-color: var(--orange-button-bg) !important;
+  background-color: var(--primary-color) !important;
   color: var(--text-color-white) !important;
   border-radius: 6px !important;
   transition: all 0.3s ease !important;
@@ -152,6 +151,10 @@
 }
 
 :global(.MuiAppBar-root) {
-  /* tui ko biết chọn màu nào cho thanh appbar hợp á, sau này sửa vô đây sau -color: ... !important;  */
+  background-color: var(--text-color-white) !important;
   border: none;
+}
+
+:global(.MuiBox-root) {
+  color: #000;
 }

@@ -1,94 +1,28 @@
-import React from "react";
-import { Grid, Paper, Typography, Box, Avatar } from "@mui/material";
+import React, { useEffect, useState } from "react";
 import {
-  AttachMoney,
-  ShoppingCart,
-  AccessTime,
-  TrendingUp,
+  Grid,
+  Paper,
+  Typography,
+  Box,
+  Avatar,
+  CircularProgress,
+} from "@mui/material";
+import {
+  AttachMoneyOutlined,
+  TrendingUpOutlined,
+  ShoppingCartOutlined,
+  AccessTimeOutlined,
 } from "@mui/icons-material";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import styles from "./Dashboard.module.css";
-
-const topSellingProducts = [
-  {
-    id: 1,
-    name: "Margherita Pizza",
-    qty: 500,
-    revenue: 129000,
-    image:
-      "https://images.unsplash.com/photo-1593253784644-2e108b3e6f9f?w=400&h=300&fit=crop&crop=center",
-  },
-  {
-    id: 2,
-    name: "Pepperoni Pizza",
-    qty: 400,
-    revenue: 149000,
-    image:
-      "https://images.unsplash.com/photo-1625398112201-58d5a5f8c6f7?w=400&h=300&fit=crop&crop=center",
-  },
-  {
-    id: 3,
-    name: "BBQ Chicken Pizza",
-    qty: 300,
-    revenue: 159000,
-    image:
-      "https://images.unsplash.com/photo-1626646736310-8e1e3e3d8f8e?w=400&h=300&fit=crop&crop=center",
-  },
-  {
-    id: 4,
-    name: "Four Cheese Pizza",
-    qty: 200,
-    revenue: 169000,
-    image:
-      "https://images.unsplash.com/photo-1559058775-530e32471d8a?w=400&h=300&fit=crop&crop=center",
-  },
-  {
-    id: 5,
-    name: "Spicy Seafood Pizza",
-    qty: 100,
-    revenue: 179000,
-    image:
-      "https://images.unsplash.com/photo-1571068969003-0a88d6d574d8?w=400&h=300&fit=crop&crop=center",
-  },
-];
-
-const todayRevenue = 6875000;
-const monthRevenue = 189240000;
-const totalOrders = 1247;
-const pendingOrders = 42;
-
-const revenueChartData = [
-  { day: "01/11", revenue: 48500000 },
-  { day: "02/11", revenue: 52100000 },
-  { day: "03/11", revenue: 59800000 },
-  { day: "04/11", revenue: 61200000 },
-  { day: "05/11", revenue: 67800000 },
-  { day: "06/11", revenue: 74300000 },
-  { day: "07/11", revenue: 82100000 },
-  { day: "08/11", revenue: 79500000 },
-  { day: "09/11", revenue: 88200000 },
-  { day: "10/11", revenue: 91600000 },
-  { day: "11/11", revenue: 97300000 },
-  { day: "12/11", revenue: 104200000 },
-  { day: "13/11", revenue: 98700000 },
-  { day: "14/11", revenue: 112300000 },
-  { day: "15/11", revenue: 108900000 },
-  { day: "16/11", revenue: 119800000 },
-  { day: "17/11", revenue: 115400000 },
-  { day: "18/11", revenue: 123700000 },
-  { day: "19/11", revenue: 118200000 },
-  { day: "20/11", revenue: 68750000 },
-];
+import adminService, { TopProduct } from "../../../services/admin.service";
 
 const formatCurrency = (value: number): string => {
+  if (value >= 1_000_000_000) {
+    return (value / 1_000_000_000).toFixed(2).replace(".00", "") + " B";
+  }
+  if (value >= 1_000_000) {
+    return (value / 1_000_000).toFixed(1) + " M";
+  }
   return value.toLocaleString("vi-VN") + "đ";
 };
 
@@ -97,146 +31,296 @@ const StatCard = ({
   value,
   icon: Icon,
   color,
+  bgGradient,
 }: {
   title: string;
   value: string | number;
   icon: React.ElementType;
   color: string;
+  bgGradient?: string;
 }) => (
   <Paper className={styles.statCard}>
-    <div
+    <Box
       className={styles.iconWrapper}
-      style={{ backgroundColor: color + "22" }}
+      style={{ background: bgGradient || color + "22" }}
     >
       <Icon className={styles.statIcon} style={{ color }} />
-    </div>
-    <div>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        className={styles.statTitle}
-      >
-        {title}
-      </Typography>
-      <Typography variant="h4" className={styles.statValue} style={{ color }}>
-        {value}
-      </Typography>
-    </div>
+    </Box>
+    <Box>
+      <Typography className={styles.statTitle}>{title}</Typography>
+      <Typography className={styles.statValue}>{value}</Typography>
+    </Box>
   </Paper>
 );
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [todayRevenue, setTodayRevenue] = useState(0);
+  const [monthRevenue, setMonthRevenue] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
+  const [topSellingProducts, setTopSellingProducts] = useState<TopProduct[]>(
+    []
+  );
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+
+        // Get today's date
+        const today = new Date().toISOString().split("T")[0];
+        const firstDayOfMonth = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          1
+        )
+          .toISOString()
+          .split("T")[0];
+
+        console.log("Fetching dashboard data...", { today, firstDayOfMonth });
+
+        // Fetch all data in parallel
+        const [
+          todayRevenueData,
+          monthRevenueData,
+          orderRatioData,
+          pendingCount,
+          topProductsData,
+        ] = await Promise.all([
+          // Today's revenue
+          adminService.getRevenueReport({
+            period: "day",
+            start_date: today,
+            end_date: today,
+          }),
+          // Month's revenue
+          adminService.getRevenueReport({
+            period: "day",
+            start_date: firstDayOfMonth,
+            end_date: today,
+          }),
+          // Total orders
+          adminService.getOrderRatio(),
+          // Pending orders
+          adminService.getPendingOrdersCount(),
+          // Top products
+          adminService.getTopProducts({
+            sort_by: "revenue",
+            limit: 5,
+          }),
+        ]);
+
+        console.log("API Responses:", {
+          todayRevenueData,
+          monthRevenueData,
+          orderRatioData,
+          pendingCount,
+          topProductsData,
+        });
+
+        // Set today's revenue
+        if (todayRevenueData.data && todayRevenueData.data.length > 0) {
+          setTodayRevenue(parseFloat(todayRevenueData.data[0].revenue));
+        } else {
+          console.warn("No today revenue data");
+        }
+
+        // Set month's revenue (sum all days)
+        if (monthRevenueData.data && monthRevenueData.data.length > 0) {
+          const monthTotal = monthRevenueData.data.reduce(
+            (sum: number, day: any) => sum + parseFloat(day.revenue),
+            0
+          );
+          setMonthRevenue(monthTotal);
+        } else {
+          console.warn("No month revenue data");
+        }
+
+        // Set total orders
+        setTotalOrders(orderRatioData.total_orders_count);
+
+        // Set pending orders
+        setPendingOrders(pendingCount);
+
+        // Set top products
+        if (topProductsData.data && topProductsData.data.length > 0) {
+          setTopSellingProducts(topProductsData.data);
+        } else {
+          console.warn("No top products data");
+        }
+      } catch (error: any) {
+        console.error("Error fetching dashboard data:", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          stack: error.stack,
+        });
+
+        if (error.response?.status === 403) {
+          setError(
+            "Access Denied: Admin privileges required to view dashboard data."
+          );
+        } else if (error.response?.status === 401) {
+          setError("Please log in to access the dashboard.");
+        } else if (error.message) {
+          setError(`Error: ${error.message}`);
+        } else {
+          setError("Failed to load dashboard data. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box
+        className={styles.container}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box className={styles.container}>
+        <Typography variant="h4" className={styles.pageTitle}>
+          DASHBOARD
+        </Typography>
+        <Paper sx={{ p: 4, textAlign: "center", mt: 4 }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            {error}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Please log in with an admin account to access the dashboard.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box className={styles.container}>
       <Typography variant="h4" className={styles.pageTitle}>
-        Dashboard Quản Trị
+        DASHBOARD
       </Typography>
 
+      {/* 4 thẻ thống kê */}
       <Grid container spacing={4} className={styles.statsGrid}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
-            title="Doanh thu hôm nay"
+            title="TODAY'S REVENUE"
             value={formatCurrency(todayRevenue)}
-            icon={AttachMoney}
-            color="#2e7d32"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <StatCard
-            title="Doanh thu tháng này"
-            value={formatCurrency(monthRevenue)}
-            icon={TrendingUp}
-            color="#ed6c02"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <StatCard
-            title="Tổng đơn hàng"
-            value={totalOrders.toLocaleString()}
-            icon={ShoppingCart}
+            icon={AttachMoneyOutlined}
             color="#1976d2"
+            bgGradient="linear-gradient(135deg, #1976d222, #42a5f522)"
           />
         </Grid>
+
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <StatCard
-            title="Đơn hàng đang chờ"
+            title="MONTHLY REVENUE"
+            value={formatCurrency(monthRevenue)}
+            icon={TrendingUpOutlined}
+            color="#4caf50"
+            bgGradient="linear-gradient(135deg, #4caf5022, #81c78422)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            title="TOTAL ORDERS"
+            value={totalOrders.toLocaleString()}
+            icon={ShoppingCartOutlined}
+            color="#ff9800"
+            bgGradient="linear-gradient(135deg, #ff980022, #ffb74d22)"
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <StatCard
+            title="PENDING ORDERS"
             value={pendingOrders}
-            icon={AccessTime}
+            icon={AccessTimeOutlined}
             color="#d32f2f"
+            bgGradient="linear-gradient(135deg, #d32f2f22, #ef535022)"
           />
         </Grid>
       </Grid>
 
+      {/* Top 5 món bán chạy - chiếm full chiều rộng còn lại */}
       <Grid container spacing={4}>
-        <Grid size={{ xs: 12, xl: 8 }}>
-          <Paper className={styles.chartCard}>
-            <Typography variant="h6" className={styles.sectionTitle}>
-              Doanh thu 20 ngày gần nhất
-            </Typography>
-            <ResponsiveContainer width="100%" height={380}>
-              <LineChart data={revenueChartData}>
-                <CartesianGrid strokeDasharray="4 4" stroke="#e0e0e0" />
-                <XAxis dataKey="day" />
-                <YAxis tickFormatter={(v) => `${(v / 1000000).toFixed(0)}tr`} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "none",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                  }}
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#1976d2"
-                  strokeWidth={4}
-                  dot={{ fill: "#1976d2", r: 6 }}
-                  activeDot={{ r: 9 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Paper>
-        </Grid>
-
-        <Grid size={{ xs: 12, xl: 4 }}>
+        <Grid size={12}>
           <Paper className={styles.topProductsCard}>
-            <Typography variant="h6" className={styles.sectionTitle}>
-              Top 5 món bán chạy
-            </Typography>
+            <Box display="flex" alignItems="center" gap={2} mb={3}>
+              <TrendingUpOutlined style={{ fontSize: 28, color: "#4caf50" }} />
+              <Typography variant="h6" className={styles.sectionTitle}>
+                TOP 5 BESTSELLING PRODUCTS
+              </Typography>
+            </Box>
+
             <Box className={styles.topList}>
-              {topSellingProducts.map((item, index) => (
-                <Box key={item.id} className={styles.topItemWithImage}>
-                  <Box
-                    className={styles.rankBadge}
-                    style={{
-                      color: index < 3 ? "var(--primary-color)" : "#666",
-                    }}
-                  >
-                    #{index + 1}
-                  </Box>
-
-                  <Avatar
-                    variant="rounded"
-                    src={item.image}
-                    alt={item.name}
-                    className={styles.productImage}
-                  />
-
-                  <Box className={styles.productInfo}>
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight="bold"
-                      className={styles.productName}
+              {topSellingProducts.length > 0 ? (
+                topSellingProducts.map((item, index) => (
+                  <Box key={item.product_id} className={styles.topItem}>
+                    <Box
+                      className={styles.rankBadge}
+                      style={{
+                        background:
+                          index === 0
+                            ? "linear-gradient(135deg, #ffd700, #ffb800)"
+                            : index === 1
+                            ? "linear-gradient(135deg, #c0c0c0, #a0a0a0)"
+                            : index === 2
+                            ? "linear-gradient(135deg, #cd7f32, #a0522d)"
+                            : "rgba(0,0,0,0.08)",
+                        color: index < 3 ? "white" : "#333",
+                      }}
                     >
-                      {item.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.qty} món • {formatCurrency(item.revenue)}
-                    </Typography>
+                      #{index + 1}
+                    </Box>
+
+                    <Avatar
+                      variant="rounded"
+                      alt={item.product_name}
+                      className={styles.productImage}
+                    >
+                      {item.product_name.charAt(0)}
+                    </Avatar>
+
+                    <Box className={styles.productInfo}>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        className={styles.productName}
+                      >
+                        {item.product_name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.quantity_sold.toLocaleString()} items •{" "}
+                        {formatCurrency(item.revenue)}
+                      </Typography>
+                    </Box>
                   </Box>
+                ))
+              ) : (
+                <Box p={3} textAlign="center">
+                  <Typography variant="body1" color="text.secondary">
+                    No sales data available
+                  </Typography>
                 </Box>
-              ))}
+              )}
             </Box>
           </Paper>
         </Grid>

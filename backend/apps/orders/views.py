@@ -197,20 +197,20 @@ class PlaceOrderView(APIView):
             )
 
 
-class OrderListView(APIView):
+class OrderListView(ListAPIView):
     """
     GET /api/orders/
     Get all orders for the authenticated user (USER only, NOT admin)
     """
 
     permission_classes = [IsAuthenticated, IsRegularUser]
+    serializer_class = OrderSerializer
+    pagination_class = StandardResultsSetPagination
 
-    def get(self, request):
-        orders = Order.objects.filter(user=request.user).prefetch_related(
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).prefetch_related(
             "items__product", "address"
         )
-        serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class OrderDetailView(APIView):
@@ -314,21 +314,13 @@ class AdminChangeStatusView(APIView):
 
     Body:
     {
-        "status": "PREPARING" | "READY" | "DELIVERED" | "CANCELLED"
+        "status": "PAID" | "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED" | "CANCELLED"
     }
 
+    Admins can change order status to any valid status for operational flexibility.
     """
 
     permission_classes = [IsAuthenticated, IsAdminUser]
-
-    VALID_TRANSITIONS = {
-        "PAID": ["PREPARING", "CANCELLED"],
-        "CONFIRMED": ["PREPARING"],
-        "PREPARING": ["READY", "CANCELLED"],
-        "READY": ["DELIVERED"],
-        "DELIVERED": [],
-        "CANCELLED": [],
-    }
 
     def patch(self, request, order_id):
         # Get the order
@@ -349,24 +341,11 @@ class AdminChangeStatusView(APIView):
             )
 
         # Validate new status is a valid OrderStatus
-        if new_status not in [choice.value for choice in OrderStatus]:
+        valid_statuses = [choice.value for choice in OrderStatus]
+        if new_status not in valid_statuses:
             return Response(
                 {
-                    "error": f"Invalid status. Valid options: {', '.join([s.value for s in OrderStatus])}"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Check if transition is valid
-        current_status = order.status
-        valid_next_statuses = self.VALID_TRANSITIONS.get(current_status, [])
-
-        if new_status not in valid_next_statuses:
-            return Response(
-                {
-                    "error": f"Invalid status transition from '{current_status}' to '{new_status}'",
-                    "current_status": current_status,
-                    "allowed_transitions": valid_next_statuses,
+                    "error": f"Invalid status. Valid options: {', '.join(valid_statuses)}"
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )

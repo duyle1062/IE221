@@ -10,6 +10,14 @@ from .models import (
 from apps.product.serializers import ProductSerializer
 
 
+class UserBasicSerializer(serializers.Serializer):
+    """Serializer for basic user information in orders"""
+
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    full_name = serializers.CharField()
+
+
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
@@ -47,12 +55,25 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
+    user = serializers.SerializerMethodField()
     user_email = serializers.CharField(source="user.email", read_only=True)
+    is_group_order = serializers.SerializerMethodField()
+
+    def get_user(self, obj):
+        """Return user data if user exists"""
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "email": obj.user.email,
+                "full_name": obj.user.get_full_name(),
+            }
+        return None
 
     class Meta:
         model = Order
         fields = [
             "id",
+            "user",
             "user_email",
             "restaurant_id",
             "address",
@@ -65,6 +86,8 @@ class OrderSerializer(serializers.ModelSerializer):
             "payment_method",
             "payment_status",
             "items",
+            "group_order_id",
+            "is_group_order",
             "created_at",
             "updated_at",
         ]
@@ -76,6 +99,9 @@ class OrderSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def get_is_group_order(self, obj):
+        return obj.group_order_id is not None
 
 
 class PlaceOrderSerializer(serializers.Serializer):
@@ -100,25 +126,33 @@ class PlaceOrderSerializer(serializers.Serializer):
 class GroupOrderMemberSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source="user.email", read_only=True)
     user_name = serializers.SerializerMethodField()
+    is_creator = serializers.SerializerMethodField()
 
     class Meta:
         model = GroupOrderMember
-        fields = ["id", "user_email", "user_name", "joined_at"]
+        fields = ["id", "user_email", "user_name", "is_creator", "joined_at"]
         read_only_fields = ["id", "joined_at"]
 
     def get_user_name(self, obj):
         return f"{obj.user.firstname} {obj.user.lastname}"
 
+    def get_is_creator(self, obj):
+        return obj.group_order.creator_id == obj.user.id
+
 
 class GroupOrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(read_only=True)
     user_email = serializers.CharField(source="user.email", read_only=True)
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    user_name = serializers.SerializerMethodField()
 
     class Meta:
         model = GroupOrderItem
         fields = [
             "id",
+            "user_id",
             "user_email",
+            "user_name",
             "product_id",
             "product_name",
             "unit_price",
@@ -135,8 +169,12 @@ class GroupOrderItemSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def get_user_name(self, obj):
+        return f"{obj.user.firstname} {obj.user.lastname}"
+
 
 class GroupOrderSerializer(serializers.ModelSerializer):
+    creator_id = serializers.IntegerField(source="creator.id", read_only=True)
     creator_email = serializers.CharField(source="creator.email", read_only=True)
     members = GroupOrderMemberSerializer(many=True, read_only=True)
     items = GroupOrderItemSerializer(many=True, read_only=True)
@@ -146,6 +184,7 @@ class GroupOrderSerializer(serializers.ModelSerializer):
         model = GroupOrder
         fields = [
             "id",
+            "creator_id",
             "creator_email",
             "restaurant_id",
             "code",

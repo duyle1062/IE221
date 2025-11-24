@@ -101,6 +101,11 @@ class RevenueReportView(APIView):
                 )
                 .order_by("date")
             )
+            # Convert datetime to date for monthly data
+            revenue_data = [
+                {**item, "date": item["date"].date() if item["date"] else None}
+                for item in revenue_data
+            ]
 
         # Add payment_method to response if filtered
         if payment_method:

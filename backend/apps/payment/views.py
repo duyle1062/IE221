@@ -177,6 +177,17 @@ class VNPayReturnView(APIView):
                 order.payment_status = "SUCCEEDED"
                 order.save()
 
+                # Update group order status if this is a group order
+                if order.group_order_id:
+                    from apps.orders.models import GroupOrder
+
+                    try:
+                        group_order = GroupOrder.objects.get(id=order.group_order_id)
+                        group_order.status = "PAID"
+                        group_order.save()
+                    except GroupOrder.DoesNotExist:
+                        pass  # Group order not found, ignore
+
                 return Response(
                     {
                         "message": "Payment successful",

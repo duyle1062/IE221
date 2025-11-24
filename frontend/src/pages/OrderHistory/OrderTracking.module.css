@@ -171,16 +171,18 @@
   justify-content: space-between;
   position: relative;
   margin-bottom: 2rem;
+  padding: 0 17px;
 }
 
 .progressBar::before {
   content: "";
   position: absolute;
-  top: 15px;
-  left: 0;
-  width: 100%;
+  top: 50%;
+  left: 17px; /* Start after first circle */
+  right: 17px; /* End before last circle */
   height: 4px;
   background-color: var(--timeline-bg-grey);
+  transform: translateY(-50%);
   z-index: 1;
 }
 

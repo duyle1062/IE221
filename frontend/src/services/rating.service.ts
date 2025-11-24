@@ -1,9 +1,9 @@
 import axiosInstance from "./axios.instance";
 import { API_ENDPOINTS } from "../config/api.config";
-import { 
-  Rating, 
-  RatingListResponse, 
-  CreateRatingData 
+import {
+  Rating,
+  RatingListResponse,
+  CreateRatingData,
 } from "../types/product.types";
 
 /**
@@ -67,7 +67,7 @@ class RatingService {
     } catch (error: any) {
       console.error("Create rating error:", error);
       console.log("Full error response:", error.response);
-      
+
       // Let the error propagate with full context
       throw error;
     }

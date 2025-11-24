@@ -1,6 +1,6 @@
 .container {
   max-width: 1200px;
-  height: 800px;
+  min-height: 800px;
   margin: 40px auto;
   margin-bottom: 50px;
   padding: 0 20px;
@@ -154,6 +154,7 @@
   display: flex;
   border-bottom: 1px solid var(--border-color-lighter);
   margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .tabs button {
@@ -180,6 +181,28 @@
 
 .reviewsList {
   margin-bottom: 32px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Custom scrollbar for reviews list */
+.reviewsList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.reviewsList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.reviewsList::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.reviewsList::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .reviewItem {
@@ -297,9 +320,13 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin-top: 24px;
-  padding: 16px 0;
+  margin-top: 16px;
+  padding: 12px 0;
   border-top: 1px solid var(--border-color-lighter);
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 10;
 }
 
 .paginationBtn {

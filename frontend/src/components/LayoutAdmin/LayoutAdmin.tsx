@@ -31,7 +31,7 @@ const LayoutAdmin: React.FC = () => {
 
   const userName = "Admin User";
   const logout = () => {
-    alert("Đã đăng xuất (tạm thời)");
+    alert("Log out successful!");
   };
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -129,8 +129,8 @@ const LayoutAdmin: React.FC = () => {
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
-              <MenuItem onClick={handleClose}>Tài khoản</MenuItem>
-              <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
+              <MenuItem onClick={handleClose}>Account</MenuItem>
+              <MenuItem onClick={handleLogout}>Log out</MenuItem>
             </Popover>
           </Toolbar>
         </AppBar>
