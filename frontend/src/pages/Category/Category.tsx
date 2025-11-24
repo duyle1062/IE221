@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import styles from "./Category.module.css";
 import Header from "../../components/Header/Header";
+import Footer from "../../components/Footer/Footer";
 import Categories from "../../components/Categories/Categories";
 import StarRating from "../../components/StarRating/StarRating";
 import productService from "../../services/product.service";
@@ -112,6 +113,7 @@ export default function Category() {
           </div>
         )}
       </div>
+      <Footer />
     </>
   );
 }

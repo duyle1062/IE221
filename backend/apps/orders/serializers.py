@@ -10,6 +10,14 @@ from .models import (
 from apps.product.serializers import ProductSerializer
 
 
+class UserBasicSerializer(serializers.Serializer):
+    """Serializer for basic user information in orders"""
+
+    id = serializers.IntegerField()
+    email = serializers.EmailField()
+    full_name = serializers.CharField()
+
+
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
@@ -47,13 +55,25 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
+    user = serializers.SerializerMethodField()
     user_email = serializers.CharField(source="user.email", read_only=True)
     is_group_order = serializers.SerializerMethodField()
+
+    def get_user(self, obj):
+        """Return user data if user exists"""
+        if obj.user:
+            return {
+                "id": obj.user.id,
+                "email": obj.user.email,
+                "full_name": obj.user.get_full_name(),
+            }
+        return None
 
     class Meta:
         model = Order
         fields = [
             "id",
+            "user",
             "user_email",
             "restaurant_id",
             "address",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Grid,
   Paper,
@@ -9,6 +9,7 @@ import {
   FormControl,
   InputLabel,
   Avatar,
+  CircularProgress,
 } from "@mui/material";
 import {
   CalendarOutlined,
@@ -29,122 +30,110 @@ import {
   Cell,
 } from "recharts";
 import styles from "./Reports.module.css";
-
-// Mock data theo đúng cấu trúc backend
-const revenueDataDaily = [
-  { date: "01/11", revenue: 48500000, order_count: 142 },
-  { date: "02/11", revenue: 52100000, order_count: 158 },
-  { date: "03/11", revenue: 59800000, order_count: 171 },
-  { date: "04/11", revenue: 61200000, order_count: 165 },
-  { date: "05/11", revenue: 67800000, order_count: 189 },
-  { date: "06/11", revenue: 74300000, order_count: 201 },
-  { date: "07/11", revenue: 82100000, order_count: 223 },
-  { date: "08/11", revenue: 79500000, order_count: 218 },
-  { date: "09/11", revenue: 88200000, order_count: 241 },
-  { date: "10/11", revenue: 91600000, order_count: 256 },
-  { date: "11/11", revenue: 97300000, order_count: 272 },
-  { date: "12/11", revenue: 104200000, order_count: 289 },
-  { date: "13/11", revenue: 98700000, order_count: 275 },
-  { date: "14/11", revenue: 112300000, order_count: 301 },
-  { date: "15/11", revenue: 108900000, order_count: 294 },
-];
-
-const revenueDataMonthly = [
-  { date: "06/2025", revenue: 2450000000, order_count: 3214 },
-  { date: "07/2025", revenue: 2890000000, order_count: 3789 },
-  { date: "08/2025", revenue: 3120000000, order_count: 4102 },
-  { date: "09/2025", revenue: 3560000000, order_count: 4567 },
-  { date: "10/2025", revenue: 4210000000, order_count: 5231 },
-  { date: "11/2025", revenue: 1892400000, order_count: 2478 },
-];
-
-const orderRatioData = {
-  individual_orders_count: 892,
-  individual_orders_revenue: 1425000000,
-  individual_orders_percentage: 71.61,
-  group_orders_count: 355,
-  group_orders_revenue: 467400000,
-  group_orders_percentage: 28.39,
-  total_orders_count: 1247,
-  total_revenue: 1892400000,
-};
-
-const topProducts = [
-  {
-    product_id: 12,
-    product_name: "Margherita Pizza",
-    quantity_sold: 892,
-    revenue: 321120000,
-    image:
-      "https://images.unsplash.com/photo-1593253784644-2e108b3e6f9f?w=400&h=300&fit=crop",
-  },
-  {
-    product_id: 15,
-    product_name: "Pepperoni Pizza",
-    quantity_sold: 745,
-    revenue: 283100000,
-    image:
-      "https://images.unsplash.com/photo-1625398112201-58d5a5f8c6f7?w=400&h=300&fit=crop",
-  },
-  {
-    product_id: 18,
-    product_name: "BBQ Chicken Pizza",
-    quantity_sold: 612,
-    revenue: 257040000,
-    image:
-      "https://images.unsplash.com/photo-1626646736310-8e1e3e3d8f8e?w=400&h=300&fit=crop",
-  },
-  {
-    product_id: 21,
-    product_name: "Four Cheese Pizza",
-    quantity_sold: 489,
-    revenue: 224940000,
-    image:
-      "https://images.unsplash.com/photo-1559058775-530e32471d8a?w=400&h=300&fit=crop",
-  },
-  {
-    product_id: 25,
-    product_name: "Spicy Seafood Pizza",
-    quantity_sold: 378,
-    revenue: 189000000,
-    image:
-      "https://images.unsplash.com/photo-1571068969003-0a88d6d574d8?w=400&h=300&fit=crop",
-  },
-  // Add 5 more items for top 10
-  ...Array(5)
-    .fill(null)
-    .map((_, i) => ({
-      product_id: 30 + i,
-      product_name: `Special Dish #${i + 1}`, // Dịch "Món ngon đặc biệt"
-      quantity_sold: 300 - i * 40,
-      revenue: (300 - i * 40) * 420000,
-      image:
-        "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop",
-    })),
-];
-
-const pieData = [
-  {
-    name: "Individual Orders",
-    value: orderRatioData.individual_orders_count,
-    revenue: orderRatioData.individual_orders_revenue,
-  },
-  {
-    name: "Group Orders",
-    value: orderRatioData.group_orders_count,
-    revenue: orderRatioData.group_orders_revenue,
-  },
-];
+import adminService, {
+  RevenueData,
+  TopProduct,
+  OrderRatioData,
+} from "../../../services/admin.service";
 
 const COLORS = ["#1976d2", "#ff6b6b"];
 
 const formatCurrency = (value: number): string => {
-  return value.toLocaleString("vi-VN") + "đ";
+  return new Intl.NumberFormat("en-US").format(Math.round(value)) + " VND";
 };
 
 const Reports: React.FC = () => {
   const [period, setPeriod] = useState<"day" | "month">("day");
-  const revenueData = period === "day" ? revenueDataDaily : revenueDataMonthly;
+  const [loading, setLoading] = useState(true);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const [orderRatioData, setOrderRatioData] = useState<OrderRatioData | null>(
+    null
+  );
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+
+  useEffect(() => {
+    const fetchReportsData = async () => {
+      try {
+        setLoading(true);
+        // Clear previous data first to avoid showing stale data
+        setRevenueData([]);
+
+        // Calculate date range based on period
+        const endDate = new Date().toISOString().split("T")[0];
+        let startDate: string;
+
+        if (period === "day") {
+          // Last 30 days
+          const start = new Date();
+          start.setDate(start.getDate() - 30);
+          startDate = start.toISOString().split("T")[0];
+        } else {
+          // Last 12 months
+          const start = new Date();
+          start.setMonth(start.getMonth() - 12);
+          start.setDate(1); // Set to first day of that month
+          startDate = start.toISOString().split("T")[0];
+        }
+
+        console.log(`Fetching ${period} data from ${startDate} to ${endDate}`);
+
+        // Fetch all data in parallel
+        const [revenueResponse, ratioResponse, productsResponse] =
+          await Promise.all([
+            adminService.getRevenueReport({
+              period: period,
+              start_date: startDate,
+              end_date: endDate,
+            }),
+            adminService.getOrderRatio(),
+            adminService.getTopProducts({
+              sort_by: "revenue",
+              limit: 10,
+            }),
+          ]);
+
+        console.log(`Revenue data (${period}):`, revenueResponse.data);
+        setRevenueData(revenueResponse.data || []);
+        setOrderRatioData(ratioResponse);
+        setTopProducts(productsResponse.data || []);
+      } catch (error) {
+        console.error("Error fetching reports data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReportsData();
+  }, [period]);
+
+  const pieData = orderRatioData
+    ? [
+        {
+          name: "Individual Orders",
+          value: orderRatioData.individual_orders_count,
+          revenue: orderRatioData.individual_orders_revenue,
+        },
+        {
+          name: "Group Orders",
+          value: orderRatioData.group_orders_count,
+          revenue: orderRatioData.group_orders_revenue,
+        },
+      ]
+    : [];
+
+  if (loading) {
+    return (
+      <Box
+        className={styles.container}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box className={styles.container}>
@@ -178,7 +167,21 @@ const Reports: React.FC = () => {
             </Box>
 
             <ResponsiveContainer width="100%" height={420}>
-              <LineChart data={revenueData}>
+              <LineChart
+                data={revenueData.map((item) => ({
+                  ...item,
+                  date:
+                    period === "day"
+                      ? new Date(item.date).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                        })
+                      : new Date(item.date).toLocaleDateString("en-US", {
+                          month: "short",
+                          year: "numeric",
+                        }),
+                }))}
+              >
                 <CartesianGrid strokeDasharray="4 4" stroke="#e0e0e0" />
                 <XAxis dataKey="date" />
                 <YAxis
@@ -259,10 +262,11 @@ const Reports: React.FC = () => {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {entry.value.toLocaleString()} orders (
-                      {(
-                        (entry.value / orderRatioData.total_orders_count) *
-                        100
-                      ).toFixed(1)}
+                      {orderRatioData &&
+                        (
+                          (entry.value / orderRatioData.total_orders_count) *
+                          100
+                        ).toFixed(1)}
                       %)
                       <br />
                       {formatCurrency(entry.revenue)}
@@ -274,8 +278,9 @@ const Reports: React.FC = () => {
 
             <Box className={styles.totalBox}>
               <Typography variant="h5" fontWeight="bold" color="primary">
-                Total: {orderRatioData.total_orders_count.toLocaleString()}{" "}
-                orders • {formatCurrency(orderRatioData.total_revenue)}
+                Total: {orderRatioData?.total_orders_count.toLocaleString()}{" "}
+                orders •{" "}
+                {orderRatioData && formatCurrency(orderRatioData.total_revenue)}
               </Typography>
             </Box>
           </Paper>
@@ -313,10 +318,11 @@ const Reports: React.FC = () => {
 
                   <Avatar
                     variant="rounded"
-                    src={item.image}
                     alt={item.product_name}
                     className={styles.productImage}
-                  />
+                  >
+                    {item.product_name.charAt(0)}
+                  </Avatar>
 
                   <Box className={styles.productInfo}>
                     <Typography
@@ -339,7 +345,7 @@ const Reports: React.FC = () => {
                       fontWeight="bold"
                       color="#4caf50"
                     >
-                      {(item.revenue / 1000000).toFixed(1)}tr
+                      {(item.revenue / 1000000).toFixed(1)}M
                     </Typography>
                   </Box>
                 </Box>

@@ -37,7 +37,7 @@ const ProductDetailPage: React.FC = () => {
     }
 
     try {
-      setIsAddingToCart(true);
+      setIsAddingToGroupOrder(true);
       await addGroupOrderItem(parseInt(activeGroupOrderId), {
         product_id: product.id,
         quantity: quantity,
@@ -47,7 +47,7 @@ const ProductDetailPage: React.FC = () => {
     } catch (error: any) {
       toast.error(error.message || "Failed to add item to group order");
     } finally {
-      setIsAddingToCart(false);
+      setIsAddingToGroupOrder(false);
     }
   };
   const { categorySlug, productSlug } = useParams<{
@@ -68,6 +68,7 @@ const ProductDetailPage: React.FC = () => {
   const [comment, setComment] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isAddingToGroupOrder, setIsAddingToGroupOrder] = useState(false);
 
   // Rating states
   const [ratings, setRatings] = useState<RatingListResponse | null>(null);
@@ -350,7 +351,7 @@ const ProductDetailPage: React.FC = () => {
         <div className={styles.errorContainer}>
           <p>{error}</p>
           <button onClick={() => navigate(-1)} className={styles.backButton}>
-            Quay lại
+            Back
           </button>
         </div>
       ) : product ? (
@@ -428,8 +429,15 @@ const ProductDetailPage: React.FC = () => {
               <button
                 className={styles.groupOrderBtn}
                 onClick={handleAddToGroupOrder}
+                disabled={isAddingToGroupOrder || !product.available}
               >
-                <FaUsers /> Add To Group Order
+                {isAddingToGroupOrder ? (
+                  "Adding..."
+                ) : (
+                  <>
+                    <FaUsers /> Add To Group Order
+                  </>
+                )}
               </button>
 
               <div className={styles.tabs}>

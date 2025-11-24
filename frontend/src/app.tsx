@@ -10,6 +10,7 @@ import Category from "./pages/Category/Category";
 import ProductDetailPage from "./pages/ProductDetail/ProductDetail";
 import UserProfile from "./pages/UserProfile/UserProfile";
 import Cart from "./pages/Cart/Cart";
+import SearchResults from "./pages/SearchResults/SearchResults";
 
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<SearchResults />} />
           <Route
             path="/product/:categorySlug/:productSlug"
             element={<ProductDetailPage />}

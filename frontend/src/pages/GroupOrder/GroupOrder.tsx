@@ -30,6 +30,8 @@ import {
 import { GroupOrder as GroupOrderData } from "../../types/groupOrder.types";
 import { useAuth } from "../../context/AuthContext";
 import addressService, { Address } from "../../services/address.service";
+import Header from "../../components/Header/Header";
+import Footer from "../../components/Footer/Footer";
 
 const GroupOrder: React.FC = () => {
   const navigate = useNavigate();
@@ -642,33 +644,37 @@ const GroupOrder: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Group Order</h1>
-        <p className={styles.subtitle}>
-          Eat together, pay together (or split later!)
-        </p>
-        {viewMode === "active" && (
-          <button
-            className={styles.newGroupBtn}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Start a new group order? You will leave the current group."
-                )
-              ) {
-                localStorage.removeItem("activeGroupOrderId");
-                setGroupData(null);
-                setViewMode("selection");
-              }
-            }}
-          >
-            + Start New Group Order
-          </button>
-        )}
-      </header>
-      {viewMode === "selection" ? renderSelection() : renderDashboard()}
-    </div>
+    <>
+      <Header />
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <h1 className={styles.title}>Group Order</h1>
+          <p className={styles.subtitle}>
+            Eat together, pay together (or split later!)
+          </p>
+          {viewMode === "active" && (
+            <button
+              className={styles.newGroupBtn}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Start a new group order? You will leave the current group."
+                  )
+                ) {
+                  localStorage.removeItem("activeGroupOrderId");
+                  setGroupData(null);
+                  setViewMode("selection");
+                }
+              }}
+            >
+              + Start New Group Order
+            </button>
+          )}
+        </header>
+        {viewMode === "selection" ? renderSelection() : renderDashboard()}
+      </div>
+      <Footer />
+    </>
   );
 };
 

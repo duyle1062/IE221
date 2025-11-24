@@ -1,5 +1,12 @@
-import React from "react";
-import { Grid, Paper, Typography, Box, Avatar } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import {
+  Grid,
+  Paper,
+  Typography,
+  Box,
+  Avatar,
+  CircularProgress,
+} from "@mui/material";
 import {
   AttachMoneyOutlined,
   TrendingUpOutlined,
@@ -7,55 +14,7 @@ import {
   AccessTimeOutlined,
 } from "@mui/icons-material";
 import styles from "./Dashboard.module.css";
-
-// Mock data chuẩn backend
-const todayRevenue = 68750000; // RevenueReportView (hôm nay)
-const monthRevenue = 1892400000; // RevenueReportView (tháng này)
-const totalOrders = 1247; // OrderRatioReportView
-const pendingOrders = 42; // AdminOrderListView (đếm đơn chưa xong)
-
-const topSellingProducts = [
-  {
-    id: 12,
-    name: "Margherita Pizza",
-    qty: 892,
-    revenue: 321120000,
-    image:
-      "https://images.unsplash.com/photo-1593253784644-2e108b3e6f9f?w=400&h=300&fit=crop",
-  },
-  {
-    id: 15,
-    name: "Pepperoni Pizza",
-    qty: 745,
-    revenue: 283100000,
-    image:
-      "https://images.unsplash.com/photo-1625398112201-58d5a5f8c6f7?w=400&h=300&fit=crop",
-  },
-  {
-    id: 18,
-    name: "BBQ Chicken Pizza",
-    qty: 612,
-    revenue: 257040000,
-    image:
-      "https://images.unsplash.com/photo-1626646736310-8e1e3e3d8f8e?w=400&h=300&fit=crop",
-  },
-  {
-    id: 21,
-    name: "Four Cheese Pizza",
-    qty: 489,
-    revenue: 224940000,
-    image:
-      "https://images.unsplash.com/photo-1559058775-530e32471d8a?w=400&h=300&fit=crop",
-  },
-  {
-    id: 25,
-    name: "Spicy Seafood Pizza",
-    qty: 378,
-    revenue: 189000000,
-    image:
-      "https://images.unsplash.com/photo-1571068969003-0a88d6d574d8?w=400&h=300&fit=crop",
-  },
-];
+import adminService, { TopProduct } from "../../../services/admin.service";
 
 const formatCurrency = (value: number): string => {
   if (value >= 1_000_000_000) {
@@ -95,6 +54,162 @@ const StatCard = ({
 );
 
 const Dashboard: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [todayRevenue, setTodayRevenue] = useState(0);
+  const [monthRevenue, setMonthRevenue] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
+  const [topSellingProducts, setTopSellingProducts] = useState<TopProduct[]>(
+    []
+  );
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+
+        // Get today's date
+        const today = new Date().toISOString().split("T")[0];
+        const firstDayOfMonth = new Date(
+          new Date().getFullYear(),
+          new Date().getMonth(),
+          1
+        )
+          .toISOString()
+          .split("T")[0];
+
+        console.log("Fetching dashboard data...", { today, firstDayOfMonth });
+
+        // Fetch all data in parallel
+        const [
+          todayRevenueData,
+          monthRevenueData,
+          orderRatioData,
+          pendingCount,
+          topProductsData,
+        ] = await Promise.all([
+          // Today's revenue
+          adminService.getRevenueReport({
+            period: "day",
+            start_date: today,
+            end_date: today,
+          }),
+          // Month's revenue
+          adminService.getRevenueReport({
+            period: "day",
+            start_date: firstDayOfMonth,
+            end_date: today,
+          }),
+          // Total orders
+          adminService.getOrderRatio(),
+          // Pending orders
+          adminService.getPendingOrdersCount(),
+          // Top products
+          adminService.getTopProducts({
+            sort_by: "revenue",
+            limit: 5,
+          }),
+        ]);
+
+        console.log("API Responses:", {
+          todayRevenueData,
+          monthRevenueData,
+          orderRatioData,
+          pendingCount,
+          topProductsData,
+        });
+
+        // Set today's revenue
+        if (todayRevenueData.data && todayRevenueData.data.length > 0) {
+          setTodayRevenue(parseFloat(todayRevenueData.data[0].revenue));
+        } else {
+          console.warn("No today revenue data");
+        }
+
+        // Set month's revenue (sum all days)
+        if (monthRevenueData.data && monthRevenueData.data.length > 0) {
+          const monthTotal = monthRevenueData.data.reduce(
+            (sum: number, day: any) => sum + parseFloat(day.revenue),
+            0
+          );
+          setMonthRevenue(monthTotal);
+        } else {
+          console.warn("No month revenue data");
+        }
+
+        // Set total orders
+        setTotalOrders(orderRatioData.total_orders_count);
+
+        // Set pending orders
+        setPendingOrders(pendingCount);
+
+        // Set top products
+        if (topProductsData.data && topProductsData.data.length > 0) {
+          setTopSellingProducts(topProductsData.data);
+        } else {
+          console.warn("No top products data");
+        }
+      } catch (error: any) {
+        console.error("Error fetching dashboard data:", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          stack: error.stack,
+        });
+
+        if (error.response?.status === 403) {
+          setError(
+            "Access Denied: Admin privileges required to view dashboard data."
+          );
+        } else if (error.response?.status === 401) {
+          setError("Please log in to access the dashboard.");
+        } else if (error.message) {
+          setError(`Error: ${error.message}`);
+        } else {
+          setError("Failed to load dashboard data. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box
+        className={styles.container}
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box className={styles.container}>
+        <Typography variant="h4" className={styles.pageTitle}>
+          DASHBOARD
+        </Typography>
+        <Paper sx={{ p: 4, textAlign: "center", mt: 4 }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            {error}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Please log in with an admin account to access the dashboard.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
   return (
     <Box className={styles.container}>
       <Typography variant="h4" className={styles.pageTitle}>
@@ -156,47 +271,56 @@ const Dashboard: React.FC = () => {
             </Box>
 
             <Box className={styles.topList}>
-              {topSellingProducts.map((item, index) => (
-                <Box key={item.id} className={styles.topItem}>
-                  <Box
-                    className={styles.rankBadge}
-                    style={{
-                      background:
-                        index === 0
-                          ? "linear-gradient(135deg, #ffd700, #ffb800)"
-                          : index === 1
-                          ? "linear-gradient(135deg, #c0c0c0, #a0a0a0)"
-                          : index === 2
-                          ? "linear-gradient(135deg, #cd7f32, #a0522d)"
-                          : "rgba(0,0,0,0.08)",
-                      color: index < 3 ? "white" : "#333",
-                    }}
-                  >
-                    #{index + 1}
-                  </Box>
-
-                  <Avatar
-                    variant="rounded"
-                    src={item.image}
-                    alt={item.name}
-                    className={styles.productImage}
-                  />
-
-                  <Box className={styles.productInfo}>
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight="bold"
-                      className={styles.productName}
+              {topSellingProducts.length > 0 ? (
+                topSellingProducts.map((item, index) => (
+                  <Box key={item.product_id} className={styles.topItem}>
+                    <Box
+                      className={styles.rankBadge}
+                      style={{
+                        background:
+                          index === 0
+                            ? "linear-gradient(135deg, #ffd700, #ffb800)"
+                            : index === 1
+                            ? "linear-gradient(135deg, #c0c0c0, #a0a0a0)"
+                            : index === 2
+                            ? "linear-gradient(135deg, #cd7f32, #a0522d)"
+                            : "rgba(0,0,0,0.08)",
+                        color: index < 3 ? "white" : "#333",
+                      }}
                     >
-                      {item.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.qty.toLocaleString()} items •{" "}
-                      {formatCurrency(item.revenue)}
-                    </Typography>
+                      #{index + 1}
+                    </Box>
+
+                    <Avatar
+                      variant="rounded"
+                      alt={item.product_name}
+                      className={styles.productImage}
+                    >
+                      {item.product_name.charAt(0)}
+                    </Avatar>
+
+                    <Box className={styles.productInfo}>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        className={styles.productName}
+                      >
+                        {item.product_name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.quantity_sold.toLocaleString()} items •{" "}
+                        {formatCurrency(item.revenue)}
+                      </Typography>
+                    </Box>
                   </Box>
+                ))
+              ) : (
+                <Box p={3} textAlign="center">
+                  <Typography variant="body1" color="text.secondary">
+                    No sales data available
+                  </Typography>
                 </Box>
-              ))}
+              )}
             </Box>
           </Paper>
         </Grid>
