@@ -197,20 +197,20 @@ class PlaceOrderView(APIView):
             )
 
 
-class OrderListView(APIView):
+class OrderListView(ListAPIView):
     """
     GET /api/orders/
     Get all orders for the authenticated user (USER only, NOT admin)
     """
 
     permission_classes = [IsAuthenticated, IsRegularUser]
+    serializer_class = OrderSerializer
+    pagination_class = StandardResultsSetPagination
 
-    def get(self, request):
-        orders = Order.objects.filter(user=request.user).prefetch_related(
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).prefetch_related(
             "items__product", "address"
         )
-        serializer = OrderSerializer(orders, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class OrderDetailView(APIView):

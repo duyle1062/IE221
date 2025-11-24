@@ -72,16 +72,20 @@ const Orders: React.FC = () => {
   const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(
     null
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const pageSize = 10;
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    loadOrders(currentPage);
+  }, [currentPage]);
 
-  const loadOrders = async () => {
+  const loadOrders = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getUserOrders(1, 100);
+      const response = await getUserOrders(page, pageSize);
       const ordersList = Array.isArray(response)
         ? response
         : response.results || [];
@@ -90,6 +94,14 @@ const Orders: React.FC = () => {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
       setOrders(sortedOrders);
+
+      // Set pagination info
+      if (!Array.isArray(response)) {
+        const count = response.count || 0;
+        const pages = Math.ceil(count / pageSize);
+        setTotalOrders(count);
+        setTotalPages(pages);
+      }
     } catch (err: any) {
       setError(err.message || "Failed to load orders");
       console.error("Error loading orders:", err);
@@ -97,13 +109,12 @@ const Orders: React.FC = () => {
       setLoading(false);
     }
   };
-
   const handleCancelOrder = async (orderId: number) => {
     if (window.confirm("Are you sure you want to cancel this order?")) {
       try {
         setCancellingOrderId(orderId);
         await cancelOrder(orderId);
-        await loadOrders();
+        await loadOrders(currentPage);
         toast.success("Order cancelled successfully");
         if (selectedOrder && selectedOrder.id === orderId) {
           setSelectedOrder(null);
@@ -117,41 +128,72 @@ const Orders: React.FC = () => {
   };
 
   const renderOrderList = () => (
-    <div className={styles.orderList}>
-      {orders.map((order) => (
-        <div key={order.id} className={styles.orderCard}>
-          <div className={styles.orderInfo}>
-            <h3>
-              Order #{order.id}
-              {order.is_group_order && (
-                <span className={styles.groupOrderBadge}>Group</span>
-              )}
-            </h3>
-            <div className={styles.orderMeta}>
-              <span>{formatDate(order.created_at)}</span>
-              <span>•</span>
-              <span>{order.items.length} items</span>
+    <>
+      <div className={styles.orderList}>
+        {orders.map((order) => (
+          <div key={order.id} className={styles.orderCard}>
+            <div className={styles.orderInfo}>
+              <h3>
+                Order #{order.id}
+                {order.is_group_order && (
+                  <span className={styles.groupOrderBadge}>Group</span>
+                )}
+              </h3>
+              <div className={styles.orderMeta}>
+                <span>{formatDate(order.created_at)}</span>
+                <span>•</span>
+                <span>{order.items.length} items</span>
+              </div>
+              <span
+                className={`${styles.badge} ${
+                  styles[`status_${order.status.toLowerCase()}`]
+                }`}
+              >
+                {getStatusLabel(order.status)}
+              </span>
             </div>
-            <span
-              className={`${styles.badge} ${
-                styles[`status_${order.status.toLowerCase()}`]
-              }`}
-            >
-              {getStatusLabel(order.status)}
+            <div style={{ textAlign: "right" }}>
+              <p className={styles.totalPrice}>{formatCurrency(order.total)}</p>
+              <button
+                className={styles.viewDetailButton}
+                onClick={() => setSelectedOrder(order)}
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageButton}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+
+          <div className={styles.pageInfo}>
+            Page {currentPage} of {totalPages}
+            <span className={styles.totalOrders}>
+              ({totalOrders} total orders)
             </span>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <p className={styles.totalPrice}>{formatCurrency(order.total)}</p>
-            <button
-              className={styles.viewDetailButton}
-              onClick={() => setSelectedOrder(order)}
-            >
-              View Details
-            </button>
-          </div>
+
+          <button
+            className={styles.pageButton}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 
   const renderOrderDetail = () => {
