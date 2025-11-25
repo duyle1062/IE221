@@ -112,99 +112,63 @@ const VerifyEmail: React.FC = () => {
   };
 
   // If verifying from email link
+  // If verifying from email link
   if (uid && token) {
     return (
       <div className={styles.container}>        
         <div className={styles.wrapperOtp}>
-          <h1 className={styles.header}>{verified ? '✅ Email Verified!' : 'Verifying Email...'}</h1>
-          {loading && (
-            <p className={styles.otpText}>Please wait while we verify your email...</p>
-          )}
-          {verified && (
-            <p className={styles.otpText} style={{ color: 'green' }}>
-              Your email has been verified successfully! Redirecting to login...
-            </p>
-          )}
-          {errors.server && (
-            <div className={styles.error} style={{ marginTop: '1rem' }}>
-              {errors.server}
-              <br />
-              <Link to="/register" className={styles.formNavigateLink} style={{ marginTop: '1rem', display: 'inline-block' }}>
-                Back to Registration
+          {verifying ? (
+            <>
+              <div className={styles.iconContainer}>
+                <svg className={styles.emailIcon} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="64" height="64" rx="32" fill="var(--brand-red-primary)" opacity="0.1"/>
+                  <path d="M20 24L32 32L44 24M20 24V40C20 41.1046 20.8954 42 22 42H42C43.1046 42 44 41.1046 44 40V24M20 24H44" stroke="var(--brand-red-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h2 className={styles.header}>Verifying Your Email</h2>
+              <p className={styles.otpText}>Please wait while we verify your email address...</p>
+              <div className={styles.loadingSpinner}></div>
+            </>
+          ) : verified ? (
+            <>
+              <div className={styles.iconContainer}>
+                <svg className={styles.emailIcon} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="64" height="64" rx="32" fill="var(--success-color)" opacity="0.1"/>
+                  <path d="M20 32L28 40L44 24" stroke="var(--success-color)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h2 className={styles.header}>Email Verified Successfully!</h2>
+              <p className={styles.otpText}>
+                Your email has been successfully verified. You will be redirected to the login page shortly.
+              </p>
+              <Link to="/login" className={styles.returnButton}>
+                Go to Login Page
               </Link>
-            </div>
+            </>
+          ) : (
+            <>
+              <div className={styles.iconContainer}>
+                <svg className={styles.emailIcon} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="64" height="64" rx="32" fill="var(--status-cancelled-text)" opacity="0.1"/>
+                  <path d="M24 24L40 40M40 24L24 40" stroke="var(--status-cancelled-text)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h2 className={styles.header}>Verification Failed</h2>
+              <p className={styles.otpText} style={{ color: 'var(--status-cancelled-text)' }}>
+                {errors.server || 'Failed to verify your email. The verification link may have expired or is invalid.'}
+              </p>
+              <p className={styles.otpText}>
+                Please try registering again or contact support if the problem persists.
+              </p>
+              <Link to="/login" className={styles.returnButton}>
+                Return to Login Page
+              </Link>
+            </>
           )}
         </div>
       </div>
     );
   }
-
-  // Manual OTP entry (fallback UI)
-  return (
-    <div className={styles.container}>        
-      <div className={styles.wrapperOtp}>
-        <h1 className={styles.header}>Verify Email</h1>
-        <p className={styles.otpText}>
-          Please check your email {email && <span className={styles.fontSemibold}>({email})</span>} and click the verification link.
-        </p>
-        {errors.otp && <span className={styles.error}>{errors.otp}</span>}
-        <form action="" className={styles.otpForm} onSubmit={handleSubmit} noValidate>
-          <div className={styles.formOtpText}>
-            <div className={styles.inputWrapperOtp}>
-              <OtpInput
-                value={otpState.otp}
-                onChange={handleChange}
-                numInputs={6}
-                renderSeparator={<span>-</span>}
-                renderInput={(props) => (
-                  <input
-                    {...props}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    type="text"
-                  />
-                )}
-                containerStyle={styles.otpInputContainer}
-                inputStyle={styles.otpInput}
-              />
-            </div>
-          </div>
-          
-          {/* Server Error */}
-          {errors.server && (
-            <div className={styles.error} style={{ marginTop: "1rem" }}>
-              {errors.server}
-            </div>
-          )}
-
-          <div className={styles.btnRow}>
-            <button
-              type="button"
-              className={styles.clearBtn}
-              onClick={handleClear}
-            >
-              Clear
-            </button>
-            <button
-              type="submit"
-              className={`${styles.formButton} ${isFormValid() && !loading ? styles.active : ''}`}
-              disabled={loading}
-            >
-              {loading ? 'Verifying...' : 'Submit'}
-            </button>
-          </div>
-          <div className={styles.formNavigateLogin}>
-            <label className={styles.formNavigateText}>
-              Didn't receive an OTP?{' '}
-              <Link to="/signup" className={styles.formNavigateLink}>
-                Resend OTP
-              </Link>
-            </label>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
 };
 
 export default VerifyEmail;

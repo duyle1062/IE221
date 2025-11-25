@@ -12,21 +12,39 @@
   align-items: center;
   justify-content: center;
   padding: 80px;
+  min-height: 100vh;
 }
 
 .header {
   font-size: 30px;
   margin: 20px auto;
+  text-align: center;
+  color: var(--text-color-dark);
 }
 
 .wrapperOtp {
   display: flex;
   flex-direction: column;
-  border-radius: 8px;
-  border: solid 1px #e5e7eb;
-  padding: 15px 20px;
+  align-items: center;
+  border-radius: 12px;
+  border: solid 1px var(--border-color-light);
+  padding: 40px 30px;
   box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
-  width: 450px;
+  width: 500px;
+  max-width: 90%;
+  background: white;
+}
+
+.iconContainer {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.emailIcon {
+  width: 80px;
+  height: 80px;
 }
 
 .otpText {
@@ -128,4 +146,41 @@
 
 .fontSemibold {
   font-weight: 600;
+}
+
+.loadingSpinner {
+  margin-top: 20px;
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border-color-light);
+  border-top-color: var(--brand-red-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.returnButton {
+  margin-top: 24px;
+  padding: 12px 32px;
+  background-color: var(--brand-red-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.returnButton:hover {
+  background-color: var(--brand-red-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(228, 0, 43, 0.3);
 }

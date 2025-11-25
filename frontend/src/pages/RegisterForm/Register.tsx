@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import styles from "./Register.module.css";
 import { Link, useNavigate } from "react-router-dom";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import authService, { Gender } from "../../services/auth.service";
@@ -112,8 +114,25 @@ const RegisterForm: React.FC = () => {
           re_password: confirmPassword,
         });
 
-        // Navigate to verify email page with email
-        navigate("/verify-email", { state: { email } });
+        // Show success toast
+        toast.success("Please check your email and click the verification link", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+
+        // Reset form after successful registration
+        setFirstName("");
+        setLastName("");
+        setGender("");
+        setPhone("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setAcceptedTerms(false);
       } catch (error: any) {
         console.error("Registration error:", error);
 
@@ -154,6 +173,7 @@ const RegisterForm: React.FC = () => {
 
   return (
     <>
+      <ToastContainer />
       <Header />
       <div className={styles.container}>
         {/* Left Side - Branding */}
