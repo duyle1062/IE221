@@ -347,10 +347,28 @@ class AdminChangeStatusView(APIView):
         "status": "PAID" | "CONFIRMED" | "PREPARING" | "READY" | "DELIVERED" | "CANCELLED"
     }
 
-    Admins can change order status to any valid status for operational flexibility.
+    Valid state transitions:
+    - PENDING → PAID, CANCELLED
+    - PAID → CONFIRMED, CANCELLED
+    - CONFIRMED → PREPARING, CANCELLED
+    - PREPARING → READY, CANCELLED
+    - READY → DELIVERED, CANCELLED
+    - DELIVERED → (terminal state, no transitions)
+    - CANCELLED → (terminal state, no transitions)
     """
 
     permission_classes = [IsAuthenticated, IsAdminUser]
+
+    # Define valid state transitions
+    VALID_TRANSITIONS = {
+        OrderStatus.PENDING: [OrderStatus.PAID, OrderStatus.CANCELLED],
+        OrderStatus.PAID: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+        OrderStatus.CONFIRMED: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+        OrderStatus.PREPARING: [OrderStatus.READY, OrderStatus.CANCELLED],
+        OrderStatus.READY: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+        OrderStatus.DELIVERED: [],  # Terminal state
+        OrderStatus.CANCELLED: [],  # Terminal state
+    }
 
     def patch(self, request, order_id):
         # Get the order
@@ -380,8 +398,42 @@ class AdminChangeStatusView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Update order status
+        # Get current status
         old_status = order.status
+
+        # Check if trying to change to the same status
+        if old_status == new_status:
+            return Response(
+                {"error": f"Order is already in '{new_status}' status"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate state transition
+        # Convert string status to OrderStatus enum for lookup
+        try:
+            current_status_enum = OrderStatus(old_status)
+            new_status_enum = OrderStatus(new_status)
+        except ValueError:
+            return Response(
+                {"error": "Invalid status value"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        allowed_transitions = self.VALID_TRANSITIONS.get(current_status_enum, [])
+        if new_status_enum not in allowed_transitions:
+            # Build helpful error message
+            if not allowed_transitions:
+                error_msg = f"Cannot change status from '{old_status}'. This is a terminal state."
+            else:
+                allowed_str = ", ".join([s.value for s in allowed_transitions])
+                error_msg = f"Invalid status transition from '{old_status}' to '{new_status}'. Allowed transitions: {allowed_str}"
+
+            return Response(
+                {"error": error_msg},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Update order status
         order.status = new_status
 
         # If cancelled, update payment status to REFUNDED
@@ -400,7 +452,7 @@ class AdminChangeStatusView(APIView):
         serializer = OrderSerializer(order)
         return Response(
             {
-                "message": f"Order status updated to '{new_status}'",
+                "message": f"Order status updated from '{old_status}' to '{new_status}'",
                 "order": serializer.data,
             },
             status=status.HTTP_200_OK,

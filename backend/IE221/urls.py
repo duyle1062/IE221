@@ -19,9 +19,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Authentication URLs using Djoser
     # Checkout Djoser base endpoints: https://djoser.readthedocs.io/en/latest/base_endpoints.html
-    path("auth/", include("djoser.urls")),
+    path("api/auth/", include("djoser.urls")),
     # JWT token management endpoints: https://djoser.readthedocs.io/en/latest/jwt_endpoints.html
-    path("auth/login/", include("djoser.urls.jwt")),
+    path("api/auth/login/", include("djoser.urls.jwt")),
     # Custom auth endpoints (logout)
     path("api/auth/", include("apps.authentication.urls")),
     # category list

@@ -87,7 +87,7 @@ axiosInstance.interceptors.response.use(
 
         // Refresh the token
         const response = await axios.post(
-          `${API_CONFIG.BASE_URL}/auth/login/jwt/refresh/`,
+          `${API_CONFIG.BASE_URL}/api/auth/login/jwt/refresh/`,
           { refresh: refreshToken },
           {
             headers: {
