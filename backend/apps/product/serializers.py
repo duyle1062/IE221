@@ -129,9 +129,10 @@ class AdminProductListSerializer(serializers.ModelSerializer):
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source="category", write_only=True, required=False
     )
+    images = ProductImageSerializer(many=True, read_only=True)
     # Accept both 'category' and 'category_id' for backwards compatibility
     # This allows frontend to send either field name
-    
+
     class Meta:
         model = Product
         fields = [
@@ -147,6 +148,7 @@ class AdminProductListSerializer(serializers.ModelSerializer):
             "available",
             "average_rating",
             "total_ratings",
+            "images",
             "is_deleted",
             "created_at",
             "updated_at",

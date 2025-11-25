@@ -33,6 +33,13 @@ const { Title } = Typography;
 const { TextArea } = Input;
 const { Search } = Input;
 
+interface ProductImage {
+  id: number;
+  image_url: string;
+  is_primary: boolean;
+  sort_order: number;
+}
+
 interface AdminProduct {
   id: number;
   name: string;
@@ -45,6 +52,7 @@ interface AdminProduct {
   available: boolean;
   average_rating: number | null;
   total_ratings: number;
+  images: ProductImage[];
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
@@ -67,6 +75,7 @@ const ProductManagement: React.FC = () => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [form] = Form.useForm();
 
   // Category Modal
@@ -113,9 +122,146 @@ const ProductManagement: React.FC = () => {
 
   const refetch = () => setRefetchTrigger((prev) => prev + 1);
 
+  // === IMAGE UPLOAD HELPER ===
+  const uploadImagesToS3 = async (productId: number, files: UploadFile[]) => {
+    const uploadResults = [];
+
+    // Filter out files that are already uploaded and collect files to upload
+    const filesToUpload = files.filter(file => {
+      if (!file || file.url) return false;
+      return file.originFileObj !== undefined;
+    });
+
+    console.log(`Starting upload for ${filesToUpload.length} files`);
+
+    if (filesToUpload.length === 0) {
+      console.log("No files to upload");
+      return [];
+    }
+
+    try {
+      // Step 1: Get presigned URLs for all files (batch request)
+      const filesPayload = filesToUpload.map(file => ({
+        filename: file.originFileObj!.name,
+        content_type: file.originFileObj!.type
+      }));
+
+      console.log("Requesting presigned URLs for:", filesPayload);
+
+      const presignedResponse = await productService.getPresignedUrls(
+        productId,
+        filesPayload
+      );
+
+      console.log("Presigned URLs response:", presignedResponse);
+
+      // Check if response has uploads array
+      const uploads = presignedResponse.uploads || presignedResponse;
+
+      if (!Array.isArray(uploads)) {
+        throw new Error("Invalid presigned URL response format");
+      }
+
+      // Step 2: Upload each file to S3 using its presigned URL
+      const successfulUploads: Array<{ s3_key: string; is_primary: boolean; sort_order: number }> = [];
+
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+
+        if (!file) {
+          console.warn(`File at index ${i} is undefined, skipping`);
+          continue;
+        }
+
+        const originFile = file.originFileObj!;
+        const presignedData = uploads[i];
+
+        console.log(`Uploading file ${i + 1}/${filesToUpload.length}: ${originFile.name}`);
+        console.log("Presigned data:", presignedData);
+
+        try {
+          // S3 requires POST with FormData when using presigned POST
+          const formData = new FormData();
+
+          // Add all the fields from the presigned response first
+          if (presignedData.fields) {
+            Object.keys(presignedData.fields).forEach(key => {
+              formData.append(key, presignedData.fields[key]);
+            });
+          }
+
+          // Add the file last (S3 requirement)
+          formData.append('file', originFile);
+
+          const uploadResponse = await fetch(presignedData.presigned_url, {
+            method: 'POST',
+            body: formData,
+          });
+
+          console.log(`S3 upload response status: ${uploadResponse.status}`);
+
+          if (!uploadResponse.ok) {
+            throw new Error(`S3 upload failed with status ${uploadResponse.status}`);
+          }
+
+          console.log(`✓ Successfully uploaded ${originFile.name} to S3`);
+
+          // Collect successful uploads for batch confirmation
+          successfulUploads.push({
+            s3_key: presignedData.s3_key,
+            is_primary: i === 0, // First image is primary
+            sort_order: i
+          });
+
+          uploadResults.push({ success: true, fileName: originFile.name });
+        } catch (error: any) {
+          console.error(`✗ Failed to upload ${originFile.name}:`, error);
+          uploadResults.push({ success: false, fileName: originFile.name, error });
+        }
+      }
+
+      // Step 3: Confirm all successful uploads in one batch request
+      if (successfulUploads.length > 0) {
+        console.log(`Confirming ${successfulUploads.length} uploads with backend...`);
+        try {
+          await productService.confirmUpload(productId, {
+            uploads: successfulUploads
+          });
+          console.log(`✓ All uploads confirmed with backend`);
+        } catch (error: any) {
+          console.error(`✗ Failed to confirm uploads with backend:`, error);
+          // Mark all as failed since backend confirmation failed
+          uploadResults.forEach(result => {
+            if (result.success) {
+              result.success = false;
+              result.error = error;
+            }
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error("Failed to get presigned URLs:", error);
+      console.error("Error details:", error.response?.data);
+      // If batch request fails, mark all files as failed
+      filesToUpload.forEach(file => {
+        uploadResults.push({
+          success: false,
+          fileName: file.originFileObj!.name,
+          error
+        });
+      });
+    }
+
+    console.log("Upload results:", uploadResults);
+    return uploadResults;
+  };
+
   // === PRODUCT CRUD ===
   const handleAddEditProduct = async (values: any) => {
     try {
+      setUploading(true);
+      let productId: number;
+
       if (editingProduct) {
         // Update existing product
         await productService.updateProduct(
@@ -131,10 +277,11 @@ const ProductManagement: React.FC = () => {
             available: values.available,
           }
         );
+        productId = editingProduct.id;
         message.success("Product updated successfully!");
       } else {
         // Create new product - slug is now required
-        await productService.createProduct({
+        const newProduct = await productService.createProduct({
           name: values.name,
           slug: values.slug,
           description: values.description,
@@ -144,8 +291,27 @@ const ProductManagement: React.FC = () => {
           is_active: true,
           available: true,
         });
+        productId = newProduct.id;
         message.success("Product added successfully!");
       }
+
+      // Upload images if any
+      if (fileList.length > 0) {
+        message.loading("Uploading images...", 0);
+        const uploadResults = await uploadImagesToS3(productId, fileList);
+        message.destroy(); // Clear loading message
+
+        const successCount = uploadResults.filter((r) => r.success).length;
+        const failCount = uploadResults.filter((r) => !r.success).length;
+
+        if (successCount > 0) {
+          message.success(`${successCount} image(s) uploaded successfully!`);
+        }
+        if (failCount > 0) {
+          message.warning(`${failCount} image(s) failed to upload`);
+        }
+      }
+
       setIsModalOpen(false);
       form.resetFields();
       setFileList([]);
@@ -186,6 +352,8 @@ const ProductManagement: React.FC = () => {
       } else {
         message.error("Failed to save product");
       }
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -374,6 +542,21 @@ const ProductManagement: React.FC = () => {
                 is_active: record.is_active,
                 available: record.available,
               });
+
+              // Load existing images
+              if (record.images && record.images.length > 0) {
+                const existingImages = record.images.map((img: any, index: number) => ({
+                  uid: `existing-${img.id}`,
+                  name: img.image_url.split('/').pop() || `image-${index}`,
+                  status: 'done',
+                  url: img.image_url,
+                  thumbUrl: img.image_url,
+                }));
+                setFileList(existingImages as any);
+              } else {
+                setFileList([]);
+              }
+
               setIsModalOpen(true);
             }}
           />
@@ -532,6 +715,10 @@ const ProductManagement: React.FC = () => {
         }
         open={isModalOpen}
         onCancel={() => {
+          if (uploading) {
+            message.warning("Please wait for image upload to complete");
+            return;
+          }
           setIsModalOpen(false);
           form.resetFields();
           setFileList([]);
@@ -539,6 +726,8 @@ const ProductManagement: React.FC = () => {
         }}
         footer={null}
         width={800}
+        maskClosable={!uploading}
+        closable={!uploading}
       >
         <Form form={form} layout="vertical" onFinish={handleAddEditProduct}>
           <Form.Item
@@ -626,6 +815,25 @@ const ProductManagement: React.FC = () => {
               fileList={fileList}
               onPreview={handlePreview}
               onChange={handleChangeUpload}
+              onRemove={async (file) => {
+                // Check if this is an existing image from backend
+                if (file.uid.startsWith('existing-') && editingProduct) {
+                  // Extract image ID from uid (format: "existing-{imageId}")
+                  const imageId = parseInt(file.uid.replace('existing-', ''));
+
+                  try {
+                    await productService.deleteProductImage(editingProduct.id, imageId);
+                    message.success('Image deleted successfully');
+                    return true; // Remove from fileList
+                  } catch (error: any) {
+                    console.error('Failed to delete image:', error);
+                    message.error('Failed to delete image');
+                    return false; // Keep in fileList
+                  }
+                }
+                // For new images (not yet uploaded), just remove from list
+                return true;
+              }}
               beforeUpload={() => false}
               multiple
             >
@@ -659,8 +867,10 @@ const ProductManagement: React.FC = () => {
           )}
 
           <Space style={{ justifyContent: "flex-end", width: "100%" }}>
-            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit">
+            <Button onClick={() => setIsModalOpen(false)} disabled={uploading}>
+              Cancel
+            </Button>
+            <Button type="primary" htmlType="submit" loading={uploading}>
               {editingProduct ? "Update" : "Add New"}
             </Button>
           </Space>

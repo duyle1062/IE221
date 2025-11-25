@@ -183,42 +183,82 @@ class ProductService {
   }
 
   /**
-   * Get presigned URL for image upload
-   * POST /api/products/products/{productId}/images/presigned-url/
+   * Get presigned URLs for multiple image uploads (batch)
+   * POST /api/products/{productId}/images/presigned-url/
    */
-  async getPresignedUrl(
+  async getPresignedUrls(
     productId: number,
-    fileName: string,
-    fileType: string
+    files: Array<{ filename: string; content_type: string }>
   ): Promise<any> {
     try {
+      const payload = {
+        files: files,
+        "content-type": files[0]?.content_type || "image/jpeg"
+      };
+
       const response = await axiosInstance.post(
-        `/api/products/products/${productId}/images/presigned-url/`,
-        { file_name: fileName, file_type: fileType }
+        `/api/products/${productId}/images/presigned-url/`,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       );
       return response.data;
     } catch (error: any) {
-      console.error("Get presigned URL error:", error);
+      console.error("Get presigned URLs error:", error);
+      console.error("Error response:", error.response?.data);
       throw error;
     }
   }
 
   /**
-   * Confirm image upload
-   * POST /api/products/products/{productId}/images/confirm-upload/
+   * Confirm image uploads (batch)
+   * POST /api/products/{productId}/images/confirm-upload/
    */
   async confirmUpload(
     productId: number,
-    data: { s3_key: string; is_primary?: boolean }
+    data: {
+      uploads: Array<{
+        s3_key: string;
+        is_primary: boolean;
+        sort_order: number;
+      }>;
+    }
   ): Promise<any> {
     try {
+      console.log(`Confirming ${data.uploads.length} uploads with productId: ${productId}`);
+      console.log("Upload data:", data);
       const response = await axiosInstance.post(
-        `/api/products/products/${productId}/images/confirm-upload/`,
+        `/api/products/${productId}/images/confirm-upload/`,
         data
       );
       return response.data;
     } catch (error: any) {
       console.error("Confirm upload error:", error);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error response status:", error.response?.status);
+      console.error("Request data was:", data);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete product image
+   * DELETE /api/products/{productId}/images/{imageId}/
+   */
+  async deleteProductImage(
+    productId: number,
+    imageId: number
+  ): Promise<any> {
+    try {
+      const response = await axiosInstance.delete(
+        `/api/products/${productId}/images/${imageId}/`
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Delete image error:", error);
       throw error;
     }
   }

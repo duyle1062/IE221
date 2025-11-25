@@ -81,7 +81,10 @@ class RecommendationService {
    * Public endpoint
    * @param params - Optional parameters (limit, days)
    */
-  async getBestSellers(params?: { limit?: number; days?: number }): Promise<Product[]> {
+  async getBestSellers(params?: {
+    limit?: number;
+    days?: number;
+  }): Promise<Product[]> {
     try {
       const response = await axiosInstance.get<RecommendationResponse>(
         `/api/products/best-sellers/`,
@@ -94,10 +97,7 @@ class RecommendationService {
       );
       return response.data.results;
     } catch (error: any) {
-      console.error(
-        "[Recommendation] Failed to fetch best sellers:",
-        error
-      );
+      console.error("[Recommendation] Failed to fetch best sellers:", error);
       throw error;
     }
   }
@@ -160,7 +160,11 @@ class RecommendationService {
    * @param product - Product object with images array
    */
   getPrimaryImage(product: Product): string {
+    // Debug: Log product image status
     if (!product.images || product.images.length === 0) {
+      console.warn(
+        `[Recommendation] No images found for product: ${product.name} (ID: ${product.id})`
+      );
       return "https://via.placeholder.com/300x300?text=No+Image";
     }
 

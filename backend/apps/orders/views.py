@@ -74,15 +74,41 @@ class PlaceOrderView(APIView):
                 {"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Calculate subtotal
+        # Validate product availability and calculate subtotal
+        unavailable_products = []
         subtotal = Decimal("0")
+        
         for item in cart_items:
-            if not item.product.is_active or not item.product.available:
-                return Response(
-                    {"error": f"Product '{item.product.name}' is not available"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            subtotal += item.product.price * item.quantity
+            if not item.product.is_active:
+                unavailable_products.append({
+                    "name": item.product.name,
+                    "reason": "inactive"
+                })
+            elif not item.product.available:
+                unavailable_products.append({
+                    "name": item.product.name,
+                    "reason": "unavailable"
+                })
+            else:
+                subtotal += item.product.price * item.quantity
+        
+        # Return error if any products are unavailable
+        if unavailable_products:
+            error_messages = []
+            for prod in unavailable_products:
+                if prod["reason"] == "inactive":
+                    error_messages.append(f"'{prod['name']}' is no longer active")
+                else:
+                    error_messages.append(f"'{prod['name']}' is currently unavailable")
+            
+            return Response(
+                {
+                    "error": "Some products in your cart are not available",
+                    "details": error_messages,
+                    "unavailable_products": unavailable_products
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Calculate total
         total = subtotal + delivery_fee - discount
