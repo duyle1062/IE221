@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 
 from .models import UserAccount
 from .serializers import UserProfileSerializer, UserUpdateProfileSerializer
@@ -129,6 +130,12 @@ def change_password_view(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class UserPagination(PageNumberPagination):
+    page_size = 15
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 class UserAdminViewSet(mixins.ListModelMixin,   
                        mixins.RetrieveModelMixin,   
                        mixins.DestroyModelMixin,     
@@ -136,6 +143,7 @@ class UserAdminViewSet(mixins.ListModelMixin,
     
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = UserProfileSerializer
+    pagination_class = UserPagination
     
     def get_queryset(self):
         queryset = UserAccount.objects.filter(deleted_at__isnull=True)
