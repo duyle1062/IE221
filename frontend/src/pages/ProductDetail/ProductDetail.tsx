@@ -137,6 +137,8 @@ const ProductDetailPage: React.FC = () => {
 
   // Fetch similar products when product is loaded
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchSimilarProducts = async () => {
       if (!product?.id) return;
 
@@ -146,6 +148,18 @@ const ProductDetailPage: React.FC = () => {
           product.id,
           { limit: 6 }
         );
+
+        // Log similar products for debugging
+        console.log("[ProductDetail] Similar products fetched:", {
+          count: similar.length,
+          products: similar.map((p) => ({
+            id: p.id,
+            name: p.name,
+            imagesCount: p.images?.length || 0,
+            images: p.images || [],
+          })),
+        });
+
         setSimilarProducts(similar);
       } catch (err) {
         console.error("Failed to fetch similar products:", err);
@@ -156,6 +170,11 @@ const ProductDetailPage: React.FC = () => {
     };
 
     fetchSimilarProducts();
+
+    // Cleanup function
+    return () => {
+      abortController.abort();
+    };
   }, [product?.id]);
 
   // Fetch ratings when product is loaded or page changes
