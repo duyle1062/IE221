@@ -602,6 +602,7 @@ class AdminProductListCreateView(ListCreateAPIView):
         """
         queryset = (
             Product.objects.select_related("category")
+            .prefetch_related("images")
             .annotate(
                 average_rating=Avg("ratings__rating"), total_ratings=Count("ratings")
             )
