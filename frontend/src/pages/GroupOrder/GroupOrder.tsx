@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import styles from "./GroupOrder.module.css";
 import {
   FaUsers,
@@ -52,6 +52,35 @@ const GroupOrder: React.FC = () => {
     null
   );
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const confirmAction = (
+    title: string,
+    message: string,
+    action: () => void
+  ) => {
+    setConfirmationModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm: action,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmationModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
   // Load group order and addresses from localStorage on mount
   useEffect(() => {
@@ -176,27 +205,25 @@ const GroupOrder: React.FC = () => {
     }
   };
 
-  const handleRemoveMember = async (memberId: number, memberName: string) => {
+  const handleRemoveMember = (memberId: number, memberName: string) => {
     if (!groupData) return;
 
-    if (
-      !window.confirm(
-        `Remove ${memberName} from the group? Their items will be deleted`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await removeMember(groupData.id, memberId);
-      await loadGroupOrder(groupData.id, true);
-      toast.success(`${memberName} removed from group`);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to remove member");
-    } finally {
-      setLoading(false);
-    }
+    confirmAction(
+      "Remove Member",
+      `Remove ${memberName} from the group? Their items will be deleted`,
+      async () => {
+        try {
+          setLoading(true);
+          await removeMember(groupData.id, memberId);
+          await loadGroupOrder(groupData.id, true);
+          toast.success(`${memberName} removed from group`);
+        } catch (error: any) {
+          toast.error(error.message || "Failed to remove member");
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
   };
 
   const handleUpdateQuantity = async (itemId: number, change: number) => {
@@ -210,24 +237,29 @@ const GroupOrder: React.FC = () => {
 
     try {
       await updateGroupOrderItem(groupData.id, itemId, { quantity: newQty });
-      // Reload to get updated data
+
       await loadGroupOrder(groupData.id, true);
     } catch (error: any) {
       toast.error(error.message || "Failed to update quantity");
     }
   };
 
-  const handleRemoveItem = async (itemId: number) => {
+  const handleRemoveItem = (itemId: number) => {
     if (!groupData) return;
-    if (!window.confirm("Remove this item?")) return;
 
-    try {
-      await removeGroupOrderItem(groupData.id, itemId);
-      await loadGroupOrder(groupData.id, true);
-      toast.success("Item removed");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to remove item");
-    }
+    confirmAction(
+      "Remove Item",
+      "Are you sure you want to remove this item?",
+      async () => {
+        try {
+          await removeGroupOrderItem(groupData.id, itemId);
+          await loadGroupOrder(groupData.id, true);
+          toast.success("Item removed");
+        } catch (error: any) {
+          toast.error(error.message || "Failed to remove item");
+        }
+      }
+    );
   };
 
   const handleFinalizeOrder = async () => {
@@ -270,7 +302,7 @@ const GroupOrder: React.FC = () => {
     }
   };
 
-  const handleLeaveGroup = async () => {
+  const handleLeaveGroup = () => {
     if (!groupData) return;
 
     const isCreator = groupData.creator_id === user?.id;
@@ -278,26 +310,30 @@ const GroupOrder: React.FC = () => {
       ? "As creator, leaving will cancel the group order for everyone. Continue?"
       : "Are you sure you want to leave this group?";
 
-    if (window.confirm(message)) {
-      try {
-        setLoading(true);
-        const response = await leaveGroupOrder(groupData.id);
+    confirmAction(
+      isCreator ? "Cancel Group Order" : "Leave Group",
+      message,
+      async () => {
+        try {
+          setLoading(true);
+          const response = await leaveGroupOrder(groupData.id);
 
-        localStorage.removeItem("activeGroupOrderId");
-        setGroupData(null);
-        setViewMode("selection");
+          localStorage.removeItem("activeGroupOrderId");
+          setGroupData(null);
+          setViewMode("selection");
 
-        if (response.cancelled) {
-          toast.success("Group order cancelled");
-        } else {
-          toast.success(response.message || "Left group order");
+          if (response.cancelled) {
+            toast.success("Group order cancelled");
+          } else {
+            toast.success(response.message || "Left group order");
+          }
+        } catch (error: any) {
+          toast.error(error.message || "Failed to leave group order");
+        } finally {
+          setLoading(false);
         }
-      } catch (error: any) {
-        toast.error(error.message || "Failed to leave group order");
-      } finally {
-        setLoading(false);
       }
-    }
+    );
   };
 
   const totalAmount =
@@ -646,6 +682,11 @@ const GroupOrder: React.FC = () => {
   return (
     <>
       <Header />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       <div className={styles.container}>
         <header className={styles.header}>
           <h1 className={styles.title}>Group Order</h1>
@@ -656,15 +697,15 @@ const GroupOrder: React.FC = () => {
             <button
               className={styles.newGroupBtn}
               onClick={() => {
-                if (
-                  window.confirm(
-                    "Start a new group order? You will leave the current group."
-                  )
-                ) {
-                  localStorage.removeItem("activeGroupOrderId");
-                  setGroupData(null);
-                  setViewMode("selection");
-                }
+                confirmAction(
+                  "Start New Group",
+                  "Start a new group order? You will leave the current group",
+                  () => {
+                    localStorage.removeItem("activeGroupOrderId");
+                    setGroupData(null);
+                    setViewMode("selection");
+                  }
+                );
               }}
             >
               + Start New Group Order
@@ -673,6 +714,33 @@ const GroupOrder: React.FC = () => {
         </header>
         {viewMode === "selection" ? renderSelection() : renderDashboard()}
       </div>
+
+      {confirmationModal.isOpen && (
+        <div className={styles.modalOverlay} onClick={closeConfirmModal}>
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>{confirmationModal.title}</h3>
+            <p className={styles.modalText}>{confirmationModal.message}</p>
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.modalBtn} ${styles.btnCancel}`}
+                onClick={closeConfirmModal}
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.modalBtn} ${styles.btnConfirm}`}
+                onClick={() => {
+                  confirmationModal.onConfirm();
+                  closeConfirmModal();
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </>
   );

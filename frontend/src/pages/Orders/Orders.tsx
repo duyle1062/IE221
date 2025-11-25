@@ -81,6 +81,13 @@ const Orders: React.FC = () => {
     loadOrders(currentPage);
   }, [currentPage]);
 
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+
   const loadOrders = async (page: number = 1) => {
     try {
       setLoading(true);
@@ -109,22 +116,23 @@ const Orders: React.FC = () => {
       setLoading(false);
     }
   };
-  const handleCancelOrder = async (orderId: number) => {
-    if (window.confirm("Are you sure you want to cancel this order?")) {
-      try {
-        setCancellingOrderId(orderId);
-        await cancelOrder(orderId);
-        await loadOrders(currentPage);
-        toast.success("Order cancelled successfully");
-        if (selectedOrder && selectedOrder.id === orderId) {
+
+  const handleCancelOrder = (orderId: number) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: "Cancel Order",
+      message: "Are you sure you want to cancel this order?",
+      onConfirm: async () => {
+        try {
+          await cancelOrder(orderId);
+          toast.success("Order cancelled successfully");
+          loadOrders();
           setSelectedOrder(null);
+        } catch (error: any) {
+          toast.error(error.message || "Failed to cancel order");
         }
-      } catch (err: any) {
-        toast.error(err.message || "Failed to cancel order");
-      } finally {
-        setCancellingOrderId(null);
-      }
-    }
+      },
+    });
   };
 
   const renderOrderList = () => (
@@ -395,13 +403,12 @@ const Orders: React.FC = () => {
   return (
     <>
       <Header />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       <div className={styles.container}>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-        />
-
         <header className={styles.header}>
           {selectedOrder ? (
             <button
@@ -428,6 +435,38 @@ const Orders: React.FC = () => {
           renderOrderList()
         )}
       </div>
+      {confirmationModal.isOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() =>
+            setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
+          }
+        >
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>{confirmationModal.title}</h3>
+            <p className={styles.modalText}>{confirmationModal.message}</p>
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.modalBtn} ${styles.btnCancel}`}
+                onClick={() =>
+                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
+                }
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.modalBtn} ${styles.btnConfirm}`}
+                onClick={() => {
+                  confirmationModal.onConfirm();
+                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }));
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Footer />
     </>
   );

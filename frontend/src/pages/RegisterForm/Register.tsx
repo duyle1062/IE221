@@ -115,14 +115,17 @@ const RegisterForm: React.FC = () => {
         });
 
         // Show success toast
-        toast.success("Please check your email and click the verification link", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
+        toast.success(
+          "Please check your email and click the verification link",
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          }
+        );
 
         // Reset form after successful registration
         setFirstName("");
@@ -173,8 +176,12 @@ const RegisterForm: React.FC = () => {
 
   return (
     <>
-      <ToastContainer />
       <Header />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       <div className={styles.container}>
         {/* Left Side - Branding */}
         <div className={styles.brandSection}>
