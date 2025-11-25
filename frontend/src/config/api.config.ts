@@ -28,13 +28,13 @@ export const HTTP_STATUS = {
 
 export const API_ENDPOINTS = {
   AUTH: {
-    REGISTER: "/auth/users/",
-    VERIFY_EMAIL: "/auth/users/activation/",
-    LOGIN: "/auth/login/jwt/create/",
-    REFRESH_TOKEN: "/auth/login/jwt/refresh/",
-    FORGOT_PASSWORD: "/auth/users/reset_password/",
-    RESET_PASSWORD_CONFIRM: "/auth/users/reset_password_confirm/",
-    GET_USER: "/auth/users/me/",
+    REGISTER: "/api/auth/users/",
+    VERIFY_EMAIL: "/api/auth/users/activation/",
+    LOGIN: "/api/auth/login/jwt/create/",
+    REFRESH_TOKEN: "/api/auth/login/jwt/refresh/",
+    FORGOT_PASSWORD: "/api/auth/users/reset_password/",
+    RESET_PASSWORD_CONFIRM: "/api/auth/users/reset_password_confirm/",
+    GET_USER: "/api/auth/users/me/",
   },
   USERS: {
     PROFILE: "/api/users/profile",

@@ -48,5 +48,30 @@ class PasswordResetEmail(email.PasswordResetEmail):
 
         return context
 
-class ConfirmationEmail(email.ActivationEmail):
+class ConfirmationEmail(email.ConfirmationEmail):
     template_name = "authentication/ConfirmationEmail.html"
+    
+    def get_context_data(self):
+        context = super().get_context_data()
+        
+        djoser_settings = settings.DJOSER
+        
+        context['domain'] = djoser_settings.get('DOMAIN', 'localhost:3000')
+        context['protocol'] = djoser_settings.get('PROTOCOL', 'http')
+        context['site_name'] = djoser_settings.get('SITE_NAME', 'IE221')
+        
+        return context
+    
+class PasswordChangedConfirmationEmail(email.PasswordChangedConfirmationEmail):
+    template_name = "authentication/PasswordChangedConfirmationEmail.html"
+    
+    def get_context_data(self):
+        context = super().get_context_data()
+        
+        djoser_settings = settings.DJOSER
+        
+        context['domain'] = djoser_settings.get('DOMAIN', 'localhost:3000')
+        context['protocol'] = djoser_settings.get('PROTOCOL', 'http')
+        context['site_name'] = djoser_settings.get('SITE_NAME', 'IE221')
+        
+        return context
