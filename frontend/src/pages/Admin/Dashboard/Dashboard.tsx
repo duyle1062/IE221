@@ -65,6 +65,8 @@ const Dashboard: React.FC = () => {
   );
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
@@ -111,6 +113,8 @@ const Dashboard: React.FC = () => {
             limit: 5,
           }),
         ]);
+
+        if (!isMounted) return;
 
         console.log("API Responses:", {
           todayRevenueData,
@@ -171,11 +175,17 @@ const Dashboard: React.FC = () => {
           setError("Failed to load dashboard data. Please try again.");
         }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {

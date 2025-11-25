@@ -125,10 +125,11 @@ class ProductService {
    */
   async createProduct(data: {
     name: string;
+    slug: string;
     description: string;
     price: number;
     category: number;
-    restaurant: string;
+    restaurant: number; // Changed from string to number
     is_active?: boolean;
     available?: boolean;
   }): Promise<any> {
@@ -242,7 +243,6 @@ class ProductService {
           ...params,
         },
       });
-      console.log("Search API response:", response.data);
       // Check if response is paginated (has results property) or flat array
       if (response.data && Array.isArray(response.data.results)) {
         return response.data.results;
