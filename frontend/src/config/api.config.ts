@@ -63,4 +63,11 @@ export const API_ENDPOINTS = {
     TRACK_INTERACTION: "/api/recommendations/track_interaction/",
     MY_INTERACTIONS: "/api/interactions/my/",
   },
+  ADMIN: {
+    USERS: {
+      LIST: "/api/admin/users/",
+      DETAIL: (id: number) => `/api/admin/users/${id}/`,
+      DELETE: (id: number) => `/api/admin/users/${id}/`,
+    },
+  },
 };

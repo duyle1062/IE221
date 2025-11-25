@@ -134,8 +134,7 @@ const LayoutAdmin: React.FC = () => {
               onClose={handleClose}
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-              <MenuItem onClick={handleClose}>Account</MenuItem>
+            >  
               <MenuItem onClick={handleLogout}>Log out</MenuItem>
             </Popover>
           </Toolbar>
