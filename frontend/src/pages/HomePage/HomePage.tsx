@@ -52,7 +52,7 @@ export default function HomePage() {
       } catch (err) {
         if (isMounted) {
           console.error("Error fetching products:", err);
-          setError("Failed to load products. Please try again later.");
+          setError("Failed to load products. Please try again later!");
         }
       } finally {
         if (isMounted) {
@@ -106,29 +106,17 @@ export default function HomePage() {
         !error &&
         isAuthenticated &&
         recommendedProducts.length > 0 && (
-          <Card
-            products={recommendedProducts}
-            title="Recommended for You"
-          />
+          <Card products={recommendedProducts} title="Recommended for You" />
         )}
 
       {/* Popular products for non-authenticated users */}
-      {!loading &&
-        !error &&
-        !isAuthenticated &&
-        popularProducts.length > 0 && (
-          <Card
-            products={popularProducts}
-            title="Popular Dishes"
-          />
-        )}
+      {!loading && !error && !isAuthenticated && popularProducts.length > 0 && (
+        <Card products={popularProducts} title="Popular Dishes" />
+      )}
 
       {/* Best Sellers for all users */}
       {!loading && !error && bestSellers.length > 0 && (
-        <Card
-          products={bestSellers}
-          title="Best Sellers"
-        />
+        <Card products={bestSellers} title="Best Sellers" />
       )}
 
       {/* Empty state */}
@@ -145,7 +133,7 @@ export default function HomePage() {
               color: "#666",
             }}
           >
-            There are no products to display.
+            There are no products to display
           </div>
         )}
 

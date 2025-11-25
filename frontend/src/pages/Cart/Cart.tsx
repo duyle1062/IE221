@@ -48,7 +48,7 @@ const CartScreen: React.FC = () => {
     } catch (error: any) {
       console.error("Failed to fetch cart:", error);
       const errorMessage =
-        error?.detail || "Không thể tải giỏ hàng. Vui lòng thử lại!";
+        error?.detail || "Unable to load the cart. Please try again!";
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ const CartScreen: React.FC = () => {
       setCart(updatedCart);
     } catch (error: any) {
       console.error("Failed to increase quantity:", error);
-      alert("Không thể cập nhật số lượng. Vui lòng thử lại!");
+      alert("Unable to update quantity. Please try again!");
     } finally {
       setUpdating(null);
     }
@@ -91,7 +91,7 @@ const CartScreen: React.FC = () => {
       setCart(updatedCart);
     } catch (error: any) {
       console.error("Failed to decrease quantity:", error);
-      alert("Không thể cập nhật số lượng. Vui lòng thử lại!");
+      alert("Unable to update quantity. Please try again!");
     } finally {
       setUpdating(null);
     }
@@ -99,7 +99,9 @@ const CartScreen: React.FC = () => {
 
   const handleRemoveItem = async (itemId: number) => {
     if (
-      !window.confirm("Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?")
+      !window.confirm(
+        "Are you sure you want to remove this item from your cart?"
+      )
     ) {
       return;
     }
@@ -111,7 +113,7 @@ const CartScreen: React.FC = () => {
       await fetchCart();
     } catch (error: any) {
       console.error("Failed to remove item:", error);
-      alert("Không thể xóa sản phẩm. Vui lòng thử lại!");
+      alert("Unable to remove the item. Please try again!");
     } finally {
       setUpdating(null);
     }
@@ -129,9 +131,9 @@ const CartScreen: React.FC = () => {
   const renderEmptyCart = () => (
     <div className={styles.emptyCart}>
       <FaShoppingCart className={styles.emptyCartIcon} />
-      <p className={styles.emptyCartMessage}>Giỏ hàng của bạn trống</p>
+      <p className={styles.emptyCartMessage}>Your cart is empty</p>
       <p className={styles.emptyCartSubMessage}>
-        Hãy thêm sản phẩm từ <a href="/">thực đơn</a>!
+        Add some items from the <a href="/">menu</a>!
       </p>
     </div>
   );
@@ -142,10 +144,10 @@ const CartScreen: React.FC = () => {
         <Header />
         <div className={styles.cartContainer}>
           <header className={styles.header}>
-            <h1 className={styles.title}>Giỏ hàng của tôi</h1>
+            <h1 className={styles.title}>My Cart</h1>
           </header>
           <div className={styles.loadingContainer}>
-            <p>Đang tải giỏ hàng...</p>
+            <p>Loading cart...</p>
           </div>
         </div>
         <Footer />
@@ -161,7 +163,7 @@ const CartScreen: React.FC = () => {
           <button onClick={handleBack} className={styles.backButton}>
             <FaArrowLeft /> Back
           </button>
-          <h1 className={styles.title}>Giỏ hàng của tôi</h1>
+          <h1 className={styles.title}>My Cart</h1>
         </header>
 
         {!cart || cart.items.length === 0 ? (
@@ -216,7 +218,7 @@ const CartScreen: React.FC = () => {
                       <button
                         className={styles.itemRemoveButton}
                         onClick={() => handleRemoveItem(item.id)}
-                        title="Xóa sản phẩm"
+                        title="Remove item"
                         disabled={updating === item.id}
                       >
                         <FaTrash />
@@ -230,16 +232,16 @@ const CartScreen: React.FC = () => {
             <aside className={styles.summary}>
               <div className={styles.summaryBox}>
                 <div className={styles.summaryLine}>
-                  <span>Tạm tính</span>
+                  <span>Subtotal</span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className={styles.summaryLine}>
-                  <span>Phí vận chuyển</span>
+                  <span>Shipping fee</span>
                   <span>{formatCurrency(shippingFee)}</span>
                 </div>
                 <hr />
                 <div className={styles.summaryTotal}>
-                  <span>Tổng cộng</span>
+                  <span>Total</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
                 <button
@@ -247,7 +249,7 @@ const CartScreen: React.FC = () => {
                   onClick={handleCheckout}
                   disabled={!cart || cart.items.length === 0}
                 >
-                  Thanh toán
+                  Checkout
                 </button>
               </div>
             </aside>

@@ -250,11 +250,11 @@ const Checkout: React.FC = () => {
 
   const handlePlaceOrder = async () => {
     if (orderType === "DELIVERY" && !selectedAddressId) {
-      toast.error("Please select a delivery address.");
+      toast.error("Please select a delivery address");
       return;
     }
     if (!paymentMethod) {
-      toast.error("Please select a payment method.");
+      toast.error("Please select a payment method");
       return;
     }
 
@@ -306,7 +306,7 @@ const Checkout: React.FC = () => {
 
   const handleOpenDeleteModal = (address: Address) => {
     if (address.is_default) {
-      toast.error("Cannot remove the default address.");
+      toast.error("Cannot remove the default address");
       return;
     }
     setAddressToDelete(address.id);
@@ -317,7 +317,7 @@ const Checkout: React.FC = () => {
     setUserAddresses((prev) =>
       prev.filter((addr) => addr.id !== addressToDelete)
     );
-    toast.success("The address has been deleted successfully.", {});
+    toast.success("The address has been deleted successfully", {});
     setIsConfirmModalOpen(false);
     setAddressToDelete(null);
   };
@@ -331,7 +331,7 @@ const Checkout: React.FC = () => {
             : addr
         )
       );
-      toast.success("The address has been updated successfully.");
+      toast.success("The address has been updated successfully");
     } else {
       const newAddress: Address = {
         ...(addressData as Omit<Address, "id" | "is_default">),

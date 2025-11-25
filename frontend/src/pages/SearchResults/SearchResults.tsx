@@ -31,7 +31,7 @@ export default function SearchResults() {
         setProducts(results);
       } catch (err: any) {
         console.error("Search error:", err);
-        setError("Failed to search products. Please try again.");
+        setError("Failed to search products. Please try again!");
       } finally {
         setLoading(false);
       }
