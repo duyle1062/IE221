@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams, Link } from 'react-router-dom';
-import OtpInput from 'react-otp-input';
 import styles from './VerifyEmail.module.css';
 import authService from '../../services/auth.service';
 
