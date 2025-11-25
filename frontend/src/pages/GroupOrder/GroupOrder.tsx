@@ -156,7 +156,7 @@ const GroupOrder: React.FC = () => {
   const handleJoinGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!joinCode.trim()) {
-      toast.error("Please enter a code.");
+      toast.error("Please enter a code");
       return;
     }
     try {
@@ -181,7 +181,7 @@ const GroupOrder: React.FC = () => {
 
     if (
       !window.confirm(
-        `Remove ${memberName} from the group? Their items will be deleted.`
+        `Remove ${memberName} from the group? Their items will be deleted`
       )
     ) {
       return;
@@ -317,7 +317,7 @@ const GroupOrder: React.FC = () => {
         </div>
         <h3 className={styles.cardTitle}>Create Group Order</h3>
         <p className={styles.cardDesc}>
-          Host a party! Get a code and share it with your friends.
+          Host a party! Get a code and share it with your friends
         </p>
         <button className={styles.btnPrimary} disabled={loading}>
           {loading ? "Creating..." : "Create Now"}
@@ -329,7 +329,7 @@ const GroupOrder: React.FC = () => {
         </div>
         <h3 className={styles.cardTitle}>Join Group Order</h3>
         <p className={styles.cardDesc}>
-          Enter code below to join an existing group order.
+          Enter code below to join an existing group order
         </p>
         <form onSubmit={handleJoinGroup} className={styles.joinForm}>
           <input
@@ -468,7 +468,7 @@ const GroupOrder: React.FC = () => {
                 {isExpanded && (
                   <div className={styles.userGroupDetails}>
                     {items.length === 0 ? (
-                      <p className={styles.emptyStateText}>No items.</p>
+                      <p className={styles.emptyStateText}>No items</p>
                     ) : (
                       items.map((item) => (
                         <div key={item.id} className={styles.detailRow}>

@@ -41,14 +41,14 @@ const LayoutAdmin: React.FC = () => {
   };
 
   const handleClose = () => setAnchorEl(null);
-  
+
   const handleLogout = async () => {
     try {
       await logout();
       message.success("Logged out successfully!");
       navigate("/login");
     } catch (error) {
-      message.error("Failed to logout. Please try again.");
+      message.error("Failed to logout. Please try again!");
     }
     handleClose();
   };

@@ -141,10 +141,10 @@ const RegisterForm: React.FC = () => {
                 : serverErrors.password,
             });
           } else {
-            setErrors({ server: "Registration failed. Please try again." });
+            setErrors({ server: "Registration failed. Please try again!" });
           }
         } else {
-          setErrors({ server: "Network error. Please try again later." });
+          setErrors({ server: "Network error. Please try again later!" });
         }
       } finally {
         setLoading(false);

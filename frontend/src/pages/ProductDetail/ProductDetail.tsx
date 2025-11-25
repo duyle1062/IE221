@@ -118,7 +118,7 @@ const ProductDetailPage: React.FC = () => {
           err?.response?.data?.detail ||
           err?.detail ||
           err?.message ||
-          "Không thể tải thông tin sản phẩm. Vui lòng thử lại!";
+          "Unable to load product information. Please try again!";
         setError(errorMessage);
       } finally {
         if (!abortController.signal.aborted) {
@@ -186,7 +186,7 @@ const ProductDetailPage: React.FC = () => {
           err?.response?.data?.detail ||
           err?.detail ||
           err?.message ||
-          "Không thể tải đánh giá.";
+          "Unable to load reviews";
         setRatingsError(errorMessage);
       } finally {
         if (!abortController.signal.aborted) {
@@ -207,7 +207,7 @@ const ProductDetailPage: React.FC = () => {
 
     // Check if user is authenticated
     if (!isAuthenticated) {
-      alert("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng!");
+      alert("Please log in to add items to your cart!");
       navigate("/login");
       return;
     }
@@ -218,14 +218,14 @@ const ProductDetailPage: React.FC = () => {
         product_id: product.id,
         quantity: quantity,
       });
-      alert(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`);
+      alert(`Added ${quantity} ${product.name} to your cart!`);
       setQuantity(1); // Reset quantity after successful add
     } catch (error: any) {
       console.error("Add to cart failed:", error);
       const errorMessage =
         error?.detail ||
         error?.message ||
-        "Không thể thêm sản phẩm vào giỏ hàng. Vui lòng thử lại!";
+        "Unable to add item to cart. Please try again!";
       alert(errorMessage);
     } finally {
       setIsAddingToCart(false);
@@ -240,19 +240,19 @@ const ProductDetailPage: React.FC = () => {
 
     // Check if user is authenticated
     if (!isAuthenticated) {
-      setSubmitError("Vui lòng đăng nhập để đánh giá sản phẩm!");
+      setSubmitError("Please log in to rate this product!");
       return;
     }
 
     // Validate rating
     if (!rating || rating < 1 || rating > 5) {
-      setSubmitError("Vui lòng chọn đánh giá từ 1 đến 5 sao!");
+      setSubmitError("Please select a rating from 1 to 5 stars!");
       return;
     }
 
     // Validate comment
     if (!comment.trim()) {
-      setSubmitError("Vui lòng nhập nội dung đánh giá của bạn!");
+      setSubmitError("Please enter your review content!");
       return;
     }
 
@@ -388,7 +388,7 @@ const ProductDetailPage: React.FC = () => {
               </div>
 
               <div className={styles.quantitySection}>
-                <label className={styles.quantityLabel}>Số lượng:</label>
+                <label className={styles.quantityLabel}>Quantity:</label>
                 <div className={styles.quantityControls}>
                   <button
                     className={styles.quantityBtn}
@@ -421,10 +421,10 @@ const ProductDetailPage: React.FC = () => {
                   disabled={isAddingToCart || !product.available}
                 >
                   {!product.available
-                    ? "Sản phẩm tạm hết hàng"
+                    ? "This item is temporarily out of stock"
                     : isAddingToCart
-                    ? "Đang thêm..."
-                    : "Thêm vào giỏ hàng"}
+                    ? "Adding..."
+                    : "Add to Cart"}
                 </button>
 
                 <button
@@ -449,13 +449,13 @@ const ProductDetailPage: React.FC = () => {
                   }
                   onClick={() => setActiveTab("description")}
                 >
-                  Mô tả
+                  Description
                 </button>
                 <button
                   className={activeTab === "reviews" ? styles.activeTab : ""}
                   onClick={() => setActiveTab("reviews")}
                 >
-                  Đánh giá ({ratings?.count || 0})
+                  Reviews ({ratings?.count || 0})
                 </button>
               </div>
 
@@ -505,7 +505,7 @@ const ProductDetailPage: React.FC = () => {
                                 disabled={!ratings.previous || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
-                                ← Trang trước
+                                ← Previous page
                               </button>
                               <span className={styles.pageInfo}>
                                 Trang {currentPage} /{" "}
@@ -523,7 +523,7 @@ const ProductDetailPage: React.FC = () => {
                                     currentPage * pageSize,
                                     ratings.count
                                   )}{" "}
-                                  / {ratings.count} đánh giá)
+                                  / {ratings.count} reviews)
                                 </span>
                               </span>
                               <button
@@ -533,20 +533,18 @@ const ProductDetailPage: React.FC = () => {
                                 disabled={!ratings.next || ratingsLoading}
                                 className={styles.paginationBtn}
                               >
-                                Trang sau →
+                                Next page →
                               </button>
                             </div>
                           )}
                         </>
                       ) : (
-                        <p className={styles.noReviews}>
-                          Chưa có đánh giá nào.
-                        </p>
+                        <p className={styles.noReviews}>No reviews yet</p>
                       )}
                     </div>
 
                     <div className={styles.addReview}>
-                      <h3>Viết đánh giá của bạn</h3>
+                      <h3>Write your review</h3>
                       {isAuthenticated ? (
                         <>
                           {submitError && (
@@ -555,7 +553,7 @@ const ProductDetailPage: React.FC = () => {
                             </div>
                           )}
                           <div className={styles.ratingInput}>
-                            <span>Đánh giá: </span>
+                            <span>Rating</span>
                             <StarRating
                               rating={rating}
                               size="large"
@@ -568,7 +566,7 @@ const ProductDetailPage: React.FC = () => {
                             />
                           </div>
                           <textarea
-                            placeholder="Nhập bình luận của bạn..."
+                            placeholder="Enter your comment..."
                             value={comment}
                             onChange={(e) => {
                               setComment(e.target.value);
@@ -583,14 +581,14 @@ const ProductDetailPage: React.FC = () => {
                             disabled={isSubmittingRating}
                           >
                             {isSubmittingRating
-                              ? "Đang gửi..."
-                              : "Gửi đánh giá"}
+                              ? "Submitting..."
+                              : "Submit Review"}
                           </button>
                         </>
                       ) : (
                         <p className={styles.loginPrompt}>
-                          Vui lòng <a href="/login">đăng nhập</a> để đánh giá
-                          sản phẩm.
+                          Please <a href="/login">log in</a> to rate this
+                          product
                         </p>
                       )}
                     </div>

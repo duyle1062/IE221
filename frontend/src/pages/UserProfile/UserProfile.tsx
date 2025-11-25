@@ -62,10 +62,10 @@ const AddressModal: React.FC<AddressModalProps> = ({
   return (
     <div className={styles.modalBackdrop}>
       <div className={styles.modalContent}>
-        <h2>{address?.id ? "Chỉnh sửa địa chỉ" : "Thêm địa chỉ mới"}</h2>
+        <h2>{address?.id ? "Edit Address" : "Add New Address"}</h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label htmlFor="street">Địa chỉ (Số nhà, Tên đường)</label>
+            <label htmlFor="street">Address (Street Name, House No.)</label>
             <input
               id="street"
               name="street"
@@ -75,7 +75,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
             />
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="ward">Phường/Xã</label>
+            <label htmlFor="ward">Ward/Commune</label>
             <input
               id="ward"
               name="ward"
@@ -85,7 +85,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
             />
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="province">Tỉnh/Thành phố</label>
+            <label htmlFor="province">Province/City</label>
             <input
               id="province"
               name="province"
@@ -95,7 +95,7 @@ const AddressModal: React.FC<AddressModalProps> = ({
             />
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="phone">Số điện thoại (người nhận)</label>
+            <label htmlFor="phone">Phone Number (Receiver)</label>
             <input
               id="phone"
               name="phone"
@@ -111,10 +111,10 @@ const AddressModal: React.FC<AddressModalProps> = ({
               className={`${styles.button} ${styles.buttonSecondary}`}
               onClick={onClose}
             >
-              Hủy
+              Cancel
             </button>
             <button type="submit" className={styles.button}>
-              Lưu
+              Save
             </button>
           </div>
         </form>
@@ -191,10 +191,7 @@ const UserProfile: React.FC = () => {
       await refreshUser();
     } catch (error: any) {
       console.error("Failed to load profile:", error);
-      showMessage(
-        error.message || "Không thể tải thông tin người dùng",
-        "error"
-      );
+      showMessage(error.message || "Unable to load user profile", "error");
     } finally {
       setLoading(false);
     }
@@ -208,7 +205,7 @@ const UserProfile: React.FC = () => {
       setAddresses(addressList);
     } catch (error: any) {
       console.error("Failed to load addresses:", error);
-      showMessage(error.message || "Không thể tải danh sách địa chỉ", "error");
+      showMessage(error.message || "Unable to load address list", "error");
     } finally {
       setLoading(false);
     }
@@ -249,11 +246,11 @@ const UserProfile: React.FC = () => {
       setEditProfile(profileData);
       setIsEditingProfile(false);
       await refreshUser();
-      showMessage("Cập nhật thông tin thành công!");
+      showMessage("Profile updated successfully!");
     } catch (error: any) {
       console.error("Failed to update profile:", error);
       showMessage(
-        error.errors?.detail || error.message || "Không thể cập nhật thông tin",
+        error.errors?.detail || error.message || "Unable to update profile",
         "error"
       );
     } finally {
@@ -277,15 +274,15 @@ const UserProfile: React.FC = () => {
   };
 
   const handleDeleteAddress = async (id: number) => {
-    if (window.confirm("Bạn có chắc muốn xóa địa chỉ này?")) {
+    if (window.confirm("Are you sure you want to delete this address?")) {
       try {
         setLoading(true);
         await addressService.deleteAddress(id);
         await loadAddresses();
-        showMessage("Xóa địa chỉ thành công!");
+        showMessage("Address deleted successfully!");
       } catch (error: any) {
         console.error("Failed to delete address:", error);
-        showMessage(error.message || "Không thể xóa địa chỉ", "error");
+        showMessage(error.message || "Unable to delete address", "error");
       } finally {
         setLoading(false);
       }
@@ -297,10 +294,10 @@ const UserProfile: React.FC = () => {
       setLoading(true);
       await addressService.setDefaultAddress(id);
       await loadAddresses();
-      showMessage("Đặt làm địa chỉ mặc định thành công!");
+      showMessage("Set as default address successfully!");
     } catch (error: any) {
       console.error("Failed to set default address:", error);
-      showMessage(error.message || "Không thể đặt địa chỉ mặc định", "error");
+      showMessage(error.message || "Unable to set default address", "error");
     } finally {
       setLoading(false);
     }
@@ -317,7 +314,7 @@ const UserProfile: React.FC = () => {
           province: addressData.province!,
           phone: addressData.phone!,
         });
-        showMessage("Cập nhật địa chỉ thành công!");
+        showMessage("Address updated successfully!");
       } else {
         // Create new address
         const createData: CreateAddressData = {
@@ -328,14 +325,14 @@ const UserProfile: React.FC = () => {
           is_default: addresses.length === 0,
         };
         await addressService.createAddress(createData);
-        showMessage("Thêm địa chỉ mới thành công!");
+        showMessage("New address added successfully!");
       }
       await loadAddresses();
       setIsAddressModalOpen(false);
     } catch (error: any) {
       console.error("Failed to save address:", error);
       showMessage(
-        error.errors?.detail || error.message || "Không thể lưu địa chỉ",
+        error.errors?.detail || error.message || "Unable to save address",
         "error"
       );
     } finally {
@@ -352,7 +349,7 @@ const UserProfile: React.FC = () => {
     e.preventDefault();
 
     if (passwordData.newPass !== passwordData.confirmPass) {
-      showMessage("Mật khẩu mới không khớp!", "error");
+      showMessage("New passwords do not match!", "error");
       return;
     }
 
@@ -369,7 +366,7 @@ const UserProfile: React.FC = () => {
         newPass: "",
         confirmPass: "",
       });
-      showMessage("Đổi mật khẩu thành công!");
+      showMessage("Password changed successfully!");
     } catch (error: any) {
       console.error("Failed to change password:", error);
       const errorMsg =
@@ -377,7 +374,7 @@ const UserProfile: React.FC = () => {
         error.errors?.new_password?.[0] ||
         error.errors?.confirm_password?.[0] ||
         error.message ||
-        "Không thể đổi mật khẩu";
+        "Unable to change password";
       showMessage(errorMsg, "error");
     } finally {
       setLoading(false);
@@ -388,10 +385,10 @@ const UserProfile: React.FC = () => {
     if (isEditingProfile) {
       return (
         <form onSubmit={handleProfileSubmit}>
-          <h3>Chỉnh sửa thông tin</h3>
+          <h3>Edit Profile</h3>
 
           <div className={styles.formGroup}>
-            <label htmlFor="lastname">Họ</label>
+            <label htmlFor="lastname">Last Name</label>
             <input
               id="lastname"
               name="lastname"
@@ -402,7 +399,7 @@ const UserProfile: React.FC = () => {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="firstname">Tên</label>
+            <label htmlFor="firstname">First Name</label>
             <input
               id="firstname"
               name="firstname"
@@ -426,7 +423,7 @@ const UserProfile: React.FC = () => {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="phone">Số điện thoại</label>
+            <label htmlFor="phone">Phone Number</label>
             <input
               id="phone"
               name="phone"
@@ -437,7 +434,7 @@ const UserProfile: React.FC = () => {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="gender">Giới tính</label>
+            <label htmlFor="gender">Gender</label>
             <select
               id="gender"
               name="gender"
@@ -445,9 +442,9 @@ const UserProfile: React.FC = () => {
               onChange={handleProfileChange}
               required
             >
-              <option value={Gender.MALE}>Nam</option>
-              <option value={Gender.FEMALE}>Nữ</option>
-              <option value={Gender.OTHER}>Khác</option>
+              <option value={Gender.MALE}>Male</option>
+              <option value={Gender.FEMALE}>Female</option>
+              <option value={Gender.OTHER}>Other</option>
             </select>
           </div>
 
@@ -458,10 +455,10 @@ const UserProfile: React.FC = () => {
               onClick={handleCancelEditProfile}
               disabled={loading}
             >
-              Hủy
+              Cancel
             </button>
             <button type="submit" className={styles.button} disabled={loading}>
-              {loading ? "Đang lưu..." : "Lưu thay đổi"}
+              {loading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
@@ -470,30 +467,30 @@ const UserProfile: React.FC = () => {
 
     return (
       <div className={styles.profileView}>
-        <h3>Thông tin của bạn</h3>
+        <h3>Your Profile</h3>
         <p>
-          <strong>Họ tên:</strong> {profile.lastname} {profile.firstname}
+          <strong>Fullname:</strong> {profile.lastname} {profile.firstname}
         </p>
         <p>
           <strong>Email:</strong> {profile.email}
         </p>
         <p>
-          <strong>Số điện thoại:</strong> {profile.phone}
+          <strong>Phone:</strong> {profile.phone}
         </p>
         <p>
-          <strong>Giới tính:</strong>{" "}
+          <strong>Gender:</strong>{" "}
           {profile.gender === Gender.MALE
-            ? "Nam"
+            ? "Male"
             : profile.gender === Gender.FEMALE
-            ? "Nữ"
-            : "Khác"}
+            ? "Female"
+            : "Other"}
         </p>
         <button
           className={styles.button}
           onClick={() => setIsEditingProfile(true)}
           disabled={loading}
         >
-          Chỉnh sửa
+          Edit
         </button>
       </div>
     );
@@ -501,18 +498,18 @@ const UserProfile: React.FC = () => {
 
   const renderAddress = () => (
     <div>
-      <h3>Quản lý địa chỉ</h3>
+      <h3>Address Management</h3>
       <button
         className={styles.button}
         onClick={handleOpenAddModal}
         disabled={loading}
       >
-        Thêm địa chỉ mới
+        Add New Address
       </button>
-      {loading && <p>Đang tải...</p>}
+      {loading && <p>Loading...</p>}
       <div className={styles.addressList}>
         {addresses.filter((addr) => addr.is_active).length === 0 ? (
-          <p>Bạn chưa có địa chỉ nào.</p>
+          <p>You have no addresses</p>
         ) : (
           addresses
             .filter((addr) => addr.is_active)
@@ -524,10 +521,10 @@ const UserProfile: React.FC = () => {
                       {profile.lastname} {profile.firstname}
                     </strong>
                     {addr.is_default && (
-                      <span className={styles.defaultBadge}>Mặc định</span>
+                      <span className={styles.defaultBadge}>Default</span>
                     )}
                   </p>
-                  <p>SĐT: {addr.phone}</p>
+                  <p>Phone: {addr.phone}</p>
                   <p>{addr.street}</p>
                   <p>
                     {addr.ward}, {addr.province}
@@ -539,14 +536,14 @@ const UserProfile: React.FC = () => {
                     onClick={() => handleOpenEditModal(addr)}
                     disabled={loading}
                   >
-                    Sửa
+                    Edit
                   </button>
                   <button
                     className={`${styles.buttonLink} ${styles.buttonLinkDanger}`}
                     onClick={() => handleDeleteAddress(addr.id)}
                     disabled={loading}
                   >
-                    Xóa
+                    Delete
                   </button>
                   {!addr.is_default && (
                     <button
@@ -554,7 +551,7 @@ const UserProfile: React.FC = () => {
                       onClick={() => handleSetDefaultAddress(addr.id)}
                       disabled={loading}
                     >
-                      Đặt làm mặc định
+                      Set as Default
                     </button>
                   )}
                 </div>
@@ -567,10 +564,10 @@ const UserProfile: React.FC = () => {
 
   const renderPassword = () => (
     <form onSubmit={handlePasswordSubmit}>
-      <h3>Thay đổi mật khẩu</h3>
+      <h3>Change Password</h3>
 
       <div className={styles.formGroup}>
-        <label htmlFor="current">Mật khẩu hiện tại</label>
+        <label htmlFor="current">Current Password</label>
         <div className={styles.passwordInputWrapper}>
           <input
             id="current"
@@ -590,7 +587,7 @@ const UserProfile: React.FC = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="newPass">Mật khẩu mới</label>
+        <label htmlFor="newPass">New Password</label>
         <div className={styles.passwordInputWrapper}>
           <input
             id="newPass"
@@ -610,7 +607,7 @@ const UserProfile: React.FC = () => {
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="confirmPass">Xác nhận mật khẩu mới</label>
+        <label htmlFor="confirmPass">Confirm New Password</label>
         <div className={styles.passwordInputWrapper}>
           <input
             id="confirmPass"
@@ -630,7 +627,7 @@ const UserProfile: React.FC = () => {
       </div>
 
       <button type="submit" className={styles.button} disabled={loading}>
-        {loading ? "Đang xử lý..." : "Đổi mật khẩu"}
+        {loading ? "Processing..." : "Change Password"}
       </button>
     </form>
   );
@@ -648,7 +645,7 @@ const UserProfile: React.FC = () => {
             aria-current={activeTab === "profile" ? "page" : undefined}
             disabled={loading}
           >
-            Thông tin cá nhân
+            Personal Information
           </button>
           <button
             className={`${styles.navButton} ${
@@ -658,7 +655,7 @@ const UserProfile: React.FC = () => {
             aria-current={activeTab === "address" ? "page" : undefined}
             disabled={loading}
           >
-            Quản lý địa chỉ
+            Address Management
           </button>
           <button
             className={`${styles.navButton} ${
@@ -668,7 +665,7 @@ const UserProfile: React.FC = () => {
             aria-current={activeTab === "password" ? "page" : undefined}
             disabled={loading}
           >
-            Thay đổi mật khẩu
+            Change Password
           </button>
         </nav>
 
