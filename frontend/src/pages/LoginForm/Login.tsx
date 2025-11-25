@@ -44,7 +44,7 @@ const LoginForm: React.FC = () => {
 
         // Get user data from auth service after login
         const userData = await authService.getCurrentUser();
-        
+
         // Redirect based on user role
         if (userData.role === UserRole.ADMIN) {
           navigate("/dashboard");
@@ -70,7 +70,7 @@ const LoginForm: React.FC = () => {
           }
         } else {
           setErrors({
-            server: "Your account does not exist. Please try again later.",
+            server: "Your account does not exist. Please try again later!",
           });
         }
       } finally {

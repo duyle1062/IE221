@@ -41,14 +41,14 @@ const LayoutAdmin: React.FC = () => {
   };
 
   const handleClose = () => setAnchorEl(null);
-  
+
   const handleLogout = async () => {
     try {
       await logout();
       message.success("Logged out successfully!");
       navigate("/login");
     } catch (error) {
-      message.error("Failed to logout. Please try again.");
+      message.error("Failed to logout. Please try again!");
     }
     handleClose();
   };
@@ -134,8 +134,7 @@ const LayoutAdmin: React.FC = () => {
               onClose={handleClose}
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-              <MenuItem onClick={handleClose}>Account</MenuItem>
+            >  
               <MenuItem onClick={handleLogout}>Log out</MenuItem>
             </Popover>
           </Toolbar>

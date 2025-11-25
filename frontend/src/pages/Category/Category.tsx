@@ -42,7 +42,7 @@ export default function Category() {
           err?.response?.data?.detail ||
           err?.detail ||
           err?.message ||
-          "Không thể tải sản phẩm. Vui lòng thử lại!";
+          "Unable to load products. Please try again!";
         setError(errorMessage);
         setProducts([]); // Ensure products is empty array on error
       } finally {
@@ -72,7 +72,7 @@ export default function Category() {
 
         {loading ? (
           <div className={styles.loadingContainer}>
-            <p>Đang tải sản phẩm...</p>
+            <p>Loading products...</p>
           </div>
         ) : error ? (
           <div className={styles.errorContainer}>
@@ -107,7 +107,7 @@ export default function Category() {
               ))
             ) : (
               <p className={styles.emptyMessage}>
-                Không có sản phẩm nào trong danh mục này.
+                There are no products in this category
               </p>
             )}
           </div>

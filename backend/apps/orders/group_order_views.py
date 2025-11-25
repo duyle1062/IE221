@@ -223,22 +223,39 @@ class GroupOrderItemsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Calculate line total
-        line_total = product.price * quantity
-
-        # Create group order item
-        group_item = GroupOrderItem.objects.create(
+        # Check if this user already has this product in the group order
+        existing_item = GroupOrderItem.objects.filter(
             group_order=group_order,
             user=request.user,
             product=product,
-            product_name=product.name,
-            unit_price=product.price,
-            quantity=quantity,
-            line_total=line_total,
-        )
+            is_active=True
+        ).first()
 
-        item_serializer = GroupOrderItemSerializer(group_item)
-        return Response(item_serializer.data, status=status.HTTP_201_CREATED)
+        if existing_item:
+            # Update existing item quantity
+            existing_item.quantity += quantity
+            existing_item.line_total = existing_item.unit_price * existing_item.quantity
+            existing_item.save()
+            
+            item_serializer = GroupOrderItemSerializer(existing_item)
+            return Response(item_serializer.data, status=status.HTTP_200_OK)
+        else:
+            # Calculate line total
+            line_total = product.price * quantity
+
+            # Create new group order item
+            group_item = GroupOrderItem.objects.create(
+                group_order=group_order,
+                user=request.user,
+                product=product,
+                product_name=product.name,
+                unit_price=product.price,
+                quantity=quantity,
+                line_total=line_total,
+            )
+
+            item_serializer = GroupOrderItemSerializer(group_item)
+            return Response(item_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class GroupOrderItemDetailView(APIView):

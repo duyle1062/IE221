@@ -1,27 +1,66 @@
 import { useState, useRef, useEffect } from "react";
 import styles from "./Header.module.css";
-import { FaShoppingCart, FaUser, FaUsers } from "react-icons/fa";
+import { FaShoppingCart, FaUser } from "react-icons/fa";
 import { IoIosMenu } from "react-icons/io";
 import { GoSearch } from "react-icons/go";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Product } from "../../types/product.types";
 import productService from "../../services/product.service";
 import logoImage from "../../assets/images/Logo_FastFood.png";
 
 export default function Header() {
-  const [activeLink, setActiveLink] = useState("Home");
   const [openMenu, setOpenMenu] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [showResults, setShowResults] = useState<boolean>(false);
+
   const avatarRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-  const { isAuthenticated, logout, user } = useAuth();
-  const navigate = useNavigate();
 
-  const navItems = ["Home", "Menu", "Group Order", "Service", "About us"];
+  const { isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const navItems = [
+    { name: "Home", path: "/" },
+    { name: "Menu", path: "/category/pizza" },
+    { name: "Group Order", path: "/group-order" },
+    { name: "Service", path: "/service" },
+    { name: "About us", path: "/about-us" },
+  ];
+
+  const checkActive = (item: { name: string; path: string }) => {
+    const currentPath = location.pathname;
+
+    if (item.name === "Home" && currentPath === "/") {
+      return true;
+    }
+
+    if (item.name === "Menu") {
+      if (
+        currentPath.startsWith("/category") ||
+        currentPath.startsWith("/product")
+      ) {
+        return true;
+      }
+    }
+
+    if (item.name === "Group Order" && currentPath.startsWith("/group-order")) {
+      return true;
+    }
+
+    if (
+      item.name !== "Home" &&
+      item.name !== "Menu" &&
+      currentPath === item.path
+    ) {
+      return true;
+    }
+
+    return false;
+  };
 
   const handleLogout = async () => {
     try {
@@ -30,7 +69,6 @@ export default function Header() {
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
-      // Still navigate to login even if logout API fails
       setOpenMenu(false);
       navigate("/login");
     }
@@ -50,7 +88,6 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Debounced search effect
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (searchQuery.trim().length > 0) {
@@ -59,7 +96,7 @@ export default function Header() {
         setSearchResults([]);
         setShowResults(false);
       }
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
@@ -78,7 +115,7 @@ export default function Header() {
     } catch (error) {
       console.error("Search error:", error);
       setSearchResults([]);
-      setShowResults(true); // Still show dropdown with "no results" message
+      setShowResults(true);
     } finally {
       setIsSearching(false);
     }
@@ -105,7 +142,6 @@ export default function Header() {
 
   return (
     <div className={styles.container}>
-      {/* Logo */}
       <div className={styles.logo}>
         <Link to="/">
           <img
@@ -116,7 +152,6 @@ export default function Header() {
         </Link>
       </div>
 
-      {/* Search Bar */}
       <div className={styles["search-bar"]} ref={searchRef}>
         <form
           onSubmit={handleSearchSubmit}
@@ -132,7 +167,6 @@ export default function Header() {
           />
         </form>
 
-        {/* Search Results Dropdown */}
         {showResults && (
           <div className={styles["search-results"]}>
             {isSearching ? (
@@ -186,52 +220,20 @@ export default function Header() {
         )}
       </div>
 
-      {/* Navigation */}
-      <div className={styles.nav}>
-        <ul>
-          {navItems.map((item) => (
-            <li key={item}>
-              {item === "Home" ? (
-                <Link
-                  to="/"
-                  className={activeLink === item ? styles.active : ""}
-                  onClick={() => setActiveLink(item)}
-                >
-                  {item}
-                </Link>
-              ) : item === "Group Order" ? (
-                <Link
-                  to="/group-order"
-                  className={activeLink === item ? styles.active : ""}
-                  onClick={() => setActiveLink(item)}
-                >
-                  {item}
-                </Link>
-              ) : item === "Menu" ? (
-                <Link
-                  to="/category/pizza"
-                  className={activeLink === item ? styles.active : ""}
-                  onClick={() => setActiveLink(item)}
-                >
-                  {item}
-                </Link>
-              ) : (
-                <a
-                  href="#"
-                  className={activeLink === item ? styles.active : ""}
-                  onClick={() => setActiveLink(item)}
-                >
-                  {item}
-                </a>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <ul className={styles["nav-links"]}>
+        {navItems.map((item) => (
+          <li key={item.name}>
+            <Link
+              to={item.path}
+              className={checkActive(item) ? styles.active : ""}
+            >
+              {item.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
 
-      {/* Action */}
       <div className={styles.actions}>
-        {/* Cart - Only show when logged in */}
         {isAuthenticated && (
           <>
             <div className={styles.cart}>
@@ -242,7 +244,6 @@ export default function Header() {
           </>
         )}
 
-        {/* Avatar */}
         <div
           ref={avatarRef}
           className={styles.avatar}
@@ -254,7 +255,6 @@ export default function Header() {
           {openMenu && (
             <div className={styles.dropdown}>
               {!isAuthenticated ? (
-                // Menu for guests
                 <>
                   <Link to="/login" onClick={() => setOpenMenu(false)}>
                     <p>Sign In</p>
@@ -264,7 +264,6 @@ export default function Header() {
                   </Link>
                 </>
               ) : (
-                // Menu for logged in users
                 <>
                   <Link to="/userprofile" onClick={() => setOpenMenu(false)}>
                     <p>User Profile</p>
