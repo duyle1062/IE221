@@ -117,8 +117,12 @@ class ProductListView(ListCreateAPIView):
 
             # Annotate with average rating for performance
             # Exclude deleted products (deleted_at IS NULL)
+            # Only show active and available products
             queryset = Product.objects.filter(
-                category=category, deleted_at__isnull=True
+                category=category,
+                deleted_at__isnull=True,
+                is_active=True,
+                available=True
             ).annotate(average_rating=Avg("ratings__rating"))
             return queryset
         else:

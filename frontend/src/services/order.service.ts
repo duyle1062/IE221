@@ -20,10 +20,8 @@ export const placeOrder = async (
     );
     return response.data;
   } catch (error: any) {
-    if (error.response?.data) {
-      throw new Error(error.response.data.error || "Failed to place order");
-    }
-    throw new Error("Network error. Please try again.");
+    // Re-throw the original error to preserve response data
+    throw error;
   }
 };
 
