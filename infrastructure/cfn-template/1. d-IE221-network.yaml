@@ -47,7 +47,7 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: ie221-vpc-foody-001
+          Value: ie221-vpc-foodi-001
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -59,7 +59,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: ie221-igw-foody-001
+          Value: ie221-igw-foodi-001
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -82,7 +82,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ie221-sn-foody-public-01
+          Value: ie221-sn-foodi-public-01
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -97,7 +97,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ie221-sn-foody-public-02
+          Value: ie221-sn-foodi-public-02
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -112,7 +112,7 @@ Resources:
       CidrBlock: !Ref PrivateAppSubnet1Cidr
       Tags:
         - Key: Name
-          Value: ie221-sn-foody-private-app-01
+          Value: ie221-sn-foodi-private-app-01
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -126,7 +126,7 @@ Resources:
       CidrBlock: !Ref PrivateAppSubnet2Cidr
       Tags:
         - Key: Name
-          Value: ie221-sn-foody-private-app-02
+          Value: ie221-sn-foodi-private-app-02
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -141,7 +141,7 @@ Resources:
       CidrBlock: !Ref PrivateDBSubnet1Cidr
       Tags:
         - Key: Name
-          Value: ie221-sn-foody-private-db-01
+          Value: ie221-sn-foodi-private-db-01
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -155,7 +155,7 @@ Resources:
       CidrBlock: !Ref PrivateDBSubnet2Cidr
       Tags:
         - Key: Name
-          Value: ie221-sn-foody-private-db-02
+          Value: ie221-sn-foodi-private-db-02
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -169,7 +169,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: Name
-          Value: ie221-ngw-foody-public-a
+          Value: ie221-ngw-foodi-public-a
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -183,7 +183,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: ie221-eip-foody-ngw-001
+          Value: ie221-eip-foodi-ngw-001
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -197,7 +197,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ie221-rt-foody-public
+          Value: ie221-rt-foodi-public
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -210,7 +210,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ie221-rt-foody-private-app
+          Value: ie221-rt-foodi-private-app
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -223,7 +223,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ie221-rt-foody-private-db
+          Value: ie221-rt-foodi-private-db
         - Key: Environment
           Value: dev
         - Key: SystemID

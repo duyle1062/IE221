@@ -11,7 +11,7 @@ Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: ie221-sg-foody-alb
+      GroupName: ie221-sg-foodi-alb
       GroupDescription: Security Group for Application Load Balancer
       VpcId: !Ref VpcId
       SecurityGroupIngress:
@@ -31,7 +31,7 @@ Resources:
           Description: Allow all outbound traffic
       Tags:
         - Key: Name
-          Value: ie221-sg-foody-alb
+          Value: ie221-sg-foodi-alb
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -41,7 +41,7 @@ Resources:
   ECSTaskSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: ie221-sg-foody-ecs-task
+      GroupName: ie221-sg-foodi-ecs-task
       GroupDescription: Security Group for ECS Tasks
       VpcId: !Ref VpcId
       SecurityGroupIngress:
@@ -56,7 +56,7 @@ Resources:
           Description: Allow all outbound traffic
       Tags:
         - Key: Name
-          Value: ie221-sg-foody-ecs-task
+          Value: ie221-sg-foodi-ecs-task
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -66,7 +66,7 @@ Resources:
   RDSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: ie221-sg-foody-db
+      GroupName: ie221-sg-foodi-db
       GroupDescription: Security Group for RDS Database
       VpcId: !Ref VpcId
       SecurityGroupIngress:
@@ -75,34 +75,9 @@ Resources:
           ToPort: 5432
           SourceSecurityGroupId: !Ref ECSTaskSecurityGroup
           Description: Allow PostgreSQL access from ECS Tasks
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          SourceSecurityGroupId: !Ref BastionSecurityGroup
-          Description: Allow PostgreSQL access from Bastion
       Tags:
         - Key: Name
-          Value: ie221-sg-foody-db
-        - Key: Environment
-          Value: dev
-        - Key: SystemID
-          Value: IE221
-
-  # Security Group for Bastion Host
-  BastionSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: ie221-sg-foody-bastion
-      GroupDescription: Security Group for Bastion Host
-      VpcId: !Ref VpcId
-      SecurityGroupIngress: []
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
-          Description: Allow all outbound traffic
-      Tags:
-        - Key: Name
-          Value: ie221-sg-foody-bastion
+          Value: ie221-sg-foodi-db
         - Key: Environment
           Value: dev
         - Key: SystemID
@@ -127,8 +102,3 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-RDSSecurityGroupID"
 
-  BastionSecurityGroupId:
-    Description: Bastion Security Group ID
-    Value: !Ref BastionSecurityGroup
-    Export:
-      Name: !Sub "${AWS::StackName}-BastionSecurityGroupID"
