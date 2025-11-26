@@ -188,7 +188,7 @@ const CartScreen: React.FC = () => {
               {cart.items.map((item) => (
                 <div key={item.id} className={styles.cartItem}>
                   <img
-                    src="https://via.placeholder.com/100x100?text=Product"
+                    src={item.product.image_url}
                     alt={item.product.name}
                     className={styles.itemImage}
                   />

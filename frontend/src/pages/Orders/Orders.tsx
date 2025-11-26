@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { getUserOrders, cancelOrder } from "../../services/order.service";
+import { useNavigate } from "react-router-dom";
+import { getUserOrders } from "../../services/order.service";
 import { Order } from "../../types/order.types";
 import styles from "./Orders.module.css";
-import { FaArrowLeft, FaCheck } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
@@ -14,23 +14,7 @@ type OrderStatus =
   | "PREPARING"
   | "READY"
   | "DELIVERED"
-  | "COMPLETED"
   | "CANCELLED";
-
-const ORDER_STEPS: OrderStatus[] = [
-  "PENDING",
-  "PAID",
-  "CONFIRMED",
-  "PREPARING",
-  "READY",
-  "DELIVERED",
-  "COMPLETED",
-];
-
-const getStepIndex = (status: OrderStatus) => {
-  const index = ORDER_STEPS.indexOf(status);
-  return index >= 0 ? index : 0;
-};
 
 const getStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
@@ -40,7 +24,6 @@ const getStatusLabel = (status: string) => {
     PREPARING: "Preparing",
     READY: "Ready",
     DELIVERED: "Delivered",
-    COMPLETED: "Completed",
     CANCELLED: "Cancelled",
   };
   return labels[status] || status;
@@ -65,37 +48,46 @@ const formatDate = (dateString: string) => {
 };
 
 const Orders: React.FC = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(
-    null
-  );
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "ALL">(
+    "ALL"
+  );
   const pageSize = 10;
+
+  const statuses: (OrderStatus | "ALL")[] = [
+    "ALL",
+    "PENDING",
+    "PAID",
+    "CONFIRMED",
+    "PREPARING",
+    "READY",
+    "DELIVERED",
+    "CANCELLED",
+  ];
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus]);
 
   useEffect(() => {
     loadOrders(currentPage);
-  }, [currentPage]);
-
-  const [confirmationModal, setConfirmationModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  }>({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+  }, [currentPage, selectedStatus]);
 
   const loadOrders = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getUserOrders(page, pageSize);
-      const ordersList = Array.isArray(response)
+      const response = await getUserOrders(page, pageSize, selectedStatus);
+      let ordersList = Array.isArray(response)
         ? response
         : response.results || [];
+
       const sortedOrders = ordersList.sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -104,10 +96,8 @@ const Orders: React.FC = () => {
 
       // Set pagination info
       if (!Array.isArray(response)) {
-        const count = response.count || 0;
-        const pages = Math.ceil(count / pageSize);
-        setTotalOrders(count);
-        setTotalPages(pages);
+        setTotalOrders(response.count || 0);
+        setTotalPages(Math.ceil((response.count || 0) / pageSize));
       }
     } catch (err: any) {
       setError(err.message || "Failed to load orders");
@@ -115,24 +105,6 @@ const Orders: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCancelOrder = (orderId: number) => {
-    setConfirmationModal({
-      isOpen: true,
-      title: "Cancel Order",
-      message: "Are you sure you want to cancel this order?",
-      onConfirm: async () => {
-        try {
-          await cancelOrder(orderId);
-          toast.success("Order cancelled successfully");
-          loadOrders();
-          setSelectedOrder(null);
-        } catch (error: any) {
-          toast.error(error.message || "Failed to cancel order");
-        }
-      },
-    });
   };
 
   const renderOrderList = () => (
@@ -164,7 +136,7 @@ const Orders: React.FC = () => {
               <p className={styles.totalPrice}>{formatCurrency(order.total)}</p>
               <button
                 className={styles.viewDetailButton}
-                onClick={() => setSelectedOrder(order)}
+                onClick={() => navigate(`/orders/${order.id}`)}
               >
                 View Details
               </button>
@@ -205,177 +177,7 @@ const Orders: React.FC = () => {
   );
 
   const renderOrderDetail = () => {
-    if (!selectedOrder) return null;
-
-    const currentStepIndex = getStepIndex(selectedOrder.status as OrderStatus);
-    const isCancelled = selectedOrder.status === "CANCELLED";
-
-    // With justify-content: space-between, first circle is at 0% and last at 100%
-    // Each step occupies equal spacing: 100% / (totalSteps - 1)
-    // For PAID (index 1) with 7 steps: (1 / 6) * 100 = 16.67%
-    const totalSteps = ORDER_STEPS.length;
-    const progressPercent = isCancelled
-      ? 0
-      : totalSteps > 1
-      ? (currentStepIndex / (totalSteps - 1)) * 100
-      : 0;
-
-    console.log(
-      "Order Status:",
-      selectedOrder.status,
-      "Step Index:",
-      currentStepIndex,
-      "Progress:",
-      progressPercent
-    );
-
-    return (
-      <div className={styles.detailContainer}>
-        <div className={styles.detailHeader}>
-          <div className={styles.detailHeaderInfo}>
-            <h2>
-              Order #{selectedOrder.id}
-              {selectedOrder.is_group_order && (
-                <span className={styles.groupOrderBadge}>Group Order</span>
-              )}
-            </h2>
-            <p>Placed on {formatDate(selectedOrder.created_at)}</p>
-            <p>Payment: {selectedOrder.payment_method.toUpperCase()}</p>
-            <p>
-              Type: {selectedOrder.type === "DELIVERY" ? "Delivery" : "Pickup"}
-            </p>
-          </div>
-          <span
-            className={`${styles.badge} ${
-              styles[`status_${selectedOrder.status.toLowerCase()}`]
-            }`}
-          >
-            {getStatusLabel(selectedOrder.status)}
-          </span>
-        </div>
-
-        {selectedOrder.address && (
-          <div className={styles.addressSection}>
-            <strong>Delivery Address:</strong>
-            <p>
-              {selectedOrder.address.street}, {selectedOrder.address.ward},{" "}
-              {selectedOrder.address.province}
-            </p>
-            <p>Phone: {selectedOrder.address.phone}</p>
-          </div>
-        )}
-
-        {isCancelled ? (
-          <div className={styles.cancelledState}>
-            <p>This order has been cancelled</p>
-          </div>
-        ) : (
-          <div className={styles.trackingContainer}>
-            <div className={styles.progressBar}>
-              {ORDER_STEPS.map((step, index) => {
-                const isActive = index <= currentStepIndex;
-                const isLastStep = index === ORDER_STEPS.length - 1;
-                const isLineActive = index < currentStepIndex;
-
-                return (
-                  <React.Fragment key={step}>
-                    <div
-                      className={`${styles.stepItem} ${
-                        isActive ? styles.active : ""
-                      }`}
-                    >
-                      <div className={styles.stepCircle}>
-                        {isActive ? <FaCheck size={12} /> : index + 1}
-                      </div>
-                      <span className={styles.stepLabel}>
-                        {getStatusLabel(step)}
-                      </span>
-                    </div>
-                    {!isLastStep && (
-                      <div
-                        className={`${styles.progressLine} ${
-                          isLineActive ? styles.activeProgressLine : ""
-                        }`}
-                      ></div>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <h3>Items</h3>
-        <table className={styles.itemsTable}>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Price</th>
-              <th>Qty</th>
-              <th style={{ textAlign: "right" }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {selectedOrder.items.map((item) => (
-              <tr key={item.id}>
-                <td
-                  style={{ display: "flex", alignItems: "center", gap: "1rem" }}
-                >
-                  {item.product.image_url && (
-                    <img
-                      src={item.product.image_url}
-                      alt={item.product_name}
-                      className={styles.itemImage}
-                    />
-                  )}
-                  <span>{item.product_name}</span>
-                </td>
-                <td>{formatCurrency(item.unit_price)}</td>
-                <td>x{item.quantity}</td>
-                <td style={{ textAlign: "right" }}>
-                  {formatCurrency(item.line_total)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className={styles.summarySection}>
-          <div className={styles.summaryBox}>
-            <div className={styles.summaryRow}>
-              <span>Subtotal</span>
-              <span>{formatCurrency(selectedOrder.subtotal)}</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Delivery Fee</span>
-              <span>{formatCurrency(selectedOrder.delivery_fee)}</span>
-            </div>
-            {Number(selectedOrder.discount) > 0 && (
-              <div className={styles.summaryRow}>
-                <span>Discount</span>
-                <span>-{formatCurrency(selectedOrder.discount)}</span>
-              </div>
-            )}
-            <div className={`${styles.summaryRow} ${styles.total}`}>
-              <span>Total</span>
-              <span>{formatCurrency(selectedOrder.total)}</span>
-            </div>
-
-            {selectedOrder.status === "PAID" && (
-              <button
-                className={styles.cancelButton}
-                onClick={() => handleCancelOrder(selectedOrder.id)}
-                disabled={cancellingOrderId === selectedOrder.id}
-              >
-                {cancellingOrderId === selectedOrder.id
-                  ? "Cancelling..."
-                  : "Cancel Order"}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   };
 
   if (loading) {
@@ -397,12 +199,16 @@ const Orders: React.FC = () => {
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <div className={styles.errorContainer}>
-          <p>{error}</p>
-          <button onClick={loadOrders}>Retry</button>
+      <>
+        <Header />
+        <div className={styles.container}>
+          <div className={styles.errorContainer}>
+            <p>{error}</p>
+            <button onClick={() => loadOrders()}>Retry</button>
+          </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
@@ -416,63 +222,37 @@ const Orders: React.FC = () => {
       />
       <div className={styles.container}>
         <header className={styles.header}>
-          {selectedOrder ? (
-            <button
-              className={styles.backButton}
-              onClick={() => setSelectedOrder(null)}
-            >
-              <FaArrowLeft /> Back to Orders
-            </button>
-          ) : (
-            <h1 className={styles.title}>Order History</h1>
-          )}
+          <h1 className={styles.title}>Order History</h1>
         </header>
 
-        {!selectedOrder && orders.length === 0 ? (
+        <div className={styles.filterContainer}>
+          <div className={styles.filterLabel}>Filter by Status:</div>
+          <div className={styles.filterButtons}>
+            {statuses.map((status) => (
+              <button
+                key={status}
+                className={`${styles.filterButton} ${
+                  selectedStatus === status ? styles.filterButtonActive : ""
+                }`}
+                onClick={() => setSelectedStatus(status)}
+              >
+                {getStatusLabel(status)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {orders.length === 0 ? (
           <div className={styles.emptyState}>
             <p>No orders yet</p>
             <a href="/" className={styles.shopButton}>
               Start Shopping
             </a>
           </div>
-        ) : selectedOrder ? (
-          renderOrderDetail()
         ) : (
           renderOrderList()
         )}
       </div>
-      {confirmationModal.isOpen && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() =>
-            setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
-          }
-        >
-          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>{confirmationModal.title}</h3>
-            <p className={styles.modalText}>{confirmationModal.message}</p>
-            <div className={styles.modalActions}>
-              <button
-                className={`${styles.modalBtn} ${styles.btnCancel}`}
-                onClick={() =>
-                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
-                }
-              >
-                Cancel
-              </button>
-              <button
-                className={`${styles.modalBtn} ${styles.btnConfirm}`}
-                onClick={() => {
-                  confirmationModal.onConfirm();
-                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }));
-                }}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <Footer />
     </>
   );

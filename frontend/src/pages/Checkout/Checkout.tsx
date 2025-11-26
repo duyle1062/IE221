@@ -272,9 +272,7 @@ const Checkout: React.FC = () => {
         discount: 0,
       };
 
-      console.log("Sending order data:", orderData);
       const response = await placeOrder(orderData);
-      console.log("Order response:", response);
 
       // If CARD payment, redirect to VNPAY
       if (paymentMethod === "CARD" && response.payment?.payment_url) {
@@ -287,16 +285,18 @@ const Checkout: React.FC = () => {
         }, 1500);
       }
     } catch (error: any) {
-      console.error("Place order error:", error);
-      console.log("Error response data:", error.response?.data);
-      
+      console.log("Place order error:", error);
+
       // Handle product availability errors
       if (error.response?.data?.unavailable_products) {
         const errorData = error.response.data;
-        console.log("Unavailable products details:", errorData.details);
-        
+
         // Show detailed error for each unavailable product
-        if (errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
+        if (
+          errorData.details &&
+          Array.isArray(errorData.details) &&
+          errorData.details.length > 0
+        ) {
           errorData.details.forEach((detail: string, index: number) => {
             setTimeout(() => {
               toast.error(detail, {
@@ -304,7 +304,7 @@ const Checkout: React.FC = () => {
               });
             }, index * 400); // Stagger the toasts
           });
-          
+
           // Redirect back to cart after showing all error toasts
           const redirectDelay = errorData.details.length * 400 + 2500;
           setTimeout(() => {
@@ -315,7 +315,7 @@ const Checkout: React.FC = () => {
           toast.error(errorData.error || "Some products are not available", {
             autoClose: 5000,
           });
-          
+
           setTimeout(() => {
             navigate("/cart");
           }, 3000);
@@ -347,38 +347,61 @@ const Checkout: React.FC = () => {
     setIsConfirmModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    setUserAddresses((prev) =>
-      prev.filter((addr) => addr.id !== addressToDelete)
-    );
-    toast.success("The address has been deleted successfully", {});
-    setIsConfirmModalOpen(false);
-    setAddressToDelete(null);
+  const handleConfirmDelete = async () => {
+    try {
+      if (!addressToDelete) return;
+
+      await addressService.deleteAddress(addressToDelete);
+      setUserAddresses((prev) =>
+        prev.filter((addr) => addr.id !== addressToDelete)
+      );
+      toast.success("The address has been deleted successfully");
+    } catch (error: any) {
+      console.error("Delete address error:", error);
+      toast.error(error.message || "Failed to delete address");
+    } finally {
+      setIsConfirmModalOpen(false);
+      setAddressToDelete(null);
+    }
   };
 
-  const handleSaveAddress = (addressData: Partial<Address>) => {
-    if (addressData.id) {
-      setUserAddresses((prev) =>
-        prev.map((addr) =>
-          addr.id === addressData.id
-            ? ({ ...addr, ...addressData } as Address)
-            : addr
-        )
-      );
-      toast.success("The address has been updated successfully");
-    } else {
-      const newAddress: Address = {
-        ...(addressData as Omit<Address, "id" | "is_default">),
-        id: Date.now(), // Temporary ID
-        is_default: false,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      setUserAddresses((prev) => [...prev, newAddress]);
-      setSelectedAddressId(newAddress.id);
+  const handleSaveAddress = async (addressData: Partial<Address>) => {
+    try {
+      if (addressData.id) {
+        // Update existing address
+        const updatedAddress = await addressService.updateAddress(
+          addressData.id,
+          {
+            street: addressData.street,
+            ward: addressData.ward,
+            province: addressData.province,
+            phone: addressData.phone,
+          }
+        );
+        setUserAddresses((prev) =>
+          prev.map((addr) =>
+            addr.id === addressData.id ? updatedAddress : addr
+          )
+        );
+        toast.success("The address has been updated successfully");
+      } else {
+        // Create new address
+        const newAddress = await addressService.createAddress({
+          street: addressData.street!,
+          ward: addressData.ward!,
+          province: addressData.province!,
+          phone: addressData.phone!,
+        });
+        setUserAddresses((prev) => [...prev, newAddress]);
+        setSelectedAddressId(newAddress.id);
+        toast.success("New address has been added successfully");
+      }
+      setIsAddressModalOpen(false);
+      setAddressToEdit(null);
+    } catch (error: any) {
+      console.error("Save address error:", error);
+      toast.error(error.message || "Failed to save address");
     }
-    setIsAddressModalOpen(false);
-    setAddressToEdit(null);
   };
 
   const canPlaceOrder =
@@ -583,7 +606,7 @@ const Checkout: React.FC = () => {
                 {cartItems.map((item) => (
                   <div key={item.id} className={styles.reviewItem}>
                     <img
-                      src={item.product.image_url || "/placeholder.png"}
+                      src={item.product.image_url}
                       alt={item.product.name}
                       className={styles.reviewItemImage}
                     />

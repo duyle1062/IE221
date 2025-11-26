@@ -17,6 +17,51 @@
   margin: 0;
 }
 
+.filterContainer {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid var(--border-color-light);
+}
+
+.filterLabel {
+  font-weight: 600;
+  color: var(--text-color-dark);
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.filterButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.filterButton {
+  padding: 0.6rem 1.2rem;
+  border: 2px solid #e0e0e0;
+  background-color: var(--text-color-white);
+  color: var(--text-color-medium);
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.filterButton:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.filterButtonActive {
+  background-color: var(--primary-color);
+  color: var(--text-color-white);
+  border-color: var(--primary-color);
+}
+
 .orderList {
   display: flex;
   flex-direction: column;
@@ -65,26 +110,27 @@
 }
 
 .totalPrice {
-  font-weight: 700;
-  color: var(--primary-color);
+  font-weight: 600;
+  color: #333;
   font-size: 1.1rem;
   margin-bottom: 15px;
 }
 
 .viewDetailButton {
   padding: 0.6rem 1.2rem;
-  background-color: var(--text-color-white);
-  border: 1px solid var(--blue-color);
-  color: var(--blue-color);
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(200, 16, 46, 0.2);
 }
 
 .viewDetailButton:hover {
-  background-color: var(--blue-color);
-  color: var(--text-color-white);
+  background-color: #a00820;
+  box-shadow: 0 4px 8px rgba(200, 16, 46, 0.3);
 }
 
 .badge {
@@ -150,7 +196,7 @@
 }
 
 .backButton:hover {
-  color: var(--blue-color);
+  color: var(--primary-color);
 }
 
 .detailContainer {
@@ -184,21 +230,26 @@
 
 .addressSection {
   margin-bottom: 2rem;
-  padding: 1rem;
-  background: #f0f7ff;
-  border-left: 3px solid #1890ff;
-  border-radius: 4px;
+  padding: 20px;
+  background: #fff5f5;
+  border: 2px solid rgba(200, 16, 46, 0.15);
+  border-radius: 8px;
+  display: flex;
+  gap: 1rem;
 }
 
 .addressSection strong {
   display: block;
-  margin-bottom: 0.5rem;
-  color: #1890ff;
+  margin-bottom: 0.75rem;
+  color: var(--primary-color);
+  font-size: 0.95rem;
 }
 
 .addressSection p {
-  margin: 0.25rem 0;
+  margin: 0.5rem 0;
   color: #333;
+  line-height: 1.5;
+  font-size: 0.9rem;
 }
 
 .trackingContainer {
@@ -209,19 +260,41 @@
 .progressBar {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
   margin-bottom: 2rem;
+  padding: 0 17px;
+}
+
+.progressBar::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #e0e0e0;
+  z-index: 0;
+}
+
+.progressBar::after {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 0;
+  height: 2px;
+  background-color: #4caf50;
+  z-index: 0;
+  width: var(--progress-width, 0%);
+  transition: width 0.3s ease;
 }
 
 .progressLine {
-  flex: 1;
-  height: 4px;
-  background-color: var(--timeline-bg-grey);
-  margin: 15px 0 0 0;
-  transition: background-color 0.3s ease;
+  display: none;
 }
 
 .progressLine.activeProgressLine {
-  background-color: var(--success-color);
+  display: none;
 }
 
 .stepItem {
@@ -235,18 +308,19 @@
 }
 
 .stepCircle {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background-color: var(--timeline-bg-grey);
+  background-color: #ffffff;
   color: var(--text-color-medium);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  border: 2px solid var(--text-color-white);
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  border: 3px solid #e0e0e0;
   transition: all 0.3s ease;
+  font-size: 0.9rem;
 }
 
 .stepLabel {
@@ -257,17 +331,13 @@
 }
 
 .stepItem.active .stepCircle {
-  background-color: var(--success-color);
+  background-color: #4caf50;
   color: var(--text-color-white);
+  border-color: #4caf50;
 }
 
 .stepItem.active .stepLabel {
-  color: var(--text-color-dark);
-  font-weight: 700;
-}
-
-.stepItem.active .stepLabel {
-  color: var(--text-color-dark);
+  color: #4caf50;
   font-weight: 700;
 }
 
@@ -322,12 +392,13 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.75rem;
-  color: var(--text-color-dark-secondary);
+  color: #333;
+  font-weight: 600;
 }
 
 .summaryRow.total {
-  font-weight: 700;
-  color: var(--text-color-dark);
+  font-weight: 600;
+  color: #333;
   font-size: 1.2rem;
   border-top: 1px dashed var(--border-color-medium);
   padding-top: 1rem;
@@ -421,7 +492,7 @@
 
 .spinner {
   border: 3px solid #f3f3f3;
-  border-top: 3px solid var(--blue-color);
+  border-top: 3px solid var(--primary-color);
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -456,7 +527,7 @@
 .shopButton {
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  background-color: var(--blue-color);
+  background-color: var(--primary-color);
   color: white;
   text-decoration: none;
   border-radius: 4px;
@@ -470,7 +541,7 @@
 
 .errorContainer button {
   padding: 0.75rem 1.5rem;
-  background-color: var(--blue-color);
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 4px;
@@ -495,7 +566,7 @@
 
 .pageButton {
   padding: 0.5rem 1.25rem;
-  background-color: var(--blue-color);
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 6px;

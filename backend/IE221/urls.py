@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include, re_path
 from django.views.generic import TemplateView
+from django.conf import settings
+from django.conf.urls.static import static
 
 # Import Router của DRF
 from rest_framework.routers import DefaultRouter
@@ -44,6 +46,10 @@ urlpatterns = [
     # Health check endpoint
     path("health/", include("health_check.urls")),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Catch-all for frontend - comment out if only using API
 # urlpatterns += [re_path(r"^.*", TemplateView.as_view(template_name="index.html"))]
