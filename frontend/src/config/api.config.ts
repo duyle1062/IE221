@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   BASE_URL:
     (globalThis as any).process?.env?.REACT_APP_API_URL ||
-    "https://api.liaman.link",
+    "https://d1a87c4jc0zeu.cloudfront.net",
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
