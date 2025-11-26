@@ -19,47 +19,55 @@
 
 .filterContainer {
   margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: #f9f9f9;
-  border-radius: 8px;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%);
+  border-radius: 12px;
   border: 1px solid var(--border-color-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: left;
 }
 
 .filterLabel {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-color-dark);
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+  font-size: 1rem;
+  letter-spacing: 0.3px;
 }
 
 .filterButtons {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 0.75rem;
-  width: 100%;
 }
 
 .filterButton {
-  padding: 0.6rem 1.2rem;
+  padding: 0.7rem 1.4rem;
   border: 2px solid #e0e0e0;
   background-color: var(--text-color-white);
   color: var(--text-color-medium);
-  border-radius: 20px;
+  border-radius: 25px;
   cursor: pointer;
   font-weight: 500;
-  font-size: 0.85rem;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
 }
 
 .filterButton:hover {
   border-color: var(--primary-color);
   color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(200, 16, 46, 0.15);
 }
 
 .filterButtonActive {
   background-color: var(--primary-color);
   color: var(--text-color-white);
   border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+  font-weight: 600;
 }
 
 .orderList {
