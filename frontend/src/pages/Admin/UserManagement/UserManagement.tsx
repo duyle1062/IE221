@@ -62,13 +62,13 @@ const UserManagement: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await adminUserService.getUserList({
         role: roleFilter,
         page: page,
         page_size: itemsPerPage,
       });
-      
+
       setUsers(response.results || []);
       setTotalCount(response.count || 0);
     } catch (err: any) {
@@ -103,7 +103,7 @@ const UserManagement: React.FC = () => {
     try {
       await adminUserService.deleteUser(userId);
       message.success("User deleted successfully!");
-      
+
       // Refresh the user list after deletion
       await fetchUsers();
     } catch (err: any) {
@@ -116,7 +116,7 @@ const UserManagement: React.FC = () => {
     try {
       setLoadingDetail(true);
       setOpenModal(true);
-      
+
       // Fetch detailed user information
       const detailedUser = await adminUserService.getUserDetail(user.id);
       setSelectedUser(detailedUser);
@@ -155,6 +155,20 @@ const UserManagement: React.FC = () => {
               label="Role"
               onChange={handleRoleFilterChange}
               disabled={loading}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    borderRadius: "16px",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                    width: "260px",
+                    bgcolor: "background.paper",
+                    "& .MuiMenuItem-root": {
+                      fontSize: "16px",
+                      py: 1.2,
+                    },
+                  },
+                },
+              }}
             >
               <MenuItem value="all">All Users</MenuItem>
               <MenuItem value={UserRole.ADMIN}>Admin</MenuItem>
@@ -169,7 +183,12 @@ const UserManagement: React.FC = () => {
       </Paper>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="400px"
+        >
           <CircularProgress size={60} />
         </Box>
       ) : (
@@ -179,13 +198,17 @@ const UserManagement: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell className={styles.tableHeader}>ID</TableCell>
-                  <TableCell className={styles.tableHeader}>Full Name</TableCell>
+                  <TableCell className={styles.tableHeader}>
+                    Full Name
+                  </TableCell>
                   <TableCell className={styles.tableHeader}>Email</TableCell>
                   <TableCell className={styles.tableHeader}>Phone</TableCell>
                   <TableCell className={styles.tableHeader}>Gender</TableCell>
                   <TableCell className={styles.tableHeader}>Role</TableCell>
                   <TableCell className={styles.tableHeader}>Status</TableCell>
-                  <TableCell className={styles.tableHeader}>Created At</TableCell>
+                  <TableCell className={styles.tableHeader}>
+                    Created At
+                  </TableCell>
                   <TableCell className={styles.tableHeader} align="center">
                     Actions
                   </TableCell>
@@ -240,7 +263,9 @@ const UserManagement: React.FC = () => {
                                 ? "#c2185b"
                                 : undefined,
                             border:
-                              user.gender === "OTHER" ? "1px solid #ddd" : "none",
+                              user.gender === "OTHER"
+                                ? "1px solid #ddd"
+                                : "none",
                           }}
                         />
                       </TableCell>
@@ -248,7 +273,9 @@ const UserManagement: React.FC = () => {
                         <Chip
                           label={user.role}
                           color={
-                            user.role === UserRole.ADMIN ? "secondary" : "default"
+                            user.role === UserRole.ADMIN
+                              ? "secondary"
+                              : "default"
                           }
                           size="small"
                         />
@@ -262,7 +289,12 @@ const UserManagement: React.FC = () => {
                       </TableCell>
                       <TableCell>{formatDate(user.created_at)}</TableCell>
                       <TableCell align="center">
-                        <Box display="flex" justifyContent="center" alignItems="center" gap={0.5}>
+                        <Box
+                          display="flex"
+                          justifyContent="center"
+                          alignItems="center"
+                          gap={0.5}
+                        >
                           <Tooltip title="View details">
                             <IconButton
                               color="primary"
@@ -273,30 +305,30 @@ const UserManagement: React.FC = () => {
                             </IconButton>
                           </Tooltip>
                           <Popconfirm
-                          title="Delete this user?"
-                          description="This will deactivate the user account"
-                          onConfirm={() => handleDeleteUser(user.id)}
-                          okText="Delete"
-                          cancelText="Cancel"
-                          disabled={user.id === currentUser?.id}
-                        >
-                          <Tooltip
-                            title={
-                              user.id === currentUser?.id
-                                ? "Cannot delete your own account"
-                                : ""
-                            }
+                            title="Delete this user?"
+                            description="This will deactivate the user account"
+                            onConfirm={() => handleDeleteUser(user.id)}
+                            okText="Delete"
+                            cancelText="Cancel"
+                            disabled={user.id === currentUser?.id}
                           >
-                            <span>
-                              <IconButton
-                                color="error"
-                                disabled={user.id === currentUser?.id}
-                                size="small"
-                              >
-                                <DeleteOutlined />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
+                            <Tooltip
+                              title={
+                                user.id === currentUser?.id
+                                  ? "Cannot delete your own account"
+                                  : ""
+                              }
+                            >
+                              <span>
+                                <IconButton
+                                  color="error"
+                                  disabled={user.id === currentUser?.id}
+                                  size="small"
+                                >
+                                  <DeleteOutlined />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
                           </Popconfirm>
                         </Box>
                       </TableCell>
@@ -329,7 +361,12 @@ const UserManagement: React.FC = () => {
       >
         <Box className={styles.modalContainer}>
           {loadingDetail ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="300px">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight="300px"
+            >
               <CircularProgress />
             </Box>
           ) : selectedUser ? (

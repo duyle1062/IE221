@@ -337,6 +337,20 @@ const OrderManagement: React.FC = () => {
               value={statusFilter}
               label="Status"
               onChange={handleFilterChange}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    borderRadius: "16px",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                    width: "260px",
+                    bgcolor: "background.paper",
+                    "& .MuiMenuItem-root": {
+                      fontSize: "16px",
+                      py: 1.2,
+                    },
+                  },
+                },
+              }}
             >
               <MenuItem value="all">All Orders</MenuItem>
               {Object.values(OrderStatus).map((s) => (
@@ -442,6 +456,20 @@ const OrderManagement: React.FC = () => {
                         VALID_TRANSITIONS[order.status as OrderStatus]
                           ?.length === 0
                       }
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            borderRadius: "16px",
+                            boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+                            width: "260px",
+                            bgcolor: "background.paper",
+                            "& .MuiMenuItem-root": {
+                              fontSize: "16px",
+                              py: 1.2,
+                            },
+                          },
+                        },
+                      }}
                     >
                       {/* Show current status */}
                       <MenuItem value={order.status}>

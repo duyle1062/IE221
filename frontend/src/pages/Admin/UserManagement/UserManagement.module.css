@@ -35,8 +35,7 @@
 }
 
 .roleFilter {
-  min-width: 150px;
-  max-width: 180px;
+  min-width: 200px;
 }
 
 .tableContainer {
@@ -122,19 +121,9 @@
 
 .MuiPaper-root-MuiTableContainer-root {
   border-radius: 20px !important;
-  overflow: hidden;
 }
 
-:global(.MuiMenu-paper),
-:global(.MuiPopover-paper) {
-  border-radius: 16px !important;
-  width: 500px !important;
-  margin-top: 25px !important;
-  left: 296px !important;
-  padding: none !important;
-}
-
-:global(.MuiList-padding) {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+.Muipopover-paper {
+  border-radius: 12px !important;
+  width: 200px !important;
 }
