@@ -15,7 +15,6 @@ import SearchResults from "./pages/SearchResults/SearchResults";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Checkout from "./pages/Checkout/Checkout";
-import OrderHistory from "./pages/OrderHistory/OrderTracking";
 import GroupOrder from "./pages/GroupOrder/GroupOrder";
 import PaymentResult from "./pages/PaymentResult/PaymentResult";
 import Orders from "./pages/Orders/Orders";
@@ -87,14 +86,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Orders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/order-history"
-            element={
-              <ProtectedRoute>
-                <OrderHistory />
               </ProtectedRoute>
             }
           />
