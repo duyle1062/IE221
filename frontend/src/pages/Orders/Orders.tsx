@@ -380,12 +380,18 @@ const Orders: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner}></div>
-          <p>Loading your orders...</p>
+      <>
+        <Header />
+        <div className={styles.ordersLoadingContainer}>
+          <div className={styles.loadingSpinnerWrapper}>
+            <div className={styles.loadingSpinnerBase}></div>
+            <div className={styles.loadingSpinnerTop}></div>
+          </div>
+          <p className={styles.loadingTextPrimary}>Fetching your orders...</p>
+          <p className={styles.loadingTextSecondary}>Please wait a moment</p>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
