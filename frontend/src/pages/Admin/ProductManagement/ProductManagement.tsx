@@ -323,7 +323,7 @@ const ProductManagement: React.FC = () => {
       if (errors) {
         // Collect all error messages
         const errorMessages: string[] = [];
-        
+
         if (errors.name) {
           errorMessages.push(`Name: ${errors.name[0]}`);
         }
@@ -331,7 +331,9 @@ const ProductManagement: React.FC = () => {
           errorMessages.push(`Slug: ${errors.slug[0]}`);
         }
         if (errors.category || errors.category_id) {
-          errorMessages.push(`Category: ${errors.category?.[0] || errors.category_id?.[0]}`);
+          errorMessages.push(
+            `Category: ${errors.category?.[0] || errors.category_id?.[0]}`
+          );
         }
         if (errors.description) {
           errorMessages.push(`Description: ${errors.description[0]}`);
@@ -339,16 +341,16 @@ const ProductManagement: React.FC = () => {
         if (errors.detail) {
           errorMessages.push(errors.detail);
         }
-        
+
         // Show all errors
         if (errorMessages.length > 0) {
-          const errorMsg = errorMessages.join('\n');
-          alert(errorMsg);
+          const errorMsg = errorMessages.join("\n");
+          message.error(errorMsg);
         } else {
-          alert("Failed to save product");
+          message.error("Failed to save product");
         }
       } else {
-        alert("Failed to save product");
+        message.error("Failed to save product");
       }
     } finally {
       setUploading(false);
@@ -532,9 +534,10 @@ const ProductManagement: React.FC = () => {
                 slug: record.slug,
                 description: record.description,
                 price: record.price,
-                category: record.category && typeof record.category === 'object'
-                  ? record.category.id
-                  : record.category,
+                category:
+                  record.category && typeof record.category === "object"
+                    ? record.category.id
+                    : record.category,
                 restaurant: record.restaurant,
                 is_active: record.is_active,
                 available: record.available,
@@ -734,7 +737,7 @@ const ProductManagement: React.FC = () => {
           >
             <Input placeholder="Enter product name" />
           </Form.Item>
-          
+
           {/* Slug field for both create and edit */}
           <Form.Item
             name="slug"
@@ -743,36 +746,43 @@ const ProductManagement: React.FC = () => {
               { required: true, message: "Please enter product slug" },
               {
                 pattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-                message: "Slug must be lowercase letters, numbers, and hyphens only (no spaces, no consecutive hyphens, no leading/trailing hyphens)"
+                message:
+                  "Slug must be lowercase letters, numbers, and hyphens only (no spaces, no consecutive hyphens, no leading/trailing hyphens)",
               },
               {
                 validator: (_, value) => {
                   if (!value) return Promise.resolve();
-                  
+
                   // Check for consecutive hyphens
-                  if (value.includes('--')) {
-                    return Promise.reject('Slug cannot contain consecutive hyphens');
+                  if (value.includes("--")) {
+                    return Promise.reject(
+                      "Slug cannot contain consecutive hyphens"
+                    );
                   }
-                  
+
                   // Check if starts or ends with hyphen
-                  if (value.startsWith('-') || value.endsWith('-')) {
-                    return Promise.reject('Slug cannot start or end with a hyphen');
+                  if (value.startsWith("-") || value.endsWith("-")) {
+                    return Promise.reject(
+                      "Slug cannot start or end with a hyphen"
+                    );
                   }
-                  
+
                   return Promise.resolve();
-                }
-              }
+                },
+              },
             ]}
             extra="Use lowercase letters, numbers, and hyphens only (e.g., combo-ga-ran-gion)"
             normalize={(value) => value?.toLowerCase().trim()}
           >
             <Input placeholder="e.g., combo-ga-ran-gion" />
           </Form.Item>
-          
-          <Form.Item 
-            name="description" 
+
+          <Form.Item
+            name="description"
             label="Description"
-            rules={[{ required: true, message: "Please enter product description" }]}
+            rules={[
+              { required: true, message: "Please enter product description" },
+            ]}
           >
             <TextArea rows={3} placeholder="Enter product description" />
           </Form.Item>
@@ -839,10 +849,18 @@ const ProductManagement: React.FC = () => {
           {/* Only show toggles when editing, not when creating */}
           {editingProduct && (
             <div className={styles.toggleWrapper}>
-              <Form.Item name="is_active" valuePropName="checked" label="Active">
+              <Form.Item
+                name="is_active"
+                valuePropName="checked"
+                label="Active"
+              >
                 <Switch />
               </Form.Item>
-              <Form.Item name="available" valuePropName="checked" label="In Stock">
+              <Form.Item
+                name="available"
+                valuePropName="checked"
+                label="In Stock"
+              >
                 <Switch />
               </Form.Item>
             </div>

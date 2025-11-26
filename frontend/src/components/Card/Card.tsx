@@ -115,6 +115,19 @@ const Card: React.FC<CardProps> = ({ products, title, onProductClick }) => {
                   src={getPrimaryImage(product)}
                   alt={product.name}
                   className={styles.cardImage}
+                  onError={(e) => {
+                    console.error(
+                      `[Card] Image failed to load for product: ${product.name}`,
+                      {
+                        src: (e.target as HTMLImageElement).src,
+                        productId: product.id,
+                        images: product.images,
+                      }
+                    );
+                    // Set placeholder on error
+                    (e.target as HTMLImageElement).src =
+                      "https://via.placeholder.com/300x300?text=No+Image";
+                  }}
                 />
               </div>
               <div className={styles.cardContent}>

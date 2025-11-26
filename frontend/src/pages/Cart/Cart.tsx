@@ -8,6 +8,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
 import cartService from "../../services/cart.service";
 import { Cart as CartType, CartItem } from "../../types/cart.types";
 import { useAuth } from "../../context/AuthContext";
@@ -31,7 +32,6 @@ const CartScreen: React.FC = () => {
   const [updating, setUpdating] = useState<number | null>(null);
   const [shippingFee] = useState<number>(15000);
 
-  // Fetch cart on component mount
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/login");
@@ -39,6 +39,13 @@ const CartScreen: React.FC = () => {
     }
     fetchCart();
   }, [isAuthenticated]);
+
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
   const fetchCart = async () => {
     setLoading(true);
@@ -49,7 +56,7 @@ const CartScreen: React.FC = () => {
       console.error("Failed to fetch cart:", error);
       const errorMessage =
         error?.detail || "Unable to load the cart. Please try again!";
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -73,7 +80,7 @@ const CartScreen: React.FC = () => {
       setCart(updatedCart);
     } catch (error: any) {
       console.error("Failed to increase quantity:", error);
-      alert("Unable to update quantity. Please try again!");
+      toast.error("Unable to update quantity. Please try again!");
     } finally {
       setUpdating(null);
     }
@@ -81,7 +88,6 @@ const CartScreen: React.FC = () => {
 
   const handleDecreaseQuantity = async (item: CartItem) => {
     if (item.quantity <= 1) return;
-
     setUpdating(item.id);
     try {
       const updatedCart = await cartService.decreaseQuantity(
@@ -91,32 +97,30 @@ const CartScreen: React.FC = () => {
       setCart(updatedCart);
     } catch (error: any) {
       console.error("Failed to decrease quantity:", error);
-      alert("Unable to update quantity. Please try again!");
+      toast.error("Unable to update quantity. Please try again!");
     } finally {
       setUpdating(null);
     }
   };
 
   const handleRemoveItem = async (itemId: number) => {
-    if (
-      !window.confirm(
-        "Are you sure you want to remove this item from your cart?"
-      )
-    ) {
-      return;
-    }
-
-    setUpdating(itemId);
-    try {
-      await cartService.deleteCartItem(itemId);
-      // Refresh cart after deletion
-      await fetchCart();
-    } catch (error: any) {
-      console.error("Failed to remove item:", error);
-      alert("Unable to remove the item. Please try again!");
-    } finally {
-      setUpdating(null);
-    }
+    setConfirmationModal({
+      isOpen: true,
+      title: "Remove Item",
+      message: "Are you sure you want to remove this item from your cart?",
+      onConfirm: async () => {
+        try {
+          setUpdating(itemId);
+          await cartService.deleteCartItem(itemId);
+          fetchCart();
+          toast.success("Item removed");
+        } catch (error: any) {
+          toast.error(error.message || "Failed to remove item");
+        } finally {
+          setUpdating(null);
+        }
+      },
+    });
   };
 
   const handleCheckout = () => {
@@ -142,6 +146,11 @@ const CartScreen: React.FC = () => {
     return (
       <>
         <Header />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={true}
+        />
         <div className={styles.cartContainer}>
           <header className={styles.header}>
             <h1 className={styles.title}>My Cart</h1>
@@ -158,6 +167,11 @@ const CartScreen: React.FC = () => {
   return (
     <>
       <Header />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       <div className={styles.cartContainer}>
         <header className={styles.header}>
           <button onClick={handleBack} className={styles.backButton}>
@@ -256,6 +270,38 @@ const CartScreen: React.FC = () => {
           </div>
         )}
       </div>
+      {confirmationModal.isOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() =>
+            setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
+          }
+        >
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>{confirmationModal.title}</h3>
+            <p className={styles.modalText}>{confirmationModal.message}</p>
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.modalBtn} ${styles.btnCancel}`}
+                onClick={() =>
+                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
+                }
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.modalBtn} ${styles.btnConfirm}`}
+                onClick={() => {
+                  confirmationModal.onConfirm();
+                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }));
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Footer />
     </>
   );

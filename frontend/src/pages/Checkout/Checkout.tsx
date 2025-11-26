@@ -18,7 +18,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 
-import { ToastContainer, toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import cartService from "../../services/cart.service";
 import addressService, {
   Address as APIAddress,
@@ -287,8 +287,42 @@ const Checkout: React.FC = () => {
         }, 1500);
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to place order");
       console.error("Place order error:", error);
+      console.log("Error response data:", error.response?.data);
+      
+      // Handle product availability errors
+      if (error.response?.data?.unavailable_products) {
+        const errorData = error.response.data;
+        console.log("Unavailable products details:", errorData.details);
+        
+        // Show detailed error for each unavailable product
+        if (errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
+          errorData.details.forEach((detail: string, index: number) => {
+            setTimeout(() => {
+              toast.error(detail, {
+                autoClose: 5000,
+              });
+            }, index * 400); // Stagger the toasts
+          });
+          
+          // Redirect back to cart after showing all error toasts
+          const redirectDelay = errorData.details.length * 400 + 2500;
+          setTimeout(() => {
+            navigate("/cart");
+          }, redirectDelay);
+        } else {
+          // Fallback if details are not provided
+          toast.error(errorData.error || "Some products are not available", {
+            autoClose: 5000,
+          });
+          
+          setTimeout(() => {
+            navigate("/cart");
+          }, 3000);
+        }
+      } else {
+        toast.error(error.message || "Failed to place order");
+      }
     } finally {
       setIsPlacingOrder(false);
     }
@@ -369,13 +403,12 @@ const Checkout: React.FC = () => {
   return (
     <>
       <Header />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       <div className={styles.checkoutContainer}>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-        />
-
         <header className={styles.header}>
           <button onClick={handleBack} className={styles.backButton}>
             <FaArrowLeft /> Back

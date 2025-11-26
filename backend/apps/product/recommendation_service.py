@@ -70,10 +70,11 @@ class RecommendationService:
         if cached_data:
             # ✅ CRITICAL: Validate cached products aren't deleted
             valid_products = [
-                p for p in cached_data 
-                if hasattr(p, 'deleted_at') and p.deleted_at is None
+                p
+                for p in cached_data
+                if hasattr(p, "deleted_at") and p.deleted_at is None
             ]
-            
+
             # If some products were deleted, invalidate cache and fall through
             if len(valid_products) < len(cached_data):
                 cache.delete(cache_key)
@@ -111,7 +112,7 @@ class RecommendationService:
                     id__in=product_ids,
                     is_active=True,
                     available=True,
-                    deleted_at__isnull=True  # ✅ CRITICAL: Exclude soft-deleted products
+                    deleted_at__isnull=True,  # ✅ CRITICAL: Exclude soft-deleted products
                 )
                 .select_related("category")
                 .prefetch_related("images")
@@ -164,7 +165,7 @@ class RecommendationService:
                             id__in=product_ids,
                             is_active=True,
                             available=True,
-                            deleted_at__isnull=True  # ✅ CRITICAL: Exclude soft-deleted products
+                            deleted_at__isnull=True,  # ✅ CRITICAL: Exclude soft-deleted products
                         )
                         .select_related("category")
                         .prefetch_related("images")
@@ -277,7 +278,7 @@ class RecommendationService:
         return set(
             Interact.objects.filter(
                 user=user,
-                product__deleted_at__isnull=True  # Only include interactions with active products
+                product__deleted_at__isnull=True,  # Only include interactions with active products
             ).values_list("product_id", flat=True)
         )
 
@@ -350,7 +351,7 @@ class RecommendationService:
             .filter(
                 product__is_active=True,
                 product__available=True,
-                product__deleted_at__isnull=True  # Exclude soft-deleted products
+                product__deleted_at__isnull=True,  # Exclude soft-deleted products
             )
             .order_by("-interaction_count", "-avg_rating")[:limit]
         )
@@ -416,7 +417,7 @@ class RecommendationService:
                 category_id__in=top_category_ids,
                 is_active=True,
                 available=True,
-                deleted_at__isnull=True  # Exclude soft-deleted products
+                deleted_at__isnull=True,  # Exclude soft-deleted products
             )
             .exclude(id__in=user_interactions)
             .select_related("category")  # Join category table
@@ -443,7 +444,7 @@ class RecommendationService:
             Product.objects.filter(
                 is_active=True,
                 available=True,
-                deleted_at__isnull=True  # Exclude soft-deleted products
+                deleted_at__isnull=True,  # Exclude soft-deleted products
             )
             .select_related("category")  # Join category table
             .prefetch_related("images")  # Prefetch images
@@ -514,7 +515,7 @@ class RecommendationService:
             id__in=top_product_ids,
             is_active=True,
             available=True,
-            deleted_at__isnull=True  # Exclude soft-deleted products
+            deleted_at__isnull=True,  # Exclude soft-deleted products
         )
 
         # Maintain score-based order
@@ -527,29 +528,25 @@ class RecommendationService:
 
     @classmethod
     def get_similar_products(cls, product, limit=6) -> List[Product]:
-        """Get products similar to a given product - OPTIMIZED"""
-        cache_key = f"similar_products_{product.id}_{limit}"
-        cached = cache.get(cache_key)
-        if cached:
-            return cached
+        """Get products similar to a given product - OPTIMIZED with proper prefetch"""
+        # NOTE: We don't cache this to ensure images are properly prefetched
+        # Caching Product objects loses their prefetched relations (images)
 
         similar = (
             Product.objects.filter(
                 category=product.category,
                 is_active=True,
                 available=True,
-                deleted_at__isnull=True  # Exclude soft-deleted products
+                deleted_at__isnull=True,  # Exclude soft-deleted products
             )
             .exclude(id=product.id)
-            .select_related("category")  # ADD THIS
-            .prefetch_related("images")  # ADD THIS
+            .select_related("category")
+            .prefetch_related("images")  # Ensure images are prefetched for serializer
             .annotate(avg_rating=Avg("ratings__rating"), rating_count=Count("ratings"))
             .order_by("-avg_rating", "-rating_count")[:limit]
         )
 
-        similar_list = list(similar)
-        cache.set(cache_key, similar_list, cls.CACHE_TIMEOUT)
-        return similar_list
+        return list(similar)
 
     @classmethod
     def update_user_recommendations(cls, user):
