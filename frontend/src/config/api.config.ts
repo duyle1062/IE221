@@ -2,7 +2,7 @@
 export const API_CONFIG = {
   BASE_URL:
     (globalThis as any).process?.env?.REACT_APP_API_URL ||
-    "http://localhost:8000",
+    "http://ie221-alb-foodi-api-698560682.ap-southeast-1.elb.amazonaws.com",
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
