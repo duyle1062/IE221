@@ -65,14 +65,12 @@ MIDDLEWARE = [
 # CORS configuration
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000,http://127.0.0.1:3000,https://d1a87c4jc0zeu.cloudfront.net",
     cast=lambda v: [s.strip() for s in v.split(",")]
 )
 
 # CSRF trusted origins (required for cross-origin POST requests in Django 4.0+)
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
-    default="http://localhost:3000",
     cast=lambda v: [s.strip() for s in v.split(",")]
 )
 
@@ -116,7 +114,7 @@ DATABASES = {
         "CONN_MAX_AGE": 60,  # Connection pooling: keep connections open for 60 seconds
         "CONN_HEALTH_CHECKS": True,  # Verify connections before use (Django 4.1+)
         "OPTIONS": {
-            "sslmode": "require" if config("DB_SSLMODE", default="disable") == "require" else "disable"
+            "sslmode": "require",
         },
     }
 }
@@ -270,7 +268,7 @@ VNPAY_API_URL = os.environ.get(
 # PRODUCTION SECURITY SETTINGS
 if not DEBUG:
     # HTTPS/SSL settings
-    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
+    SECURE_SSL_REDIRECT = False  # Set to True if you want to enforce HTTPS
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     # HSTS (HTTP Strict Transport Security)
