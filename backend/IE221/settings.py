@@ -115,6 +115,9 @@ DATABASES = {
         "PORT": config("DB_PORT", default="5432"),
         "CONN_MAX_AGE": 60,  # Connection pooling: keep connections open for 60 seconds
         "CONN_HEALTH_CHECKS": True,  # Verify connections before use (Django 4.1+)
+        "OPTIONS": {
+            "sslmode": "require" if config("DB_SSLMODE", default="disable") == "require" else "disable"
+        },
     }
 }
 

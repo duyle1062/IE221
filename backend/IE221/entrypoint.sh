@@ -16,7 +16,7 @@ done
 
 echo "PostgreSQL started successfully"
 
-# Run database migrations (migrations should be created in dev, not production)
+# Run database migrations
 echo "Running migrations..."
 python manage.py migrate --noinput
 
