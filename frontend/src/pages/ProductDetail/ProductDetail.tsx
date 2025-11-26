@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import Header from "../../components/Header/Header";
 import Footer from "../../components/Footer/Footer";
 import StarRating from "../../components/StarRating/StarRating";
@@ -20,12 +20,10 @@ import styles from "./ProductDetail.module.css";
 import { FaUsers } from "react-icons/fa";
 
 const ProductDetailPage: React.FC = () => {
-  // Add to group order using real API
   const handleAddToGroupOrder = async () => {
     const activeGroupOrderId = localStorage.getItem("activeGroupOrderId");
 
     if (!activeGroupOrderId) {
-      // No active group, navigate to group order page
       toast.info("Please create or join a group order first");
       navigate("/group-order");
       return;
@@ -70,7 +68,6 @@ const ProductDetailPage: React.FC = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAddingToGroupOrder, setIsAddingToGroupOrder] = useState(false);
 
-  // Rating states
   const [ratings, setRatings] = useState<RatingListResponse | null>(null);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [ratingsError, setRatingsError] = useState<string | null>(null);
@@ -79,11 +76,9 @@ const ProductDetailPage: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const pageSize = 5;
 
-  // Similar products state
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [similarLoading, setSimilarLoading] = useState(false);
 
-  // Fetch product details
   useEffect(() => {
     const abortController = new AbortController();
 
@@ -92,7 +87,7 @@ const ProductDetailPage: React.FC = () => {
 
       setLoading(true);
       setError(null);
-      setProduct(null); // Reset product
+      setProduct(null);
 
       try {
         const data = await productService.getProductDetail(
@@ -101,7 +96,6 @@ const ProductDetailPage: React.FC = () => {
           abortController.signal
         );
         setProduct(data);
-        // Set initial selected image
         if (data.images && data.images.length > 0) {
           const primaryImage = data.images.find((img) => img.is_primary);
           setSelectedImage(
@@ -109,7 +103,6 @@ const ProductDetailPage: React.FC = () => {
           );
         }
       } catch (err: any) {
-        // Ignore abort errors
         if (err.name === "CanceledError" || err.name === "AbortError") {
           return;
         }
@@ -129,19 +122,16 @@ const ProductDetailPage: React.FC = () => {
 
     fetchProduct();
 
-    // Cleanup function to abort request on unmount
     return () => {
       abortController.abort();
     };
   }, [categorySlug, productSlug]);
 
-  // Fetch similar products when product is loaded
   useEffect(() => {
     const abortController = new AbortController();
 
     const fetchSimilarProducts = async () => {
       if (!product?.id) return;
-
       setSimilarLoading(true);
       try {
         const similar = await recommendationService.getSimilarProducts(
@@ -163,7 +153,6 @@ const ProductDetailPage: React.FC = () => {
         setSimilarProducts(similar);
       } catch (err) {
         console.error("Failed to fetch similar products:", err);
-        // Fail silently - similar products are optional
       } finally {
         setSimilarLoading(false);
       }
@@ -177,7 +166,6 @@ const ProductDetailPage: React.FC = () => {
     };
   }, [product?.id]);
 
-  // Fetch ratings when product is loaded or page changes
   useEffect(() => {
     const abortController = new AbortController();
 
@@ -196,7 +184,6 @@ const ProductDetailPage: React.FC = () => {
         );
         setRatings(data);
       } catch (err: any) {
-        // Ignore abort errors
         if (err.name === "CanceledError" || err.name === "AbortError") {
           return;
         }
@@ -223,10 +210,8 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = async () => {
     if (!product) return;
-
-    // Check if user is authenticated
     if (!isAuthenticated) {
-      alert("Please log in to add items to your cart!");
+      toast.info("Please log in to add items to your cart!");
       navigate("/login");
       return;
     }
@@ -237,15 +222,15 @@ const ProductDetailPage: React.FC = () => {
         product_id: product.id,
         quantity: quantity,
       });
-      alert(`Added ${quantity} ${product.name} to your cart!`);
-      setQuantity(1); // Reset quantity after successful add
+      toast.success(`Added ${quantity} ${product.name} to your cart!`);
+      setQuantity(1);
     } catch (error: any) {
       console.error("Add to cart failed:", error);
       const errorMessage =
         error?.detail ||
         error?.message ||
         "Unable to add item to cart. Please try again!";
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsAddingToCart(false);
     }
@@ -254,22 +239,18 @@ const ProductDetailPage: React.FC = () => {
   const handleSubmitReview = async () => {
     if (!product) return;
 
-    // Reset error state
     setSubmitError(null);
 
-    // Check if user is authenticated
     if (!isAuthenticated) {
       setSubmitError("Please log in to rate this product!");
       return;
     }
 
-    // Validate rating
     if (!rating || rating < 1 || rating > 5) {
       setSubmitError("Please select a rating from 1 to 5 stars!");
       return;
     }
 
-    // Validate comment
     if (!comment.trim()) {
       setSubmitError("Please enter your review content!");
       return;
@@ -283,15 +264,13 @@ const ProductDetailPage: React.FC = () => {
         comment: comment.trim(),
       });
 
-      alert("Thanks for your review!");
+      toast.success("Thanks for your review!");
 
-      // Reset form
       setRating(0);
       setComment("");
       setSubmitError(null);
 
-      // Refresh ratings list
-      setCurrentPage(1); // Go back to first page
+      setCurrentPage(1);
       const updatedRatings = await ratingService.getRatings(
         product.id,
         1,
@@ -299,7 +278,6 @@ const ProductDetailPage: React.FC = () => {
       );
       setRatings(updatedRatings);
 
-      // Refresh product to update average rating
       if (categorySlug && productSlug) {
         const updatedProduct = await productService.getProductDetail(
           categorySlug,
@@ -311,7 +289,6 @@ const ProductDetailPage: React.FC = () => {
       console.error("Submit rating failed:", error);
       console.log("Error response:", error?.response);
 
-      // Extract error message from response
       const responseData = error?.response?.data;
       let errorMessage = "Unable to submit review. Please try again!";
 
@@ -323,7 +300,6 @@ const ProductDetailPage: React.FC = () => {
           (typeof responseData === "string" ? responseData : null);
 
         if (errorText) {
-          // Check for "already rated" pattern
           if (errorText.toLowerCase().includes("already rated")) {
             errorMessage =
               "You have already rated this product. Only one rating per user!";
@@ -342,7 +318,6 @@ const ProductDetailPage: React.FC = () => {
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
 
-    // Scroll to top of reviews section when changing page
     const reviewsSection = document.querySelector(`.${styles.reviewsList}`);
     if (reviewsSection) {
       reviewsSection.scrollTo({ top: 0, behavior: "smooth" });
@@ -362,6 +337,11 @@ const ProductDetailPage: React.FC = () => {
   return (
     <>
       <Header />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       {loading ? (
         <div className={styles.loadingContainer}>
           <p>Loading product information...</p>
@@ -514,7 +494,6 @@ const ProductDetailPage: React.FC = () => {
                             </div>
                           ))}
 
-                          {/* Pagination controls */}
                           {ratings.count > pageSize && (
                             <div className={styles.pagination}>
                               <button
@@ -580,7 +559,7 @@ const ProductDetailPage: React.FC = () => {
                               interactive={true}
                               onRatingChange={(newRating) => {
                                 setRating(newRating);
-                                setSubmitError(null); // Clear error when user interacts
+                                setSubmitError(null);
                               }}
                             />
                           </div>
@@ -589,7 +568,7 @@ const ProductDetailPage: React.FC = () => {
                             value={comment}
                             onChange={(e) => {
                               setComment(e.target.value);
-                              setSubmitError(null); // Clear error when user types
+                              setSubmitError(null);
                             }}
                             className={styles.commentInput}
                             disabled={isSubmittingRating}
@@ -619,7 +598,6 @@ const ProductDetailPage: React.FC = () => {
         </div>
       ) : null}
 
-      {/* Similar Products Section */}
       {!loading && product && similarProducts.length > 0 && (
         <div style={{ padding: "20px 0", backgroundColor: "#f8f9fa" }}>
           <Card products={similarProducts} title="Similar Dishes" />

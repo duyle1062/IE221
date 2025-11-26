@@ -18,7 +18,7 @@ import {
   FaArrowLeft,
 } from "react-icons/fa";
 
-import { ToastContainer, toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import cartService from "../../services/cart.service";
 import addressService, {
   Address as APIAddress,
@@ -403,13 +403,12 @@ const Checkout: React.FC = () => {
   return (
     <>
       <Header />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       <div className={styles.checkoutContainer}>
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-        />
-
         <header className={styles.header}>
           <button onClick={handleBack} className={styles.backButton}>
             <FaArrowLeft /> Back

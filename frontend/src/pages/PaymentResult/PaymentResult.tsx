@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import axiosInstance from "../../services/axios.instance";
 import "./PaymentResult.css";
 
@@ -85,6 +85,11 @@ const PaymentResult: React.FC = () => {
 
   return (
     <div className="payment-result-container">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={true}
+      />
       <div className="payment-result-card">
         {result?.success ? (
           <div className="result-card">

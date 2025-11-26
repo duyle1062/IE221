@@ -132,6 +132,13 @@ const UserProfile: React.FC = () => {
     "success"
   );
 
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+
   const [profile, setProfile] = useState<UserProfileData>({
     firstname: "",
     lastname: "",
@@ -273,20 +280,25 @@ const UserProfile: React.FC = () => {
     setIsAddressModalOpen(true);
   };
 
-  const handleDeleteAddress = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this address?")) {
-      try {
-        setLoading(true);
-        await addressService.deleteAddress(id);
-        await loadAddresses();
-        showMessage("Address deleted successfully!");
-      } catch (error: any) {
-        console.error("Failed to delete address:", error);
-        showMessage(error.message || "Unable to delete address", "error");
-      } finally {
-        setLoading(false);
-      }
-    }
+  const handleDeleteAddress = (id: number) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: "Delete Address",
+      message: "Are you sure you want to delete this address?",
+      onConfirm: async () => {
+        try {
+          setLoading(true);
+          await addressService.deleteAddress(id);
+          await loadAddresses();
+          showMessage("Address deleted successfully!");
+        } catch (error: any) {
+          console.error("Failed to delete address:", error);
+          showMessage(error.message || "Unable to delete address", "error");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleSetDefaultAddress = async (id: number) => {
@@ -695,6 +707,39 @@ const UserProfile: React.FC = () => {
           />
         )}
       </div>
+
+      {confirmationModal.isOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() =>
+            setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
+          }
+        >
+          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>{confirmationModal.title}</h3>
+            <p className={styles.modalText}>{confirmationModal.message}</p>
+            <div className={styles.modalActions}>
+              <button
+                className={`${styles.modalBtn} ${styles.btnCancel}`}
+                onClick={() =>
+                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }))
+                }
+              >
+                Cancel
+              </button>
+              <button
+                className={`${styles.modalBtn} ${styles.btnConfirm}`}
+                onClick={() => {
+                  confirmationModal.onConfirm();
+                  setConfirmationModal((prev) => ({ ...prev, isOpen: false }));
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Footer />
     </>
   );
