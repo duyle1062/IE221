@@ -65,14 +65,12 @@ MIDDLEWARE = [
 # CORS configuration
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000,http://127.0.0.1:3000,https://d1a87c4jc0zeu.cloudfront.net",
     cast=lambda v: [s.strip() for s in v.split(",")]
 )
 
 # CSRF trusted origins (required for cross-origin POST requests in Django 4.0+)
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
-    default="http://localhost:3000",
     cast=lambda v: [s.strip() for s in v.split(",")]
 )
 
@@ -116,7 +114,7 @@ DATABASES = {
         "CONN_MAX_AGE": 60,  # Connection pooling: keep connections open for 60 seconds
         "CONN_HEALTH_CHECKS": True,  # Verify connections before use (Django 4.1+)
         "OPTIONS": {
-            "sslmode": "require" if config("DB_SSLMODE", default="disable") == "require" else "disable"
+            "sslmode": "require",
         },
     }
 }
@@ -221,9 +219,9 @@ DJOSER = {
     "USERNAME_RESET_CONFIRM_URL": "email/reset/confirm/{uid}/{token}",
     "ACTIVATION_URL": "verify-email?uid={uid}&token={token}",
     "SEND_ACTIVATION_EMAIL": True,
-    "DOMAIN": "localhost:3000",
-    "PROTOCOL": "http",
-    "SITE_NAME": "IE221",
+    "DOMAIN": "foody.liaman.link",
+    "PROTOCOL": "https",
+    "SITE_NAME": "Foody",
     "PERMISSIONS": {
         "user_create": ["rest_framework.permissions.AllowAny"],
         "password_reset": ["rest_framework.permissions.AllowAny"],
@@ -253,25 +251,24 @@ AUTH_USER_MODEL = "users.UserAccount"
 
 # VNPAY Payment Gateway Configuration
 # Documentation: https://sandbox.vnpayment.vn/apis/docs/
-VNPAY_TMN_CODE = os.environ.get("VNPAY_TMN_CODE", "BG6RGL0E")
+VNPAY_TMN_CODE = os.environ.get("VNPAY_TMN_CODE")
 VNPAY_HASH_SECRET = os.environ.get(
-    "VNPAY_HASH_SECRET", "N9G7A5AEQPUT1S17LTU3J8SSPXEAL03Z"
+    "VNPAY_HASH_SECRET"
 )
 VNPAY_PAYMENT_URL = os.environ.get(
-    "VNPAY_PAYMENT_URL", "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"
+    "VNPAY_PAYMENT_URL"
 )
 VNPAY_RETURN_URL = os.environ.get(
-    "VNPAY_RETURN_URL", "http://localhost:3000/payment/result"
+    "VNPAY_RETURN_URL"
 )
 VNPAY_API_URL = os.environ.get(
-    "VNPAY_API_URL", "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction"
+    "VNPAY_API_URL"
 )
 
 # PRODUCTION SECURITY SETTINGS
-
 if not DEBUG:
     # HTTPS/SSL settings
-    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
+    SECURE_SSL_REDIRECT = False  # Set to True if you want to enforce HTTPS
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     # HSTS (HTTP Strict Transport Security)
