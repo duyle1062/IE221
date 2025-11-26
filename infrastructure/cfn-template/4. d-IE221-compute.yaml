@@ -1,0 +1,476 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for IE221 Compute Resources - ECS, ALB, Auto Scaling'
+
+Parameters:
+  # Networking Parameters
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: Select VPC for resources
+
+  PublicSubnet1Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Select Public Subnet 1
+
+  PublicSubnet2Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Select Public Subnet 2
+
+  PrivateAppSubnet1Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Select Private App Subnet 1
+
+  PrivateAppSubnet2Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Select Private App Subnet 2
+
+  # Security Groups Parameters
+  ALBSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Select ALB Security Group
+
+  AppSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Select App Security Group
+
+  # Service Configuration
+  ServiceName:
+    Type: String
+    Description: Service name
+    Default: foody-api
+
+  ContainerPort:
+    Type: Number
+    Description: Container port
+    Default: 8000
+
+  ContainerCpu:
+    Type: String
+    Description: CPU units for container
+    Default: 256
+
+  ContainerMemory:
+    Type: String
+    Description: Memory for container (MB)
+    Default: 512
+
+  DesiredCount:
+    Type: Number
+    Description: Desired count of ECS tasks
+    Default: 0
+
+  # Auto Scaling Parameters
+  TargetCPUUtilization:
+    Type: Number
+    Description: Target CPU utilization percentage for auto scaling
+    Default: 60
+    MinValue: 10
+    MaxValue: 90
+
+  TargetMemoryUtilization:
+    Type: Number
+    Description: Target Memory utilization percentage for auto scaling
+    Default: 70
+    MinValue: 10
+    MaxValue: 90
+
+  MinCapacity:
+    Type: Number
+    Description: Minimum number of tasks
+    Default: 1
+    MinValue: 1
+
+  MaxCapacity:
+    Type: Number
+    Description: Maximum number of tasks
+    Default: 5
+    MinValue: 1
+
+Resources:
+  # IAM Task Execution Role
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'ie221-iam-foody-${ServiceName}-ecs-execution'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ie221-secret-foody-*'
+        - PolicyName: ECRAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: '*'
+        - PolicyName: CloudWatchLogsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt CloudWatchLogsGroup.Arn
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-iam-foody-${ServiceName}-ecs-execution'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # IAM Task Role
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'ie221-iam-foody-${ServiceName}-ecs-task'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: S3MediaAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::ie221*'
+                  - !Sub 'arn:aws:s3:::ie221*/*'
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-iam-foody-${ServiceName}-ecs-task'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # ECR Repository
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub 'ie221-ecr-foody-${ServiceName}'
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "Keep only 10 images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": 10
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-ecr-foody-${ServiceName}'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # CloudWatch Logs Group
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/ecs/ie221-ecs-foody-${ServiceName}'
+      RetentionInDays: 14
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-logs-foody-${ServiceName}'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Target Group
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub 'ie221-tg-foody-${ServiceName}'
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /health
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VPCId
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-tg-foody-${ServiceName}'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Application Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub 'ie221-alb-foody-${ServiceName}'
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref ALBSecurityGroupId
+      Subnets:
+        - !Ref PublicSubnet1Id
+        - !Ref PublicSubnet2Id
+      Type: application
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-alb-foody-${ServiceName}'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # HTTP Listener
+  HTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  # ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub 'ie221-ecs-foody-${ServiceName}'
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-ecs-foody-${ServiceName}'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # ECS Task Definition
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub 'ie221-task-foody-${ServiceName}'
+      Cpu: !Ref ContainerCpu
+      Memory: !Ref ContainerMemory
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: !Sub 'ie221-container-foody-${ServiceName}'
+          Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ie221-ecr-foody-${ServiceName}:latest'
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          Environment:
+            - Name: DEBUG
+              Value: 'False'
+            - Name: DB_NAME
+              Value: ie221_db
+            - Name: DB_USER
+              Value: ie221_user
+            - Name: DB_HOST
+              Value: ep-steep-darkness-a1bgc8qi-pooler.ap-southeast-1.aws.neon.tech
+            - Name: DB_PORT
+              Value: '5432'
+            - Name: ALLOWED_HOSTS
+              Value: '*'
+            - Name: CORS_ALLOWED_ORIGINS
+              Value: 'https://d1a87c4jc0zeu.cloudfront.net'
+            - Name: CSRF_TRUSTED_ORIGINS
+              Value: 'https://d1a87c4jc0zeu.cloudfront.net'
+            - Name: AWS_STORAGE_BUCKET_NAME
+              Value: ie221
+            - Name: AWS_S3_REGION_NAME
+              Value: ap-southeast-1
+            - Name: EMAIL_HOST_USER
+              Value: ie221noreply@gmail.com
+            - Name: FRONTEND_DOMAIN
+              Value: d1a87c4jc0zeu.cloudfront.net
+            - Name: FRONTEND_PROTOCOL
+              Value: https
+            - Name: VNPAY_TMN_CODE
+              Value: BG6RGL0E
+            - Name: VNPAY_PAYMENT_URL
+              Value: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+            - Name: VNPAY_RETURN_URL
+              Value: https://d1a87c4jc0zeu.cloudfront.net/payment/result
+            - Name: VNPAY_API_URL
+              Value: https://sandbox.vnpayment.vn/merchant_webapi/api/transaction
+            - Name: AWS_REGION
+              Value: !Ref AWS::Region
+          Secrets:
+            - Name: SECRET_KEY
+              ValueFrom: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ie221-secret-foody-django-secret-key-*'
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ie221-secret-foody-db-password-*'
+            - Name: EMAIL_HOST_PASSWORD
+              ValueFrom: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ie221-secret-foody-email-password-*'
+            - Name: VNPAY_HASH_SECRET
+              ValueFrom: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ie221-secret-foody-vnpay-hash-secret-*'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-task-foody-${ServiceName}'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - HTTPListener
+    Properties:
+      Cluster: !Ref ECSCluster
+      ServiceName: !Sub 'ie221-ecs-service-foody-${ServiceName}'
+      TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: !Ref DesiredCount
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+            - !Ref AppSecurityGroupId
+          Subnets:
+            - !Ref PrivateAppSubnet1Id
+            - !Ref PrivateAppSubnet2Id
+      LoadBalancers:
+        - ContainerName: !Sub 'ie221-container-foody-${ServiceName}'
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 50
+      Tags:
+        - Key: Name
+          Value: !Sub 'ie221-ecs-service-foody-${ServiceName}'
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Auto Scaling Target
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn: ECSService
+    Properties:
+      ServiceNamespace: ecs
+      ResourceId: !Sub 'service/${ECSCluster}/ie221-ecs-service-foody-${ServiceName}'
+      ScalableDimension: ecs:service:DesiredCount
+      MinCapacity: !Ref MinCapacity
+      MaxCapacity: !Ref MaxCapacity
+      RoleARN: !Sub 'arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService'
+
+  # CPU Scaling Policy
+  CPUScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub 'ie221-scaling-policy-foody-${ServiceName}-cpu'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        TargetValue: !Ref TargetCPUUtilization
+        ScaleOutCooldown: 300
+        ScaleInCooldown: 300
+
+  # Memory Scaling Policy
+  MemoryScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub 'ie221-scaling-policy-foody-${ServiceName}-memory'
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref AutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageMemoryUtilization
+        TargetValue: !Ref TargetMemoryUtilization
+        ScaleOutCooldown: 300
+        ScaleInCooldown: 300
+
+Outputs:
+  ECRRepositoryUri:
+    Description: ECR Repository URI
+    Value: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ie221-ecr-foody-${ServiceName}'
+    Export:
+      Name: !Sub "${AWS::StackName}-ECRRepositoryUri"
+
+  ALBDnsName:
+    Description: ALB DNS Name
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub "${AWS::StackName}-ALBDnsName"
+
+  ECSClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref ECSCluster
+    Export:
+      Name: !Sub "${AWS::StackName}-ECSClusterName"
+
+  ECSServiceName:
+    Description: ECS Service Name
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: !Sub "${AWS::StackName}-ECSServiceName"
+
+  TaskExecutionRoleArn:
+    Description: Task Execution Role ARN
+    Value: !GetAtt TaskExecutionRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-TaskExecutionRoleArn"
+
+  TaskRoleArn:
+    Description: Task Role ARN
+    Value: !GetAtt TaskRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-TaskRoleArn"

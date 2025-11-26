@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for IE221 Security Groups'
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Select the VPC for Security Groups
+
+Resources:
+  # Security Group for ALB
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ie221-sg-foody-alb
+      GroupDescription: Security Group for Application Load Balancer
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTP traffic from Internet
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: Allow HTTPS traffic from Internet
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: ie221-sg-foody-alb
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Security Group for ECS Tasks
+  ECSTaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ie221-sg-foody-ecs-task
+      GroupDescription: Security Group for ECS Tasks
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+          Description: Allow traffic from ALB on port 80
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: ie221-sg-foody-ecs-task
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Security Group for RDS
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ie221-sg-foody-db
+      GroupDescription: Security Group for RDS Database
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref ECSTaskSecurityGroup
+          Description: Allow PostgreSQL access from ECS Tasks
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref BastionSecurityGroup
+          Description: Allow PostgreSQL access from Bastion
+      Tags:
+        - Key: Name
+          Value: ie221-sg-foody-db
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Security Group for Bastion Host
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ie221-sg-foody-bastion
+      GroupDescription: Security Group for Bastion Host
+      VpcId: !Ref VpcId
+      SecurityGroupIngress: []
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic
+      Tags:
+        - Key: Name
+          Value: ie221-sg-foody-bastion
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+Outputs:
+  ALBSecurityGroupId:
+    Description: ALB Security Group ID
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-ALBSecurityGroupID"
+
+  ECSTaskSecurityGroupId:
+    Description: ECS Task Security Group ID
+    Value: !Ref ECSTaskSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-ECSTaskSecurityGroupID"
+
+  RDSSecurityGroupId:
+    Description: RDS Security Group ID
+    Value: !Ref RDSSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-RDSSecurityGroupID"
+
+  BastionSecurityGroupId:
+    Description: Bastion Security Group ID
+    Value: !Ref BastionSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-BastionSecurityGroupID"

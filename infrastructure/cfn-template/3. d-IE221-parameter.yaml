@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for IE221 Secrets Manager'
+
+Parameters:
+  DjangoSecretKey:
+    Type: String
+    Description: Django SECRET_KEY for application encryption
+    NoEcho: true
+
+  DBPassword:
+    Type: String
+    Description: PostgreSQL database password
+    NoEcho: true
+
+  EmailHostPassword:
+    Type: String
+    Description: Gmail app password for SMTP email sending
+    NoEcho: true
+
+  VNPayHashSecret:
+    Type: String
+    Description: VNPay payment gateway hash secret
+    NoEcho: true
+
+Resources:
+  # Django Secret Key
+  DjangoSecretKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foody-django-secret-key
+      Description: Django SECRET_KEY for IE221 Foody application
+      SecretString: !Ref DjangoSecretKey
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foody-django-secret-key
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foody
+
+  # Database Password Secret
+  DBPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foody-db-password
+      Description: PostgreSQL database password for IE221 Foody application
+      SecretString: !Ref DBPassword
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foody-db-password
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foody
+
+  # Email Host Password Secret
+  EmailHostPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foody-email-password
+      Description: Gmail app password for SMTP email sending
+      SecretString: !Ref EmailHostPassword
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foody-email-password
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foody
+
+  # VNPay Hash Secret
+  VNPayHashSecretSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foody-vnpay-hash-secret
+      Description: VNPay payment gateway hash secret
+      SecretString: !Ref VNPayHashSecret
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foody-vnpay-hash-secret
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foody
+
+Outputs:
+  DjangoSecretKeySecretArn:
+    Description: ARN of Django SECRET_KEY secret
+    Value: !Ref DjangoSecretKeySecret
+    Export:
+      Name: !Sub "${AWS::StackName}-DjangoSecretKeyArn"
+
+  DBPasswordSecretArn:
+    Description: ARN of database password secret
+    Value: !Ref DBPasswordSecret
+    Export:
+      Name: !Sub "${AWS::StackName}-DBPasswordArn"
+
+  EmailHostPasswordSecretArn:
+    Description: ARN of email host password secret
+    Value: !Ref EmailHostPasswordSecret
+    Export:
+      Name: !Sub "${AWS::StackName}-EmailPasswordArn"
+
+  VNPayHashSecretSecretArn:
+    Description: ARN of VNPay hash secret
+    Value: !Ref VNPayHashSecretSecret
+    Export:
+      Name: !Sub "${AWS::StackName}-VNPayHashSecretArn"

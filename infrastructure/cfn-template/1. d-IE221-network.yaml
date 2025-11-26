@@ -1,0 +1,391 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for IE221 Core Networking - 3-tier VPC with 6 subnets'
+
+Parameters:
+  VPCCidr:
+    Type: String
+    Description: CIDR block for VPC
+    Default: 10.1.0.0/16
+
+  PublicSubnet1Cidr:
+    Type: String
+    Description: CIDR block for Public Subnet 1 (AZ-a)
+    Default: 10.1.1.0/24
+
+  PublicSubnet2Cidr:
+    Type: String
+    Description: CIDR block for Public Subnet 2 (AZ-c)
+    Default: 10.1.2.0/24
+
+  PrivateAppSubnet1Cidr:
+    Type: String
+    Description: CIDR block for Private App Subnet 1 (AZ-a)
+    Default: 10.1.11.0/24
+
+  PrivateAppSubnet2Cidr:
+    Type: String
+    Description: CIDR block for Private App Subnet 2 (AZ-c)
+    Default: 10.1.12.0/24
+
+  PrivateDBSubnet1Cidr:
+    Type: String
+    Description: CIDR block for Private DB Subnet 1 (AZ-a)
+    Default: 10.1.21.0/24
+
+  PrivateDBSubnet2Cidr:
+    Type: String
+    Description: CIDR block for Private DB Subnet 2 (AZ-c)
+    Default: 10.1.22.0/24
+
+Resources:
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: ie221-vpc-foody-001
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ie221-igw-foody-001
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Attach Internet Gateway to VPC
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  # Public Subnets
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet1Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: ie221-sn-foody-public-01
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet2Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: ie221-sn-foody-public-02
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Private App Subnets
+  PrivateAppSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateAppSubnet1Cidr
+      Tags:
+        - Key: Name
+          Value: ie221-sn-foody-private-app-01
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  PrivateAppSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: !Ref PrivateAppSubnet2Cidr
+      Tags:
+        - Key: Name
+          Value: ie221-sn-foody-private-app-02
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Private DB Subnets
+  PrivateDBSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateDBSubnet1Cidr
+      Tags:
+        - Key: Name
+          Value: ie221-sn-foody-private-db-01
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  PrivateDBSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Select [2, !GetAZs '']
+      CidrBlock: !Ref PrivateDBSubnet2Cidr
+      Tags:
+        - Key: Name
+          Value: ie221-sn-foody-private-db-02
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # NAT Gateway (chỉ 1 NAT Gateway trong PublicSubnet1)
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: ie221-ngw-foody-public-a
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Elastic IP for NAT Gateway
+  NATGatewayEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: ie221-eip-foody-ngw-001
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Route Tables
+  # Public Route Table (dùng chung cho cả 2 public subnets)
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: ie221-rt-foody-public
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Private App Route Table (dùng chung cho cả 2 app subnets)
+  PrivateAppRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: ie221-rt-foody-private-app
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Private DB Route Table (dùng chung cho cả 2 DB subnets)
+  PrivateDBRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: ie221-rt-foody-private-db
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+
+  # Routes
+  # Public Route - Internet Gateway
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # S3 Gateway Endpoint
+  S3GatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref PrivateAppRouteTable
+        - !Ref PrivateDBRouteTable
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+              - 's3:ListBucket'
+            Resource:
+              - 'arn:aws:s3:::*'
+              - 'arn:aws:s3:::*/*'
+
+  # Private App Route - NAT Gateway
+  PrivateAppRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateAppRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGateway
+
+  # Subnet Route Table Associations
+  # Public Subnets
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  # Private App Subnets
+  PrivateAppSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateAppRouteTable
+      SubnetId: !Ref PrivateAppSubnet1
+
+  PrivateAppSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateAppRouteTable
+      SubnetId: !Ref PrivateAppSubnet2
+
+  # Private DB Subnets
+  PrivateDBSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateDBRouteTable
+      SubnetId: !Ref PrivateDBSubnet1
+
+  PrivateDBSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateDBRouteTable
+      SubnetId: !Ref PrivateDBSubnet2
+
+Outputs:
+  VPC:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VPCID"
+
+  VPCCidr:
+    Description: VPC CIDR Block
+    Value: !Ref VPCCidr
+    Export:
+      Name: !Sub "${AWS::StackName}-VPCCidr"
+
+  PublicSubnet1:
+    Description: Public Subnet 1 ID (AZ-a)
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet1ID"
+
+  PublicSubnet2:
+    Description: Public Subnet 2 ID (AZ-c)
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicSubnet2ID"
+
+  PrivateAppSubnet1:
+    Description: Private App Subnet 1 ID (AZ-a)
+    Value: !Ref PrivateAppSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateAppSubnet1ID"
+
+  PrivateAppSubnet2:
+    Description: Private App Subnet 2 ID (AZ-c)
+    Value: !Ref PrivateAppSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateAppSubnet2ID"
+
+  PrivateDBSubnet1:
+    Description: Private DB Subnet 1 ID (AZ-a)
+    Value: !Ref PrivateDBSubnet1
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateDBSubnet1ID"
+
+  PrivateDBSubnet2:
+    Description: Private DB Subnet 2 ID (AZ-c)
+    Value: !Ref PrivateDBSubnet2
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateDBSubnet2ID"
+
+  PublicRouteTableId:
+    Description: Public Route Table ID
+    Value: !Ref PublicRouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PublicRouteTableID"
+
+  PrivateAppRouteTableId:
+    Description: Private App Route Table ID
+    Value: !Ref PrivateAppRouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateAppRouteTableID"
+
+  PrivateDBRouteTableId:
+    Description: Private DB Route Table ID
+    Value: !Ref PrivateDBRouteTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PrivateDBRouteTableID"
+
+  NATGatewayId:
+    Description: NAT Gateway ID
+    Value: !Ref NATGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-NATGatewayID"
+
+  S3GatewayEndpointId:
+    Description: S3 Gateway Endpoint ID
+    Value: !Ref S3GatewayEndpoint
+    Export:
+      Name: !Sub "${AWS::StackName}-S3GatewayEndpointID"
