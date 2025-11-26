@@ -3,7 +3,8 @@
 export interface CartProduct {
   id: number;
   name: string;
-  price: number;
+  price: string | number; // Backend sends as string, convert as needed
+  image_url: string; // Now required - backend always provides a value
 }
 
 export interface CartItem {

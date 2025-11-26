@@ -1,6 +1,7 @@
 import React, { useState, FormEvent, ChangeEvent, useEffect } from "react";
 import styles from "./UserProfile.module.css";
-import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
+import { FaRegEye, FaRegEyeSlash, FaUser, FaEnvelope, FaPhone, 
+  FaVenusMars, FaMapMarkerAlt, FaLock, FaUserCircle, FaEdit } from "react-icons/fa";
 import userService, { UpdateProfileData } from "../../services/user.service";
 import addressService, {
   CreateAddressData,
@@ -396,33 +397,34 @@ const UserProfile: React.FC = () => {
   const renderProfile = () => {
     if (isEditingProfile) {
       return (
-        <form onSubmit={handleProfileSubmit}>
-          <h3>Edit Profile</h3>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="lastname">Last Name</label>
-            <input
-              id="lastname"
-              name="lastname"
-              value={editProfile.lastname}
-              onChange={handleProfileChange}
-              required
-            />
+        <form onSubmit={handleProfileSubmit} className={styles.fadeIn}>
+          <h3>Edit Personal Information</h3>
+          
+          <div className={styles.infoGrid}>
+            <div className={styles.formGroup}>
+              <label htmlFor="lastname">Last Name</label>
+              <input
+                id="lastname"
+                name="lastname"
+                value={editProfile.lastname}
+                onChange={handleProfileChange}
+                required
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="firstname">First Name</label>
+              <input
+                id="firstname"
+                name="firstname"
+                value={editProfile.firstname}
+                onChange={handleProfileChange}
+                required
+              />
+            </div>
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="firstname">First Name</label>
-            <input
-              id="firstname"
-              name="firstname"
-              value={editProfile.firstname}
-              onChange={handleProfileChange}
-              required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email Address</label>
             <input
               id="email"
               name="email"
@@ -430,34 +432,35 @@ const UserProfile: React.FC = () => {
               value={editProfile.email}
               disabled
               readOnly
-              style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
             />
+            <small style={{color: '#888', marginTop: '5px', display: 'block'}}>Email cannot be changed.</small>
           </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              id="phone"
-              name="phone"
-              value={editProfile.phone}
-              onChange={handleProfileChange}
-              required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="gender">Gender</label>
-            <select
-              id="gender"
-              name="gender"
-              value={editProfile.gender}
-              onChange={handleProfileChange}
-              required
-            >
-              <option value={Gender.MALE}>Male</option>
-              <option value={Gender.FEMALE}>Female</option>
-              <option value={Gender.OTHER}>Other</option>
-            </select>
+          <div className={styles.infoGrid}>
+            <div className={styles.formGroup}>
+              <label htmlFor="phone">Phone Number</label>
+              <input
+                id="phone"
+                name="phone"
+                value={editProfile.phone}
+                onChange={handleProfileChange}
+                required
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="gender">Gender</label>
+              <select
+                id="gender"
+                name="gender"
+                value={editProfile.gender}
+                onChange={handleProfileChange}
+                required
+              >
+                <option value={Gender.MALE}>Male</option>
+                <option value={Gender.FEMALE}>Female</option>
+                <option value={Gender.OTHER}>Other</option>
+              </select>
+            </div>
           </div>
 
           <div className={styles.buttonGroup}>
@@ -477,33 +480,72 @@ const UserProfile: React.FC = () => {
       );
     }
 
+    // 2. Chế độ Xem (View Mode) - Đẹp hơn
     return (
       <div className={styles.profileView}>
-        <h3>Your Profile</h3>
-        <p>
-          <strong>Fullname:</strong> {profile.lastname} {profile.firstname}
-        </p>
-        <p>
-          <strong>Email:</strong> {profile.email}
-        </p>
-        <p>
-          <strong>Phone:</strong> {profile.phone}
-        </p>
-        <p>
-          <strong>Gender:</strong>{" "}
-          {profile.gender === Gender.MALE
-            ? "Male"
-            : profile.gender === Gender.FEMALE
-            ? "Female"
-            : "Other"}
-        </p>
-        <button
-          className={styles.button}
-          onClick={() => setIsEditingProfile(true)}
-          disabled={loading}
-        >
-          Edit
-        </button>
+        {/* Header section: Avatar + Name */}
+        <div className={styles.profileHeader}>
+            <div className={styles.avatarWrapper}>
+                <FaUser />
+            </div>
+            <div className={styles.profileSummary}>
+                <h2>{profile.lastname} {profile.firstname}</h2>
+                <p>{profile.email}</p>
+            </div>
+        </div>
+
+        <h3>Personal Details</h3>
+        <div className={styles.infoGrid}>
+            <div className={styles.infoCard}>
+                <div className={styles.infoLabel}>
+                    <FaUserCircle /> Fullname
+                </div>
+                <div className={styles.infoValue}>
+                    {profile.lastname} {profile.firstname}
+                </div>
+            </div>
+
+            <div className={styles.infoCard}>
+                <div className={styles.infoLabel}>
+                    <FaEnvelope /> Email
+                </div>
+                <div className={styles.infoValue}>
+                    {profile.email}
+                </div>
+            </div>
+
+            <div className={styles.infoCard}>
+                <div className={styles.infoLabel}>
+                    <FaPhone /> Phone
+                </div>
+                <div className={styles.infoValue}>
+                    {profile.phone || "Not provided"}
+                </div>
+            </div>
+
+            <div className={styles.infoCard}>
+                <div className={styles.infoLabel}>
+                    <FaVenusMars /> Gender
+                </div>
+                <div className={styles.infoValue}>
+                    {profile.gender === Gender.MALE
+                        ? "Male"
+                        : profile.gender === Gender.FEMALE
+                        ? "Female"
+                        : "Other"}
+                </div>
+            </div>
+        </div>
+
+        <div style={{ marginTop: "2rem" }}>
+            <button
+              className={styles.button}
+              onClick={() => setIsEditingProfile(true)}
+              disabled={loading}
+            >
+              <FaEdit /> Edit Profile
+            </button>
+        </div>
       </div>
     );
   };
@@ -518,7 +560,6 @@ const UserProfile: React.FC = () => {
       >
         Add New Address
       </button>
-      {loading && <p>Loading...</p>}
       <div className={styles.addressList}>
         {addresses.filter((addr) => addr.is_active).length === 0 ? (
           <p>You have no addresses</p>
@@ -657,7 +698,7 @@ const UserProfile: React.FC = () => {
             aria-current={activeTab === "profile" ? "page" : undefined}
             disabled={loading}
           >
-            Personal Information
+            <FaUser /> Personal Info
           </button>
           <button
             className={`${styles.navButton} ${
@@ -667,7 +708,7 @@ const UserProfile: React.FC = () => {
             aria-current={activeTab === "address" ? "page" : undefined}
             disabled={loading}
           >
-            Address Management
+            <FaMapMarkerAlt /> Addresses
           </button>
           <button
             className={`${styles.navButton} ${
@@ -677,7 +718,7 @@ const UserProfile: React.FC = () => {
             aria-current={activeTab === "password" ? "page" : undefined}
             disabled={loading}
           >
-            Change Password
+            <FaLock /> Password
           </button>
         </nav>
 

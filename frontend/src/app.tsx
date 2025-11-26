@@ -18,6 +18,7 @@ import Checkout from "./pages/Checkout/Checkout";
 import GroupOrder from "./pages/GroupOrder/GroupOrder";
 import PaymentResult from "./pages/PaymentResult/PaymentResult";
 import Orders from "./pages/Orders/Orders";
+import OrderDetail from "./pages/OrderDetail/OrderDetail";
 
 import LayoutAdmin from "./components/LayoutAdmin/LayoutAdmin";
 import Dashboard from "./pages/Admin/Dashboard/Dashboard";
@@ -85,6 +86,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Orders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders/:orderId"
+            element={
+              <ProtectedRoute>
+                <OrderDetail />
               </ProtectedRoute>
             }
           />
