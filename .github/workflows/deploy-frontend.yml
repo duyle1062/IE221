@@ -3,7 +3,7 @@ name: Deploy Frontend to CloudFront/S3
 on:
   push:
     branches:
-      - 'test-cf-s3'
+      - 'dev'
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-frontend.yml'
