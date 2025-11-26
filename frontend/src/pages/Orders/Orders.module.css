@@ -1,7 +1,8 @@
 .container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 2rem auto;
   padding: 0 1rem;
+  min-height: 100vh;
 }
 
 .header {
@@ -356,7 +357,7 @@
 }
 
 .ordersLoadingContainer {
-  min-height: 100vh;
+  min-height: 58vh;
   display: flex;
   flex-direction: column;
   align-items: center;

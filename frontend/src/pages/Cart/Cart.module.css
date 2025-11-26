@@ -2,6 +2,13 @@
   max-width: 1200px;
   margin: 2rem auto;
   padding: 0 1rem;
+  min-height: 100vh;
+}
+
+.cartContainerLoading {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
 }
 
 .header {
