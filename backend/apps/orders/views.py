@@ -37,10 +37,10 @@ class PlaceOrderView(APIView):
         serializer = PlaceOrderSerializer(data=request.data)
 
         if not serializer.is_valid():
-            logger.warning("Order placement failed - invalid data", extra={
-                "user_id": request.user.id,
-                "errors": serializer.errors
-            })
+            logger.warning(
+                "Order placement failed - invalid data",
+                extra={"user_id": request.user.id, "errors": serializer.errors},
+            )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
@@ -77,21 +77,19 @@ class PlaceOrderView(APIView):
         # Validate product availability and calculate subtotal
         unavailable_products = []
         subtotal = Decimal("0")
-        
+
         for item in cart_items:
             if not item.product.is_active:
-                unavailable_products.append({
-                    "name": item.product.name,
-                    "reason": "inactive"
-                })
+                unavailable_products.append(
+                    {"name": item.product.name, "reason": "inactive"}
+                )
             elif not item.product.available:
-                unavailable_products.append({
-                    "name": item.product.name,
-                    "reason": "unavailable"
-                })
+                unavailable_products.append(
+                    {"name": item.product.name, "reason": "unavailable"}
+                )
             else:
                 subtotal += item.product.price * item.quantity
-        
+
         # Return error if any products are unavailable
         if unavailable_products:
             error_messages = []
@@ -100,12 +98,12 @@ class PlaceOrderView(APIView):
                     error_messages.append(f"'{prod['name']}' is no longer active")
                 else:
                     error_messages.append(f"'{prod['name']}' is currently unavailable")
-            
+
             return Response(
                 {
                     "error": "Some products in your cart are not available",
                     "details": error_messages,
-                    "unavailable_products": unavailable_products
+                    "unavailable_products": unavailable_products,
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
@@ -170,13 +168,16 @@ class PlaceOrderView(APIView):
                     order.payment_status = "SUCCEEDED"
                     order.save()
 
-                    logger.info("Order placed successfully", extra={
-                        "user_id": user.id,
-                        "order_id": order.id,
-                        "payment_method": payment_method,
-                        "total": float(total),
-                        "items_count": len(order_items)
-                    })
+                    logger.info(
+                        "Order placed successfully",
+                        extra={
+                            "user_id": user.id,
+                            "order_id": order.id,
+                            "payment_method": payment_method,
+                            "total": float(total),
+                            "items_count": len(order_items),
+                        },
+                    )
                     order_serializer = OrderSerializer(order)
                     return Response(
                         {
@@ -211,13 +212,16 @@ class PlaceOrderView(APIView):
                         payment.gateway_transaction_id = result["txn_ref"]
                         payment.save()
 
-                        logger.info("Order created - pending VNPAY payment", extra={
-                            "user_id": user.id,
-                            "order_id": order.id,
-                            "payment_method": payment_method,
-                            "total": float(total),
-                            "txn_ref": result["txn_ref"]
-                        })
+                        logger.info(
+                            "Order created - pending VNPAY payment",
+                            extra={
+                                "user_id": user.id,
+                                "order_id": order.id,
+                                "payment_method": payment_method,
+                                "total": float(total),
+                                "txn_ref": result["txn_ref"],
+                            },
+                        )
                         order_serializer = OrderSerializer(order)
                         return Response(
                             {
@@ -238,10 +242,10 @@ class PlaceOrderView(APIView):
                         )
 
         except Exception as e:
-            logger.error("Order creation failed", extra={
-                "user_id": request.user.id,
-                "error": str(e)
-            })
+            logger.error(
+                "Order creation failed",
+                extra={"user_id": request.user.id, "error": str(e)},
+            )
             return Response(
                 {"error": f"Failed to create order: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -252,11 +256,14 @@ class OrderListView(ListAPIView):
     """
     GET /api/orders/
     Get all orders for the authenticated user (USER only, NOT admin)
+    Supports filtering by status: ?status=PENDING,PAID,etc
     """
 
     permission_classes = [IsAuthenticated, IsRegularUser]
     serializer_class = OrderSerializer
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["status"]
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user).prefetch_related(
@@ -318,11 +325,14 @@ class CancelOrderView(APIView):
         order.payment_status = "REFUNDED"
         order.save()
 
-        logger.info("Order cancelled by user", extra={
-            "user_id": request.user.id,
-            "order_id": order.id,
-            "previous_status": "PAID"
-        })
+        logger.info(
+            "Order cancelled by user",
+            extra={
+                "user_id": request.user.id,
+                "order_id": order.id,
+                "previous_status": "PAID",
+            },
+        )
         serializer = OrderSerializer(order)
         return Response(
             {"message": "Order cancelled successfully", "order": serializer.data},
@@ -468,12 +478,15 @@ class AdminChangeStatusView(APIView):
 
         order.save()
 
-        logger.info("Order status updated by admin", extra={
-            "admin_id": request.user.id,
-            "order_id": order.id,
-            "old_status": old_status,
-            "new_status": new_status
-        })
+        logger.info(
+            "Order status updated by admin",
+            extra={
+                "admin_id": request.user.id,
+                "order_id": order.id,
+                "old_status": old_status,
+                "new_status": new_status,
+            },
+        )
         # Return updated order
         serializer = OrderSerializer(order)
         return Response(

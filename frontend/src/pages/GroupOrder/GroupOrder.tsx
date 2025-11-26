@@ -41,6 +41,8 @@ const GroupOrder: React.FC = () => {
   const [joinCode, setJoinCode] = useState("");
   const [groupData, setGroupData] = useState<GroupOrderData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [joiningOrder, setJoiningOrder] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     {}
   );
@@ -169,7 +171,7 @@ const GroupOrder: React.FC = () => {
 
   const handleCreateGroup = async () => {
     try {
-      setLoading(true);
+      setCreatingOrder(true);
       const newGroup = await createGroupOrder();
       setGroupData(newGroup);
       setViewMode("active");
@@ -178,7 +180,7 @@ const GroupOrder: React.FC = () => {
     } catch (error: any) {
       toast.error(error.message || "Failed to create group order");
     } finally {
-      setLoading(false);
+      setCreatingOrder(false);
     }
   };
 
@@ -189,7 +191,7 @@ const GroupOrder: React.FC = () => {
       return;
     }
     try {
-      setLoading(true);
+      setJoiningOrder(true);
       const response = await joinGroupOrder({ code: joinCode.toUpperCase() });
       setGroupData(response.group_order);
       setViewMode("active");
@@ -201,7 +203,7 @@ const GroupOrder: React.FC = () => {
     } catch (error: any) {
       toast.error(error.message || "Failed to join group order");
     } finally {
-      setLoading(false);
+      setJoiningOrder(false);
     }
   };
 
@@ -346,7 +348,7 @@ const GroupOrder: React.FC = () => {
     <div className={styles.selectionContainer}>
       <div
         className={styles.selectionCard}
-        onClick={!loading ? handleCreateGroup : undefined}
+        onClick={!creatingOrder ? handleCreateGroup : undefined}
       >
         <div className={styles.iconWrapper}>
           <FaUserPlus />
@@ -355,8 +357,11 @@ const GroupOrder: React.FC = () => {
         <p className={styles.cardDesc}>
           Host a party! Get a code and share it with your friends
         </p>
-        <button className={styles.btnPrimary} disabled={loading}>
-          {loading ? "Creating..." : "Create Now"}
+        <button
+          className={styles.btnPrimary}
+          disabled={creatingOrder || joiningOrder}
+        >
+          {creatingOrder ? "Creating..." : "Create Now"}
         </button>
       </div>
       <div className={styles.selectionCard}>
@@ -373,15 +378,15 @@ const GroupOrder: React.FC = () => {
             placeholder="ENTER CODE"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
-            disabled={loading}
+            disabled={joiningOrder || creatingOrder}
           />
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={loading}
+            disabled={joiningOrder || creatingOrder}
           >
             <div className={styles.buttonContent}>
-              {loading ? "Joining..." : "Join"} <FaArrowRight />
+              {joiningOrder ? "Joining..." : "Join"} <FaArrowRight />
             </div>
           </button>
         </form>

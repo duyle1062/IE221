@@ -28,19 +28,30 @@ export const placeOrder = async (
 /**
  * Get user's order history
  * GET /api/orders/
+ * @param page - Page number (default: 1)
+ * @param pageSize - Number of items per page (default: 10)
+ * @param status - Optional filter by order status (e.g., "PENDING", "COMPLETED")
  */
 export const getUserOrders = async (
   page: number = 1,
-  pageSize: number = 10
+  pageSize: number = 10,
+  status?: string
 ): Promise<OrderListResponse> => {
   try {
+    const params: any = {
+      page,
+      page_size: pageSize,
+    };
+
+    // Add status filter to query params if provided
+    if (status && status !== "ALL") {
+      params.status = status;
+    }
+
     const response = await axiosInstance.get<OrderListResponse>(
       "/api/orders/",
       {
-        params: {
-          page,
-          page_size: pageSize,
-        },
+        params,
       }
     );
     return response.data;
