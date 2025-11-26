@@ -46,8 +46,8 @@
 }
 
 .tableHeader {
-  background-color: var(--orange-button-bg) !important;
-  color: var(--text-color-white) !important;
+  background-color: var(--background-light) !important;
+  color: var(--text-color-black) !important;
   font-weight: 700 !important;
   font-size: 15px !important;
 }
@@ -57,7 +57,7 @@
 }
 
 .tableRow:hover {
-  background-color: var(--button-disabled-bg) !important;
+  background-color: var(--background-hover-light) !important;
   transition: background-color 0.2s;
 }
 
@@ -98,4 +98,50 @@
   .pageTitle {
     font-size: 1.8rem !important;
   }
+}
+
+.MuiTableCell-head {
+  background: #000 !important;
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  padding: 16px 20px !important;
+  text-align: center !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.MuiTableCell-body {
+  padding: 18px 20px !important;
+  vertical-align: middle;
+  font-size: 14.5px;
+}
+
+.MuiTableCell-root:nth-child(1),
+.MuiTableCell-root:nth-child(4),
+.MuiTableCell-root:nth-child(8) {
+  text-align: center !important;
+}
+
+.MuiPaper-root-MuiTableContainer-root {
+  border-radius: 20px !important;
+}
+
+.Muipopover-paper {
+  border-radius: 12px !important;
+  width: 200px !important;
+}
+
+:global(.MuiMenu-paper),
+:global(.MuiPopover-paper) {
+  border-radius: 16px !important;
+  width: 500px !important;
+  margin-top: 25px !important;
+  left: 296px !important;
+  padding: none !important;
+}
+
+:global(.MuiList-padding) {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }

@@ -25,6 +25,9 @@
   margin: 0 auto;
   width: 5rem;
   height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .loading-spinner-base {
@@ -32,20 +35,17 @@
   border-radius: 9999px;
   height: 5rem;
   width: 5rem;
-  border: 4px solid #fed7aa;
-  margin: 0 auto;
+  border: 4px solid #fca5a5;
+  position: absolute;
 }
 
 .loading-spinner-top {
   position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
   animation: spin 1s linear infinite;
   border-radius: 9999px;
   height: 5rem;
   width: 5rem;
-  border-top: 4px solid #f97316;
+  border-top: 4px solid #dc2626;
   border-right: 4px solid transparent;
   border-bottom: 4px solid transparent;
   border-left: 4px solid transparent;
@@ -75,7 +75,7 @@
 
 /* Success Header Styles */
 .success-header {
-  background: linear-gradient(to right, #4ade80, #10b981);
+  background: linear-gradient(to right, #ef4444, #dc2626);
   padding: 2.5rem 2rem;
   text-align: center;
 }
@@ -116,7 +116,7 @@
 .success-icon {
   width: 4rem;
   height: 4rem;
-  color: #10b981;
+  color: #dc2626;
 }
 
 .error-icon {
@@ -309,13 +309,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(to right, #f97316, #ea580c);
+  background: linear-gradient(to right, #ef4444, #dc2626);
   color: white;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(to right, #ea580c, #c2410c);
+  background: linear-gradient(to right, #dc2626, #b91c1c);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   transform: scale(1.02);
 }
