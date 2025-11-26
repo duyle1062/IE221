@@ -70,7 +70,7 @@ const LoginForm: React.FC = () => {
           }
         } else {
           setErrors({
-            server: "Your account does not exist. Please try again later!",
+            server: "Your account does not exist. Please try again!",
           });
         }
       } finally {

@@ -169,10 +169,10 @@ class S3Handler:
             str: Full URL (CloudFront or S3)
         """
         if self.cloudfront_domain:
-            # Use CloudFront URL
-            return f"https://{self.cloudfront_domain}/{s3_key}"
+            # Use CloudFront URL with /media/ prefix for multi-origin setup
+            return f"https://{self.cloudfront_domain}/media/{s3_key}"
         else:
-            # Use S3 URL
+            # Use S3 URL (direct access)
             return f"https://{self.bucket_name}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{s3_key}"
 
     def _get_extension_from_content_type(self, content_type):

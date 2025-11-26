@@ -63,10 +63,9 @@ MIDDLEWARE = [
 ]
 
 # CORS configuration
-CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL", default=False, cast=bool)
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default="http://localhost:3000",
+    default="http://localhost:3000,http://127.0.0.1:3000,https://d1a87c4jc0zeu.cloudfront.net",
     cast=lambda v: [s.strip() for s in v.split(",")]
 )
 
