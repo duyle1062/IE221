@@ -155,6 +155,7 @@ const UserManagement: React.FC = () => {
               label="Role"
               onChange={handleRoleFilterChange}
               disabled={loading}
+              style={{ width: 200 }}
               MenuProps={{
                 PaperProps: {
                   sx: {

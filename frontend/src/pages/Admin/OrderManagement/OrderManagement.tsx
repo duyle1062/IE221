@@ -337,6 +337,7 @@ const OrderManagement: React.FC = () => {
               value={statusFilter}
               label="Status"
               onChange={handleFilterChange}
+              style={{ width: 200 }}
               MenuProps={{
                 PaperProps: {
                   sx: {

@@ -151,7 +151,7 @@ const CartScreen: React.FC = () => {
           autoClose={3000}
           hideProgressBar={true}
         />
-        <div className={styles.cartContainer}>
+        <div className={styles.cartContainerLoading}>
           <header className={styles.header}>
             <h1 className={styles.title}>My Cart</h1>
           </header>
