@@ -9,6 +9,10 @@ on:
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   deploy:
     name: Build and Deploy
@@ -27,7 +31,8 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm ci 
+             npm install
 
       - name: Build application
         working-directory: ./frontend
