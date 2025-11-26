@@ -23,8 +23,8 @@ import { useAuth } from "../../context/AuthContext";
 
 import styles from "./LayoutAdmin.module.css";
 
-const drawerWidth = 250;
-const collapsedWidth = 85;
+const drawerWidth = 210;
+const collapsedWidth = 25;
 
 const LayoutAdmin: React.FC = () => {
   const navigate = useNavigate();
@@ -65,6 +65,12 @@ const LayoutAdmin: React.FC = () => {
   };
 
   const menuItems = [
+    {
+      key: "menu-admin",
+      icon: null,
+      label: "MENU ADMIN",
+      onClick: toggleCollapsed,
+    },
     {
       key: "dashboard",
       icon: <DashboardOutlined />,
@@ -134,7 +140,7 @@ const LayoutAdmin: React.FC = () => {
               onClose={handleClose}
               anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
               transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >  
+            >
               <MenuItem onClick={handleLogout}>Log out</MenuItem>
             </Popover>
           </Toolbar>
@@ -150,7 +156,7 @@ const LayoutAdmin: React.FC = () => {
         onClick={toggleCollapsed}
         className={styles.toggleButton}
         style={{
-          left: collapsed ? `${collapsedWidth}px` : `${drawerWidth + 5}px`,
+          left: collapsed ? `${collapsedWidth}px` : `${drawerWidth}px`,
         }}
       >
         {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
