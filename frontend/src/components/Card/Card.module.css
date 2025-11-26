@@ -1,13 +1,26 @@
 .sectionContainer {
   margin: 50px 0;
+  padding: 0 20px;
 }
 
 .sectionTitle {
+  display: flex;             /* Sử dụng Flex để căn chỉnh dòng kẻ và chữ */
+  align-items: center;       /* Căn giữa theo chiều dọc */
+  justify-content: center;
   text-align: center;
   font-size: 32px;
   font-weight: bold;
-  margin-bottom: 20px;
+  margin-bottom: 10px;       /* Giảm khoảng cách dưới của title (Cũ: 20px) */
   color: var(--text-color-dark);
+  white-space: nowrap;
+}
+
+.sectionTitle::before,
+.sectionTitle::after {
+  content: "";
+  flex: 1;                   /* Dòng kẻ sẽ chiếm hết khoảng trống còn lại */
+  border-bottom: 2px solid #e0e0e0; /* Màu và độ dày của dòng kẻ */
+  margin: 0 20px;            /* Khoảng cách giữa chữ và dòng kẻ */
 }
 
 .cardsContainer {
@@ -16,7 +29,7 @@
   gap: 20px;
   padding: 20px;
   margin: 0 auto;
-  margin-top: 50px;
+  margin-top: 10px;
   margin-bottom: 50px;
   flex-wrap: nowrap;
   overflow: hidden;
