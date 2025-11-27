@@ -32,6 +32,8 @@ export default function Category() {
           abortController.signal
         );
         setProducts(products || []);
+        // Scroll to top when products load
+        window.scrollTo(0, 0);
       } catch (err: any) {
         // Ignore abort errors
         if (err.name === "CanceledError" || err.name === "AbortError") {
