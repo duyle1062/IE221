@@ -28,5 +28,8 @@
     "javascript"
   ],
   "author": "duyle1062",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "boto3": "^0.0.1"
+  }
 }

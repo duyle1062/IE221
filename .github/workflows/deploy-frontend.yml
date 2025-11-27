@@ -1,0 +1,87 @@
+name: Deploy Frontend to CloudFront/S3
+
+on:
+  push:
+    branches:
+      - 'dev'
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.17.0'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci 
+             npm install
+
+      - name: Build application
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+          CI: false
+          GENERATE_SOURCEMAP: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/IE221-GitHubActionsRole
+          role-session-name: github-actions-${{ github.run_id }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy to S3
+        working-directory: ./frontend
+        run: |
+          # Upload static assets (JS, CSS, images) with long-term caching
+          # These files have content hashes in names, safe to cache forever
+          aws s3 sync build/ s3://${{ secrets.S3_FRONTEND_BUCKET }} \
+            --delete \
+            --cache-control "public,max-age=31536000,immutable" \
+            --exclude "index.html" \
+            --exclude "asset-manifest.json" \
+            --exclude "*.map"
+
+          # Upload index.html with no-cache
+          # This ensures users always get the latest version
+          aws s3 cp build/index.html s3://${{ secrets.S3_FRONTEND_BUCKET }}/index.html \
+            --cache-control "no-cache,no-store,must-revalidate" \
+            --metadata-directive REPLACE
+
+          # Upload asset-manifest.json (if exists)
+          if [ -f build/asset-manifest.json ]; then
+            aws s3 cp build/asset-manifest.json s3://${{ secrets.S3_FRONTEND_BUCKET }}/asset-manifest.json \
+              --cache-control "no-cache,no-store,must-revalidate" \
+              --metadata-directive REPLACE
+          fi
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Deployment complete
+        run: |  
+          echo "Deployment successful!"
+          echo "URL: https://${{ secrets.CLOUDFRONT_DOMAIN }}"
+          echo "Bucket: ${{ secrets.S3_FRONTEND_BUCKET }}"

@@ -1,0 +1,119 @@
+:root {
+  --primary-color: #c8102e;
+  --primary-color-hover: #a60d26;
+  --blue-color: #2d68f8;
+
+  --success-color: #28a745;
+  --success-color-hover: #1e8449;
+  --success-background-light: #d4edda;
+  --success-text-dark: #155724;
+  --success-border-color: #c3e6cb;
+
+  --btn-color: #637381;
+  --btn-background-color: #dfe4ea;
+
+  --text-color-black: #000;
+  --text-color-white: #fff;
+  --text-color-dark: #333;
+  --text-color-dark-secondary: #444;
+  --text-color-medium: #555;
+  --text-color-gray: #666;
+  --text-color-light-gray: #999;
+
+  --background-light: #f9f9f9;
+  --background-hover-light: #f0f0f0;
+  --backdrop-color: rgba(0, 0, 0, 0.6);
+
+  --border-color-light: #e0e0e0;
+  --border-color-medium: #ccc;
+  --border-color-gray: #ddd;
+  --border-color-lighter: #eee;
+
+  --shadow-light: rgba(0, 0, 0, 0.05);
+  --shadow-medium: rgba(0, 0, 0, 0.3);
+
+  --primary-color-light: #fcebeb;
+  --border-color-light-pink: #fdf2f2;
+  --button-disabled-bg: #dde2e7;
+  --text-color-light: #8a92a6;
+
+  --pink-button-bg: #f7a7a7;
+  --pink-light-bg: #fef0f0;
+
+  --yellow-button-bg: #ffd966;
+
+  --orange-button-bg: #ff5900;
+  --orange-medium-bg: #ff9500;
+  --status-pending-bg: #fff3cd;
+  --status-pending-text: #856404;
+
+  --status-paid-bg: #d1ecf1;
+  --status-paid-text: #0c5460;
+
+  --status-confirmed-bg: #cce5ff;
+  --status-confirmed-text: #004085;
+
+  --status-preparing-bg: #e2e3e5;
+  --status-preparing-text: #383d41;
+
+  --status-cancelled-bg: #f8d7da;
+  --status-cancelled-text: #721c24;
+
+  --timeline-bg-grey: #e9ecef;
+
+  /* Login/Auth Page Colors */
+  --brand-red-primary: #e4002b;
+  --brand-red-dark: #c4001f;
+  --brand-red-darker: #c8102e;
+  --brand-red-hover: #ff1a3f;
+  --brand-gradient: linear-gradient(135deg, #e4002b 0%, #c4001f 100%);
+
+  --button-green: #22c55e;
+  --button-green-hover: #16a34a;
+  --button-disabled: #ccc;
+
+  --social-apple: #000;
+  --social-apple-hover: #333;
+  --social-google: #db4437;
+  --social-google-hover: #c23321;
+
+  --error-bg: #fee;
+  --error-border: #e4002b;
+  --error-text: #e4002b;
+
+  --input-border: #ddd;
+  --input-focus: #e4002b;
+  --group-bg-light: #f8f9fa;
+  --group-border-color: #e9ecef;
+  --text-color-secondary: #6c757d;
+  --text-color-placeholder: #999;
+
+  --warning-bg-light: #fff3cd;
+  --warning-text-dark: #856404;
+
+  --star-color: #f39c12;
+  --star-empty-color: #ddd;
+  --error-color: #d32f2f;
+
+  --disabled-bg: #95a5a6;
+  --disabled-text: #fff;
+}
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+@font-face {
+  font-family: OpenSans;
+  src: url(../assets/fonts/OpenSans-VariableFont_wdthwght.ttf);
+}
+
+html,
+body {
+  height: 100%;
+  font-family: OpenSans;
+}

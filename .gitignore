@@ -15,6 +15,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+.env
+*.env
+*__pycache__/
+Lab/*
+CLAUDE.md
 
 # ===============================
 # FRONTEND (React/Node.js)
@@ -214,3 +219,5 @@ backend/static_root/
 *.temp
 .tmp/
 .temp/
+
+/node_modules

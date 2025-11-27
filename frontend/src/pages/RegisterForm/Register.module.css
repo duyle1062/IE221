@@ -1,0 +1,298 @@
+/* Container for the entire register page */
+.container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Left Side - Branding Section */
+.brandSection {
+  flex: 1;
+  background: var(--brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.brandContent {
+  text-align: center;
+  color: var(--text-color-white);
+  max-width: 500px;
+}
+
+.brandTitle {
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 4rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.brandLogo {
+  margin-top: 2rem;
+}
+
+.logoImage {
+  width: 200px;
+  height: auto;
+  object-fit: contain;
+}
+
+.logoPlaceholder {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  background: var(--text-color-white);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: var(--brand-red-primary);
+}
+
+/* Right Side - Form Section */
+.formSection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--text-color-white);
+  overflow-y: auto;
+}
+
+.wrapper {
+  width: 100%;
+  max-width: 450px;
+  padding: 1rem 0;
+}
+
+.header {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  color: var(--text-color-black);
+  text-align: left;
+}
+
+/* Form Groups */
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-color-dark);
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 0;
+  font-size: 1rem;
+  font-family: inherit;
+  border: none;
+  border-bottom: 2px solid var(--input-border);
+  outline: none;
+  transition: border-color 0.3s ease;
+  background: transparent;
+}
+
+.input:focus {
+  border-bottom-color: var(--input-focus);
+}
+
+.input::placeholder {
+  color: var(--text-color-light-gray);
+}
+
+/* Select Dropdown */
+select.input {
+  cursor: pointer;
+  padding: 0.75rem 0;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+  background-size: 1.5em;
+  padding-right: 2em;
+}
+
+select.input option {
+  color: var(--text-color-black);
+  background: var(--text-color-white);
+}
+
+/* Password Wrapper */
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.toggleEye {
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+  color: var(--text-color-gray);
+  font-size: 1.2rem;
+  user-select: none;
+}
+
+.toggleEye:hover {
+  color: var(--text-color-dark);
+}
+
+/* Error Messages */
+.error {
+  display: block;
+  color: var(--error-text);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.serverError {
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-text);
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Terms and Conditions */
+.termsGroup {
+  margin-bottom: 1.5rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  color: var(--text-color-dark);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--brand-red-primary);
+  flex-shrink: 0;
+}
+
+/* Links */
+.link {
+  color: var(--brand-red-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.link:hover {
+  color: var(--brand-red-hover);
+  text-decoration: underline;
+}
+
+/* Submit Button */
+.submitButton {
+  width: 100%;
+  padding: 1rem;
+  background: var(--button-disabled);
+  color: var(--text-color-white);
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.5rem;
+}
+
+.submitButton.active {
+  background: var(--brand-red-primary);
+  cursor: pointer;
+}
+
+.submitButton.active:hover {
+  background: var(--brand-red-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(228, 0, 43, 0.3);
+}
+
+.submitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Login Link */
+.loginLink {
+  text-align: center;
+  color: var(--text-color-gray);
+  font-size: 0.95rem;
+  margin-top: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .brandSection {
+    min-height: 30vh;
+    padding: 3rem 1.5rem;
+  }
+
+  .brandTitle {
+    font-size: 2.5rem;
+  }
+
+  .logoPlaceholder {
+    width: 150px;
+    height: 150px;
+    font-size: 1rem;
+  }
+
+  .formSection {
+    min-height: 70vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .brandTitle {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .logoPlaceholder {
+    width: 120px;
+    height: 120px;
+  }
+
+  .header {
+    font-size: 1.5rem;
+  }
+
+  .wrapper {
+    padding: 0 1rem;
+  }
+
+  .formGroup {
+    margin-bottom: 1.25rem;
+  }
+}

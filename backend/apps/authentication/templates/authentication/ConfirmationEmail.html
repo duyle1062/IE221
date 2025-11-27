@@ -1,0 +1,153 @@
+{% load i18n %}
+
+{% block subject %}
+Welcome to {{ site_name }} - Your account is ready! 🎉
+{% endblock %}
+
+{% block text_body %}
+Hi there!
+
+Great news - your {{ site_name }} account has been successfully created and activated!
+
+You can now:
+- Browse restaurants near you
+- Save your favorite dishes
+- Track your orders in real-time
+- Get exclusive deals and offers
+
+Start ordering: {{ protocol }}://{{ domain }}
+
+Hungry already? Here are some popular restaurants to check out:
+{{ protocol }}://{{ domain }}/restaurants
+
+Need help getting started? Visit our help center or reply to this email.
+
+Happy eating!
+The {{ site_name }} Team
+
+---
+Follow us for daily food inspiration
+[Instagram] [Facebook] [Twitter]
+{% endblock text_body %}
+
+{% block html_body %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; max-width: 600px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 20px 40px; text-align: center; background-color: #FF6B35;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px;"></h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Success Icon -->
+                    <tr>
+                        <td style="padding: 30px 40px 20px 40px; text-align: center;">
+                            <!-- Outer table for centering the icon -->
+                            <table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td valign="middle" align="center">
+                                        <!-- The green circle div -->
+                                        <div style="width: 80px; height: 80px; background-color: #4CAF50; border-radius: 50%; line-height: 80px; text-align: center; font-size: 48px; color: white; font-family: Arial, sans-serif;">
+                                            &#10004;
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Main content -->
+                    <tr>
+                        <td style="padding: 20px 40px 40px 40px;">
+                            <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600; text-align: center;">You're All Set!</h2>
+                            
+                            <p style="margin: 0 0 25px 0; color: #555555; font-size: 16px; line-height: 1.6; text-align: center;">
+                                Your {{ site_name }} account has been successfully created and activated. Time to satisfy those cravings! 🍕🍔🍜
+                            </p>
+                            
+                            <!-- What you can do section -->
+                            <div style="background-color: #f8f9fa; padding: 25px; border-radius: 8px; margin: 0 0 25px 0;">
+                                <h3 style="margin: 0 0 15px 0; color: #333333; font-size: 18px; font-weight: 600;">What You Can Do Now:</h3>
+                                <ul style="margin: 0; padding-left: 20px; color: #555555; font-size: 15px; line-height: 1.8;">
+                                    <li>Browse hundreds of restaurants near you</li>
+                                    <li>Save your favorite dishes for quick reordering</li>
+                                    <li>Track your orders in real-time</li>
+                                    <li>Get exclusive deals and offers</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- CTA Button -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 auto 20px auto;">
+                                <tr>
+                                    <td style="border-radius: 4px; background-color: #FF6B35;">
+                                        <a href="{{ protocol }}://{{ domain }}" 
+                                           style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 600; border-radius: 4px;">
+                                            Start Ordering Now
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Secondary CTA -->
+                            <p style="margin: 0; text-align: center;">
+                                <a href="{{ protocol }}://{{ domain }}" style="color: #FF6B35; text-decoration: none; font-size: 15px;">
+                                    Explore Our Restaurants →
+                                </a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f8f9fa; border-top: 1px solid #e9ecef;">
+                            <p style="margin: 0 0 15px 0; color: #555555; font-size: 14px; line-height: 1.6; text-align: center;">
+                                Questions? We're here to help!<br>
+                                Reply to this email or visit our Help Center!
+                            </p>
+                            
+                            <!-- Social media links -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 20px auto 0 auto;">
+                                <tr>
+                                    <td style="padding: 0 8px;">
+                                        <a href="https://instagram.com/yourpage" style="text-decoration: none; color: #555555;">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2000px-Instagram_logo_2016.svg.png" alt="Instagram" width="24" height="24" style="display: block;">
+                                        </a>
+                                    </td>
+                                    <td style="padding: 0 8px;">
+                                        <a href="https://facebook.com/yourpage" style="text-decoration: none; color: #555555;">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Facebook_Logo_2023.png" alt="Facebook" width="24" height="24" style="display: block;">
+                                        </a>
+                                    </td>
+                                    <td style="padding: 0 8px;">
+                                        <a href="https://X.com/yourpage" style="text-decoration: none; color: #555555;">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/9/95/Twitter_new_X_logo.png" alt="Twitter" width="24" height="24" style="display: block;">
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 20px 0 0 0; color: #888888; font-size: 12px; line-height: 1.6; text-align: center;">
+                                © {% now "Y" %} {{ site_name }}. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+{% endblock html_body %}
