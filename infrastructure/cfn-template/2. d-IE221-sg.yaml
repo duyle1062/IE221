@@ -46,10 +46,10 @@ Resources:
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: 8000
+          ToPort: 8000
           SourceSecurityGroupId: !Ref ALBSecurityGroup
-          Description: Allow traffic from ALB on port 80
+          Description: Allow traffic from ALB on port 8000
       SecurityGroupEgress:
         - IpProtocol: -1
           CidrIp: 0.0.0.0/0
