@@ -102,6 +102,8 @@ const ProductDetailPage: React.FC = () => {
             primaryImage?.image_url ?? data.images?.[0]?.image_url ?? ""
           );
         }
+        // Scroll to top when product loads
+        window.scrollTo(0, 0);
       } catch (err: any) {
         if (err.name === "CanceledError" || err.name === "AbortError") {
           return;
