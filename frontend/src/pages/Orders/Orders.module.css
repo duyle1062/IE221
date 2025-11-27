@@ -70,6 +70,14 @@
   font-weight: 600;
 }
 
+.filterButtonActive:hover {
+  background-color: #a00820;
+  color: var(--text-color-white);
+  border-color: #a00820;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(200, 16, 46, 0.4);
+}
+
 .orderList {
   display: flex;
   flex-direction: column;
