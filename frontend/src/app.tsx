@@ -48,7 +48,6 @@ export default function App() {
           <Route path="/group-order" element={<GroupOrder />} />
           <Route path="/payment/result" element={<PaymentResult />} />
 
-          {/* Tui chưa hiểu đoạn phân quyền dưới á nên để tạm đường dẫn trang của Admin ở đây nha */}
           <Route element={<LayoutAdmin />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/orders-admin" element={<OrderManagement />} />

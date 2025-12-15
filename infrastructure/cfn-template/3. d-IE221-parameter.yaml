@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for IE221 Secrets Manager'
+
+Parameters:
+  DjangoSecretKey:
+    Type: String
+    Description: Django SECRET_KEY for application encryption
+    NoEcho: true
+
+  DBPassword:
+    Type: String
+    Description: PostgreSQL database password
+    NoEcho: true
+
+  EmailHostPassword:
+    Type: String
+    Description: Gmail app password for SMTP email sending
+    NoEcho: true
+
+  VNPayHashSecret:
+    Type: String
+    Description: VNPay payment gateway hash secret
+    NoEcho: true
+
+Resources:
+  # Django Secret Key
+  DjangoSecretKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foodi-django-secret-key
+      Description: Django SECRET_KEY for IE221 foodi application
+      SecretString: !Ref DjangoSecretKey
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foodi-django-secret-key
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foodi
+
+  # Database Password Secret
+  DBPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foodi-db-password
+      Description: PostgreSQL database password for IE221 foodi application
+      SecretString: !Ref DBPassword
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foodi-db-password
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foodi
+
+  # Email Host Password Secret
+  EmailHostPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foodi-email-password
+      Description: Gmail app password for SMTP email sending
+      SecretString: !Ref EmailHostPassword
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foodi-email-password
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foodi
+
+  # VNPay Hash Secret
+  VNPayHashSecretSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foodi-vnpay-hash-secret
+      Description: VNPay payment gateway hash secret
+      SecretString: !Ref VNPayHashSecret
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foodi-vnpay-hash-secret
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foodi
+  
+  AWSAccessKeyIdSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foodi-aws-access-key-id
+      Description: AWS Access Key ID for S3 access for media
+      SecretString: !Ref AWSAccessKeyId
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foodi-aws-access-key-id
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221
+        - Key: Application
+          Value: foodi
+  
+  AWSSecretAccessKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ie221-secret-foodi-aws-secret-access-key
+      Description: AWS Secret Access Key for S3 access for media
+      SecretString: !Ref AWSSecretAccessKey
+      Tags:
+        - Key: Name
+          Value: ie221-secret-foodi-aws-secret-access-key
+        - Key: Environment
+          Value: dev
+        - Key: SystemID
+          Value: IE221  
+        - Key: Application
+          Value: foodi
+
+Outputs:
+  DjangoSecretKeySecretArn:
+    Description: ARN of Django SECRET_KEY secret
+    Value: !Ref DjangoSecretKeySecret
+    Export:
+      Name: !Sub "${AWS::StackName}-DjangoSecretKeyArn"
+
+  DBPasswordSecretArn:
+    Description: ARN of database password secret
+    Value: !Ref DBPasswordSecret
+    Export:
+      Name: !Sub "${AWS::StackName}-DBPasswordArn"
+
+  EmailHostPasswordSecretArn:
+    Description: ARN of email host password secret
+    Value: !Ref EmailHostPasswordSecret
+    Export:
+      Name: !Sub "${AWS::StackName}-EmailPasswordArn"
+
+  VNPayHashSecretSecretArn:
+    Description: ARN of VNPay hash secret
+    Value: !Ref VNPayHashSecretSecret
+    Export:
+      Name: !Sub "${AWS::StackName}-VNPayHashSecretArn"

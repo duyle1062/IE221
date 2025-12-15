@@ -1,8 +1,8 @@
 // API Configuration
 export const API_CONFIG = {
   BASE_URL:
-    (globalThis as any).process?.env?.REACT_APP_API_URL ||
-    "https://foodi.liaman.link/",
+    process.env.REACT_APP_API_URL ||
+    "https://foodi.liaman.link",
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
