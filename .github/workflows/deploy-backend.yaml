@@ -4,7 +4,7 @@ name: Deploy Backend to ECR
 on:
   push:
     branches:
-      - 'dev'
+      - 'main'
     paths:
       - 'backend/**'
 
