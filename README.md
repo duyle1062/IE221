@@ -1,7 +1,8 @@
 # IE221 - Full-Stack Web Application
 
-A modern full-stack web application built with Django (Python) backend and React (JavaScript) frontend.
-
+A modern full-stack web application built with Django (Python) backend and React (JavaScript) frontend.�
+## 📷 Video demo
+https://drive.google.com/file/d/1xQZBQc4DIEMvqeLg_TY4LRkskntK1-PP/view?usp=sharing
 ## 🏗️ Project Structure
 
 ```
