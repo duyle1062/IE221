@@ -121,7 +121,6 @@ IE221/
 │       ├── deploy-frontend.yml  # Frontend CI/CD pipeline
 │       └── deploy-backend.yaml  # Backend CI/CD pipeline
 ├── package.json                # Root package scripts
-├── docker-compose.yml          # Local development setup
 └── README.md                   # This file
 ```
 
@@ -133,7 +132,6 @@ IE221/
 - **Node.js 22.17.0+**
 - **PostgreSQL 15+** (or use provided RDS)
 - **Git**
-- **Docker** (optional, for containerized development)
 
 ### Local Development Setup
 
@@ -329,27 +327,6 @@ GENERATE_SOURCEMAP=false
 | GET | `/api/payment/status/{order_id}/` | Check payment status |
 
 For detailed API documentation, see [GROUP_ORDER_API.md](backend/GROUP_ORDER_API.md)
-
-## 🐳 Docker Development
-
-Run the entire application with Docker Compose:
-
-```bash
-# Build and start all services
-docker-compose up --build
-
-# Run in background
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-
-# Stop and remove volumes
-docker-compose down -v
-```
 
 ## 🧪 Testing
 
