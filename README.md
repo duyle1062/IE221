@@ -1,12 +1,37 @@
+<p align="center">
+  <a href="https://www.uit.edu.vn/" title="Trường Đại học Công nghệ Thông tin" style="border: none;">
+    <img src="https://i.imgur.com/WmMnSRt.png" alt="Trường Đại học Công nghệ Thông tin | University of Information Technology">
+  </a>
+</p>
+
+<h1 align="center"><b>KỸ THUẬT LẬP TRÌNH PYTHON</b></h1>
+
+## TEAM
+
+| No  | Student ID       | Name              | Email |
+| --- | -------- | ----------------- | -------------------------------- |
+| 1   | 22520315 | Lê Đức Anh Duy    | 22520315@gm.uit.edu.vn |
+| 2   | 22520198 | Đỗ Thành Danh     | 22520198@gm.uit.edu.vn |
+| 3   | 22520309 | Phạm Hải Dương    | 22520309@gm.uit.edu.vn |
+| 4   | 22520316 | Lê Thanh Duy      | 22520316@gm.uit.edu.vn |
+| 5   | 22520732 | An Nhất Lâm       | 22520732@gm.uit.edu.vn | 
+
+## COURSE INFORMATION
+* **Course Name:** Kỹ thuật lập trình Python
+* **Course Code:** IE221
+* **Class Code:** IE221.Q11
+* **Academic Year:** Semester 1 (2025–2026)
+* **Instructor:** Dr. Nguyễn Tất Bảo Thiện
+
 # IE221 - Foodi: Food Ordering Platform
 
 A modern full-stack food ordering web application built with Django REST Framework backend and React frontend, deployed on AWS infrastructure.
 
-## 📹 Video Demo
+## Video Demo
 
 [Watch Demo Video](https://drive.google.com/file/d/1xQZBQc4DIEMvqeLg_TY4LRkskntK1-PP/view?usp=sharing)
 
-## 🌟 Project Overview
+## Project Overview
 
 Foodi is a comprehensive food ordering platform that enables users to browse restaurants, order food, make payments through VNPay, and participate in group orders. The application features user authentication, product management, shopping cart functionality, order tracking, and payment integration.
 
@@ -24,7 +49,7 @@ Foodi is a comprehensive food ordering platform that enables users to browse res
 - Email notifications
 - Media file management with AWS S3
 
-## 🏗️ Architecture
+## Architecture
 
 ### Technology Stack
 
@@ -79,7 +104,7 @@ Foodi is a comprehensive food ordering platform that enables users to browse res
 └────────┘   └───────────┘
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 IE221/
@@ -124,7 +149,7 @@ IE221/
 └── README.md                   # This file
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -259,7 +284,7 @@ REACT_APP_API_URL=http://127.0.0.1:8000
 GENERATE_SOURCEMAP=false
 ```
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication Endpoints
 
@@ -328,7 +353,7 @@ GENERATE_SOURCEMAP=false
 
 For detailed API documentation, see [GROUP_ORDER_API.md](backend/GROUP_ORDER_API.md)
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -347,7 +372,7 @@ cd backend && python manage.py test apps.authentication
 cd backend && python manage.py test apps.orders
 ```
 
-## 📦 Available Scripts
+## Available Scripts
 
 ### Root Level Scripts
 
@@ -397,7 +422,7 @@ npm test           # Run tests
 npm run eject      # Eject from CRA (not recommended)
 ```
 
-## 🚀 Production Deployment
+## Production Deployment
 
 ### AWS Infrastructure
 
@@ -514,7 +539,7 @@ aws cloudfront create-invalidation \
   --paths "/*"
 ```
 
-## 🔐 Security
+## Security
 
 ### Best Practices Implemented
 
@@ -543,7 +568,7 @@ aws cloudfront create-invalidation \
 - Secrets in AWS Secrets Manager
 - CloudFront CDN with SSL/TLS
 
-## 📊 Monitoring and Logging
+## Monitoring and Logging
 
 ### CloudWatch Integration
 
@@ -564,7 +589,7 @@ aws ecs describe-services \
   --services ie221-ecs-service-foodi-api
 ```
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -624,7 +649,7 @@ npm run build
 - Verify S3 bucket contents
 - Check cache-control headers
 
-## 💡 Development Tips
+## Development Tips
 
 ### Backend Development
 
@@ -655,7 +680,7 @@ psql -U your_user ie221_db < backup.sql
 python manage.py flush
 ```
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please follow these steps:
 
@@ -673,17 +698,11 @@ We welcome contributions! Please follow these steps:
 - Follow existing code style
 - Ensure all tests pass before submitting PR
 
-## 📄 License
+## License
 
 This project is part of the IE221 course, Group 10.
 
-## 👥 Team
-
-**Group 10 - IE221**
-
-- GitHub: [@duyle1062](https://github.com/duyle1062)
-
-## 🔗 Links
+## Links
 
 - **Production**: https://foodi.liaman.link
 - **Backend API**: https://api.foodi.liaman.link
@@ -691,7 +710,7 @@ This project is part of the IE221 course, Group 10.
 - **Video Demo**: [Google Drive](https://drive.google.com/file/d/1xQZBQc4DIEMvqeLg_TY4LRkskntK1-PP/view?usp=sharing)
 - **Infrastructure Docs**: [infrastructure/README.md](infrastructure/README.md)
 
-## 📞 Support
+## Support
 
 For issues or questions:
 1. Check existing issues on GitHub
@@ -699,7 +718,7 @@ For issues or questions:
 3. Check CloudWatch logs for production issues
 4. Contact the development team
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Django REST Framework for the robust API framework
 - React team for the excellent frontend library
@@ -709,4 +728,4 @@ For issues or questions:
 
 ---
 
-Built with ❤️ by Group 10 for IE221 Course
+Built with :heart: by Group 10 for IE221 Course
