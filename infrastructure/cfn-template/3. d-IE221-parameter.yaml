@@ -21,7 +21,17 @@ Parameters:
     Type: String
     Description: VNPay payment gateway hash secret
     NoEcho: true
+    
+  AWSAccessKeyId:
+    Type: String
+    Description: AWS Access Key ID for S3 access
+    NoEcho: true
 
+  AWSSecretAccessKey:
+    Type: String
+    Description: AWS Secret Access Key for S3 access
+    NoEcho: true
+    
 Resources:
   # Django Secret Key
   DjangoSecretKeySecret:
