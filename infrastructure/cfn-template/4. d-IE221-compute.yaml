@@ -367,7 +367,7 @@ Resources:
             - Name: FRONTEND_PROTOCOL
               Value: https
             - Name: VNPAY_TMN_CODE
-              Value: BG6RGL0E
+              Value: BUNOTUWU
             - Name: VNPAY_PAYMENT_URL
               Value: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
             - Name: VNPAY_RETURN_URL
