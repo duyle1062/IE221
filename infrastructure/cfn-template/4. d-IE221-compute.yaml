@@ -62,7 +62,16 @@ Parameters:
     Type: String
     Description: Full ARN of AWS Secret Access Key for S3 access
     NoEcho: true
+    
+  # Route 53 Configuration  
+  ACMCertificateArn:
+    Type: String
+    Description: ARN of existing ACM certificate for api.liaman.link
 
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route 53 Hosted Zone ID for liaman.link
+    
   # Service Configuration
   ServiceName:
     Type: String
@@ -306,7 +315,44 @@ Resources:
       LoadBalancerArn: !Ref ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
-
+      
+  # HTTPS Listener    
+  HTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref ACMCertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+  
+  # Route 53 Config alias for IPv4        
+  Route53RecordA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: api.liaman.link
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApplicationLoadBalancer.DNSName
+        HostedZoneId: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+        EvaluateTargetHealth: true
+  
+  # Route 53 Config for IPv6  
+  Route53RecordAAAA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: api.liaman.link
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt ApplicationLoadBalancer.DNSName
+        HostedZoneId: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+        EvaluateTargetHealth: true          
+        
   # ECS Cluster
   ECSCluster:
     Type: AWS::ECS::Cluster
