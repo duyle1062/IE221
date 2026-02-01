@@ -27,10 +27,6 @@
 
 A modern full-stack food ordering web application built with Django REST Framework backend and React frontend, deployed on AWS infrastructure.
 
-## Video Demo
-
-[Watch Demo Video](https://drive.google.com/file/d/1xQZBQc4DIEMvqeLg_TY4LRkskntK1-PP/view?usp=sharing)
-
 ## Project Overview
 
 Foodi is a comprehensive food ordering platform that enables users to browse restaurants, order food, make payments through VNPay, and participate in group orders. The application features user authentication, product management, shopping cart functionality, order tracking, and payment integration.
